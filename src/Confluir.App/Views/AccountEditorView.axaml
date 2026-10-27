@@ -1,0 +1,301 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:conv="using:Confluir.App.Converters"
+             xmlns:res="using:Confluir.App.Resources"
+             x:Class="Confluir.App.Views.AccountEditorView"
+             x:DataType="vm:AccountEditorViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <Style Selector="Border.notice">
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+    </Style>
+    <Style Selector="Border.section">
+      <Setter Property="Background" Value="{DynamicResource Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="22,18" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="Button.crumb">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+    </Style>
+    <Style Selector="Button.crumb:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+    </Style>
+    <Style Selector="Grid.helpStep > Border">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="CornerRadius" Value="11" />
+      <Setter Property="Background" Value="{DynamicResource AccentSubtle}" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="Grid.helpStep > Border > TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Grid.helpStep > TextBlock">
+      <Setter Property="Margin" Value="12,1,0,0" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <Grid x:Name="Layout" Margin="40,24,40,40" MaxWidth="1040" HorizontalAlignment="Left"
+          ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+
+      <!-- Cabeçalho: caminho, título e subtítulo -->
+      <StackPanel Grid.ColumnSpan="2" Spacing="6" Margin="0,0,0,24">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="crumb" Content="{x:Static res:Strings.Breadcrumb_Accounts}" Command="{Binding CancelCommand}" />
+          <LucideIcon Kind="ChevronRight" Size="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding Title}" Classes="caption" FontSize="13" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10" Margin="-8,0,0,0">
+          <Button Classes="icon" Command="{Binding CancelCommand}" ToolTip.Tip="{x:Static res:Strings.Action_Back}"
+                  VerticalAlignment="Center">
+            <LucideIcon Kind="ArrowLeft" Size="20" />
+          </Button>
+          <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Text="{Binding Subtitle}" Classes="secondary" FontSize="14" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <!-- Formulário -->
+      <StackPanel x:Name="Form" Grid.Row="1" Spacing="16" MaxWidth="640">
+
+        <!-- Conta -->
+        <Border Classes="section">
+          <StackPanel Spacing="14">
+            <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.AddAccount_Section_Account}" />
+            <StackPanel>
+              <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_Email}" />
+              <TextBox x:Name="EmailBox" Text="{Binding Email}" PlaceholderText="voce@exemplo.com" />
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0" IsVisible="{Binding HasDetectionMessage}">
+                <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsDetecting}"
+                            Foreground="{DynamicResource TextSecondary}" />
+                <LucideIcon Kind="Info" Size="14" IsVisible="{Binding !IsDetecting}" Foreground="{DynamicResource Accent}" />
+                <TextBlock Text="{Binding DetectionMessage}" Classes="caption" TextWrapping="Wrap" MaxWidth="560" />
+              </StackPanel>
+            </StackPanel>
+
+            <!-- Outlook: OAuth2 ainda não disponível -->
+            <Border Classes="notice" IsVisible="{Binding RequiresOAuth}">
+              <Grid ColumnDefinitions="Auto,*">
+                <LucideIcon Kind="TriangleAlert" Size="18" Foreground="{DynamicResource Warning}" VerticalAlignment="Top" />
+                <TextBlock Grid.Column="1" Margin="10,0,0,0" TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}"
+                           Text="{x:Static res:Strings.AddAccount_OAuthRequired}" />
+              </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,24,Auto" IsVisible="{Binding !RequiresOAuth}">
+              <StackPanel>
+                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_DisplayName}" />
+                <TextBox Text="{Binding DisplayName}" PlaceholderText="{x:Static res:Strings.AddAccount_DisplayName_Placeholder}" />
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_Color}" />
+                <ListBox Classes="swatches" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding SelectedColor}"
+                         Background="Transparent">
+                  <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="0" />
+                    </ItemsPanelTemplate>
+                  </ListBox.ItemsPanel>
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="vm:AccountColorOption">
+                      <Ellipse Width="22" Height="22" ToolTip.Tip="{Binding Name}"
+                               Fill="{Binding Hex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Autenticação -->
+        <Border Classes="section" IsVisible="{Binding !RequiresOAuth}">
+          <StackPanel Spacing="14">
+            <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.AddAccount_Section_Auth}" />
+            <StackPanel>
+              <TextBlock Classes="label" Text="{Binding PasswordLabel}" />
+              <TextBox Text="{Binding Password}" PasswordChar="•" Classes="revealPasswordButton"
+                       PlaceholderText="{Binding PasswordPlaceholder}" />
+            </StackPanel>
+            <Border Classes="notice" IsVisible="{Binding HasAppPasswordHint}">
+              <Grid ColumnDefinitions="Auto,*">
+                <LucideIcon Kind="Info" Size="16" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2">
+                  <TextBlock Text="{Binding AppPasswordHint}" TextWrapping="Wrap" FontSize="13"
+                             Foreground="{DynamicResource TextPrimary}" />
+                  <HyperlinkButton Content="{x:Static res:Strings.AddAccount_AppPasswordLink}" Padding="0"
+                                   Command="{Binding OpenAppPasswordHelpCommand}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- Servidores -->
+        <Border Classes="section" IsVisible="{Binding !RequiresOAuth}">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.AddAccount_Section_Servers}" />
+                <TextBlock Classes="caption" Text="{x:Static res:Strings.AddAccount_Section_Servers_Hint}" TextWrapping="Wrap" />
+              </StackPanel>
+              <ToggleButton Grid.Column="1" IsChecked="{Binding ShowAdvanced}" VerticalAlignment="Top" Margin="12,0,0,0"
+                            Content="{x:Static res:Strings.AddAccount_EditServers}" />
+            </Grid>
+
+            <TextBlock Text="{Binding ServerSummary}" FontSize="13" Foreground="{DynamicResource TextPrimary}"
+                       IsVisible="{Binding !ShowAdvanced}" />
+
+            <StackPanel Spacing="14" IsVisible="{Binding ShowAdvanced}">
+              <StackPanel>
+                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_UserName}" />
+                <TextBox Text="{Binding UserName}" />
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_IncomingServer}" />
+                <Grid ColumnDefinitions="*,8,96,8,150">
+                  <TextBox Text="{Binding ImapHost}" PlaceholderText="{x:Static res:Strings.AddAccount_Host}" />
+                  <NumericUpDown Grid.Column="2" Value="{Binding ImapPort}" Minimum="1" Maximum="65535"
+                                 Increment="1" FormatString="0" ShowButtonSpinner="False"
+                                 ToolTip.Tip="{x:Static res:Strings.AddAccount_Port}" />
+                  <ComboBox Grid.Column="4" ItemsSource="{Binding SecurityOptions}" SelectedItem="{Binding ImapSecurity}"
+                            HorizontalAlignment="Stretch" ToolTip.Tip="{x:Static res:Strings.AddAccount_Security}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate DataType="vm:SecurityOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </Grid>
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_OutgoingServer}" />
+                <Grid ColumnDefinitions="*,8,96,8,150">
+                  <TextBox Text="{Binding SmtpHost}" PlaceholderText="{x:Static res:Strings.AddAccount_Host}" />
+                  <NumericUpDown Grid.Column="2" Value="{Binding SmtpPort}" Minimum="1" Maximum="65535"
+                                 Increment="1" FormatString="0" ShowButtonSpinner="False"
+                                 ToolTip.Tip="{x:Static res:Strings.AddAccount_Port}" />
+                  <ComboBox Grid.Column="4" ItemsSource="{Binding SecurityOptions}" SelectedItem="{Binding SmtpSecurity}"
+                            HorizontalAlignment="Stretch" ToolTip.Tip="{x:Static res:Strings.AddAccount_Security}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate DataType="vm:SecurityOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </Grid>
+              </StackPanel>
+            </StackPanel>
+
+            <!-- Resultado do teste -->
+            <StackPanel Spacing="2">
+              <ContentControl Content="{Binding ImapStatus}" />
+              <ContentControl Content="{Binding SmtpStatus}" />
+              <StackPanel.DataTemplates>
+                <DataTemplate DataType="vm:TestStatusViewModel">
+                  <Grid ColumnDefinitions="Auto,56,*" Margin="0,3" IsVisible="{Binding IsVisible}">
+                    <Panel Width="18">
+                      <LucideIcon Kind="LoaderCircle" Size="16" Classes="spin" IsVisible="{Binding IsTesting}"
+                                  Foreground="{DynamicResource TextSecondary}" />
+                      <LucideIcon Kind="CircleCheck" Size="16" IsVisible="{Binding IsOk}" Foreground="{DynamicResource Success}" />
+                      <LucideIcon Kind="CircleX" Size="16" IsVisible="{Binding IsFailed}" Foreground="{DynamicResource Danger}" />
+                    </Panel>
+                    <TextBlock Grid.Column="1" Text="{Binding Protocol}" FontWeight="SemiBold" Margin="8,0,0,0"
+                               Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondary}" />
+                  </Grid>
+                </DataTemplate>
+              </StackPanel.DataTemplates>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <TextBlock Text="{Binding ErrorMessage}" IsVisible="{Binding HasError}" TextWrapping="Wrap"
+                   Foreground="{DynamicResource Danger}" />
+
+        <!-- Ações, no fim do formulário -->
+        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+          <Button Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSubmit}" IsDefault="True">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="Check" Size="16" Foreground="{DynamicResource OnAccent}" />
+              <TextBlock Text="{x:Static res:Strings.AddAccount_SaveAccount}" />
+            </StackPanel>
+          </Button>
+          <Button Content="{x:Static res:Strings.AddAccount_Test}" Command="{Binding TestCommand}"
+                  IsEnabled="{Binding CanSubmit}" />
+          <LucideIcon Kind="LoaderCircle" Size="18" Classes="spin" IsVisible="{Binding IsBusy}"
+                      Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Remover conta (só na edição), com confirmação inline -->
+        <Border Classes="section" Margin="0,24,0,0" IsVisible="{Binding IsEditing}">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.Account_Remove}" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Account_Remove_Confirm}" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="danger" Content="{x:Static res:Strings.Account_Remove}" Command="{Binding AskRemoveCommand}"
+                      IsVisible="{Binding !IsConfirmingRemoval}" />
+              <Button Classes="danger" Content="{x:Static res:Strings.Account_Remove_ConfirmButton}"
+                      Command="{Binding ConfirmRemoveCommand}" IsVisible="{Binding IsConfirmingRemoval}" />
+              <Button Content="{x:Static res:Strings.AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}"
+                      IsVisible="{Binding IsConfirmingRemoval}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <!-- Ajuda lateral (abaixo do formulário em larguras menores) -->
+      <StackPanel x:Name="Aside" Grid.Row="1" Grid.Column="1" Width="280" Margin="40,4,0,0" Spacing="16">
+        <TextBlock Text="{x:Static res:Strings.AddAccount_Help_Title}" FontSize="15" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimary}" />
+        <Grid Classes="helpStep" ColumnDefinitions="Auto,*">
+          <Border><TextBlock Text="1" /></Border>
+          <TextBlock Grid.Column="1" Text="{x:Static res:Strings.AddAccount_Help_1}" />
+        </Grid>
+        <Grid Classes="helpStep" ColumnDefinitions="Auto,*">
+          <Border><TextBlock Text="2" /></Border>
+          <TextBlock Grid.Column="1" Text="{x:Static res:Strings.AddAccount_Help_2}" />
+        </Grid>
+        <Grid Classes="helpStep" ColumnDefinitions="Auto,*">
+          <Border><TextBlock Text="3" /></Border>
+          <TextBlock Grid.Column="1" Text="{x:Static res:Strings.AddAccount_Help_3}" />
+        </Grid>
+        <Border Height="1" Background="{DynamicResource Border}" />
+        <Grid ColumnDefinitions="Auto,*">
+          <LucideIcon Kind="ShieldAlert" Size="16" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Top" />
+          <TextBlock Grid.Column="1" Margin="10,0,0,0" Text="{x:Static res:Strings.AddAccount_Privacy}"
+                     Classes="caption" TextWrapping="Wrap" />
+        </Grid>
+      </StackPanel>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

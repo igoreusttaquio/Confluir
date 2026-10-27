@@ -149,6 +149,10 @@
     <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
     <Setter Property="Opacity" Value="0.9" />
   </Style>
+  <Style Selector="Button.accent.iconOnly">
+    <Setter Property="Padding" Value="9" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
   <Style Selector="Button.accent:disabled">
     <Setter Property="Opacity" Value="0.5" />
   </Style>

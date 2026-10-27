@@ -10,7 +10,10 @@
       <!-- Estado vazio -->
       <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10"
                   IsVisible="{Binding !HasSelection}">
-        <Image Source="{StaticResource LogoImage}" Width="88" Height="88" Opacity="0.9" />
+        <Border Width="96" Height="96" CornerRadius="48" Background="{DynamicResource AccentSubtle}"
+                HorizontalAlignment="Center">
+          <LucideIcon Kind="Mail" Size="44" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />
+        </Border>
         <TextBlock Text="{x:Static res:Strings.Reading_Empty_Title}" FontSize="16" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,8,0,0" />
         <TextBlock Text="{x:Static res:Strings.Reading_Empty_Hint}" Classes="secondary" HorizontalAlignment="Center" />
@@ -25,8 +28,8 @@
             <DockPanel>
               <!-- Ações (ativadas nas fases de sincronização e envio) -->
               <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
-                      Padding="12,6">
-                <StackPanel Orientation="Horizontal" Spacing="2">
+                      Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
+                <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                   <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Reply}">
                     <LucideIcon Kind="Reply" />
                   </Button>

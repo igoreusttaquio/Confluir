@@ -48,7 +48,7 @@ public sealed partial class TestStatusViewModel(string protocol) : ViewModelBase
 /// Tela "Adicionar conta": detecta o provedor pelo endereço, preenche os servidores,
 /// testa IMAP e SMTP e só então salva (senha no cofre do sistema).
 /// </summary>
-public sealed partial class AddAccountViewModel : ViewModelBase
+public sealed partial class AccountEditorViewModel : ViewModelBase
 {
     private const string GmailAppPasswordUrl = "https://myaccount.google.com/apppasswords";
     private const string YahooAppPasswordUrl = "https://login.yahoo.com/account/security";
@@ -59,7 +59,8 @@ public sealed partial class AddAccountViewModel : ViewModelBase
     private readonly ICredentialStore _credentials;
     private readonly IUrlLauncher _urls;
     private readonly NavigationService _navigation;
-    private readonly ILogger<AddAccountViewModel> _logger;
+    private readonly AccountService _accountService;
+    private readonly ILogger<AccountEditorViewModel> _logger;
 
     private CancellationTokenSource? _detectCts;
     private string? _detectedDomain;
@@ -69,15 +70,17 @@ public sealed partial class AddAccountViewModel : ViewModelBase
     private bool _suppressInvalidate;
     private bool _testPassed;
 
-    public AddAccountViewModel(
+    public AccountEditorViewModel(
         IServerSettingsResolver resolver,
         IConnectionTester tester,
         IAccountStore accounts,
         ICredentialStore credentials,
         IUrlLauncher urls,
         NavigationService navigation,
-        ILogger<AddAccountViewModel> logger)
+        AccountService accountService,
+        ILogger<AccountEditorViewModel> logger)
     {
+        _accountService = accountService;
         _resolver = resolver;
         _tester = tester;
         _accounts = accounts;
@@ -99,6 +102,73 @@ public sealed partial class AddAccountViewModel : ViewModelBase
         ];
         ImapSecurity = SecurityOptions[0];
         SmtpSecurity = SecurityOptions[0];
+    }
+
+    /// <summary>Conta sendo editada; nulo ao adicionar uma nova.</summary>
+    private MailAccount? _editing;
+
+    public bool IsEditing => _editing is not null;
+    public string Title => IsEditing ? Strings.EditAccount_Title : Strings.AddAccount_Title;
+    public string Subtitle => IsEditing ? Strings.EditAccount_Subtitle : Strings.AddAccount_Subtitle;
+    public string PasswordPlaceholder => IsEditing ? Strings.EditAccount_PasswordKeep : "";
+
+    [ObservableProperty]
+    public partial bool IsConfirmingRemoval { get; set; }
+
+    /// <summary>Preenche o editor com uma conta existente. A senha fica em branco (mantida se não for alterada).</summary>
+    public void Load(MailAccount account)
+    {
+        _editing = account;
+        _applyingPreset = true;
+        try
+        {
+            // Marca o domínio como já detectado: a conta tem servidores próprios que não devem ser sobrescritos.
+            _detectedDomain = KnownProviders.GetDomain(account.Email);
+            Email = account.Email;
+            DisplayName = account.DisplayName;
+            _displayNameEdited = true;
+            Provider = account.Provider;
+            Auth = account.Auth;
+            UserName = account.UserName;
+            ImapHost = account.Servers.Imap.Host;
+            ImapPort = account.Servers.Imap.Port;
+            ImapSecurity = SecurityOptions.First(o => o.Mode == account.Servers.Imap.Security);
+            SmtpHost = account.Servers.Smtp.Host;
+            SmtpPort = account.Servers.Smtp.Port;
+            SmtpSecurity = SecurityOptions.First(o => o.Mode == account.Servers.Smtp.Security);
+            SelectedColor = ColorOptions.FirstOrDefault(c => c.Hex.Equals(account.ColorHex, StringComparison.OrdinalIgnoreCase))
+                ?? SelectedColor;
+        }
+        finally
+        {
+            _applyingPreset = false;
+        }
+
+        _detectCts?.Cancel();
+        DetectionMessage = null;
+        // A configuração salva já funcionava: só exige novo teste se a conexão for alterada.
+        _testPassed = true;
+        ImapStatus.Set(TestState.Idle);
+        SmtpStatus.Set(TestState.Idle);
+        OnPropertyChanged(nameof(IsEditing));
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Subtitle));
+        OnPropertyChanged(nameof(PasswordPlaceholder));
+    }
+
+    [RelayCommand]
+    private void AskRemove() => IsConfirmingRemoval = true;
+
+    [RelayCommand]
+    private void CancelRemove() => IsConfirmingRemoval = false;
+
+    [RelayCommand]
+    private async Task ConfirmRemoveAsync()
+    {
+        if (_editing is null)
+            return;
+        await _accountService.RemoveAsync(_editing);
+        _navigation.GoBack();
     }
 
     public IReadOnlyList<AccountColorOption> ColorOptions { get; }
@@ -205,12 +275,26 @@ public sealed partial class AddAccountViewModel : ViewModelBase
 
     partial void OnPasswordChanged(string value) => InvalidateTest();
     partial void OnUserNameChanged(string value) => InvalidateTest();
-    partial void OnImapHostChanged(string value) => InvalidateTest();
-    partial void OnImapPortChanged(decimal? value) => InvalidateTest();
+    partial void OnImapHostChanged(string value) => OnServerChanged();
+    partial void OnImapPortChanged(decimal? value) => OnServerChanged();
     partial void OnImapSecurityChanged(SecurityOption value) => InvalidateTest();
-    partial void OnSmtpHostChanged(string value) => InvalidateTest();
-    partial void OnSmtpPortChanged(decimal? value) => InvalidateTest();
+    partial void OnSmtpHostChanged(string value) => OnServerChanged();
+    partial void OnSmtpPortChanged(decimal? value) => OnServerChanged();
     partial void OnSmtpSecurityChanged(SecurityOption value) => InvalidateTest();
+
+    /// <summary>Resumo exibido com os servidores recolhidos, ex.: "imap.gmail.com:993 · smtp.gmail.com:465".</summary>
+    public string ServerSummary => string.IsNullOrWhiteSpace(ImapHost)
+        ? ""
+        : $"IMAP {ImapHost.Trim()}:{ImapPort:0}  ·  SMTP {SmtpHost.Trim()}:{SmtpPort:0}";
+
+    public bool HasServerSummary => ServerSummary.Length > 0;
+
+    private void OnServerChanged()
+    {
+        OnPropertyChanged(nameof(ServerSummary));
+        OnPropertyChanged(nameof(HasServerSummary));
+        InvalidateTest();
+    }
 
     [RelayCommand]
     private Task OpenAppPasswordHelpAsync() => Provider switch
@@ -245,7 +329,7 @@ public sealed partial class AddAccountViewModel : ViewModelBase
 
             var domain = KnownProviders.GetDomain(Email) ?? Email;
             var account = new MailAccount(
-                Guid.NewGuid(),
+                _editing?.Id ?? Guid.NewGuid(),
                 string.IsNullOrWhiteSpace(DisplayName) ? DefaultDisplayName(domain) : DisplayName.Trim(),
                 Email.Trim(),
                 Provider,
@@ -254,19 +338,25 @@ public sealed partial class AddAccountViewModel : ViewModelBase
                 BuildServers(),
                 Auth);
 
-            try
+            // Na edição, senha em branco mantém a atual.
+            if (!IsEditing || Password.Length > 0)
             {
-                await _credentials.SetAsync(CredentialKeys.Password(account.Id), Password, ct);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogError(ex, "Falha ao gravar a credencial no cofre do sistema");
-                ErrorMessage = Strings.AddAccount_CredentialStoreError;
-                return;
+                try
+                {
+                    await _credentials.SetAsync(CredentialKeys.Password(account.Id), Password, ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogError(ex, "Falha ao gravar a credencial no cofre do sistema");
+                    ErrorMessage = Strings.AddAccount_CredentialStoreError;
+                    return;
+                }
             }
 
+            // Mesmo Id substitui a conta existente.
             _accounts.Add(account);
-            _logger.LogInformation("Conta {AccountId} adicionada ({Provider})", account.Id, account.Provider);
+            _logger.LogInformation("Conta {AccountId} {Action} ({Provider})",
+                account.Id, IsEditing ? "atualizada" : "adicionada", account.Provider);
             _navigation.GoBack();
         }
         catch (OperationCanceledException)
@@ -299,7 +389,11 @@ public sealed partial class AddAccountViewModel : ViewModelBase
         SmtpStatus.Set(TestState.Testing, Strings.Test_Testing);
         try
         {
-            var result = await _tester.TestAsync(Provider, BuildServers(), UserName.Trim(), Password, ct);
+            // Na edição com senha em branco, testa com a senha guardada no cofre.
+            var password = Password.Length == 0 && _editing is not null
+                ? await _credentials.GetAsync(CredentialKeys.Password(_editing.Id), ct) ?? ""
+                : Password;
+            var result = await _tester.TestAsync(Provider, BuildServers(), UserName.Trim(), password, ct);
             ImapStatus.Set(result.Imap.Success ? TestState.Ok : TestState.Failed, ErrorMessages.For(result.Imap));
             SmtpStatus.Set(result.Smtp.Success ? TestState.Ok : TestState.Failed, ErrorMessages.For(result.Smtp));
             if (result.SmtpAlternative is { } alt)
@@ -417,7 +511,7 @@ public sealed partial class AddAccountViewModel : ViewModelBase
     {
         if (KnownProviders.GetDomain(Email) is null)
             return Strings.AddAccount_Invalid_Email;
-        if (string.IsNullOrEmpty(Password))
+        if (string.IsNullOrEmpty(Password) && !IsEditing)
             return Strings.AddAccount_Invalid_Password;
         if (string.IsNullOrWhiteSpace(ImapHost) || string.IsNullOrWhiteSpace(SmtpHost) ||
             !IsValidPort(ImapPort) || !IsValidPort(SmtpPort) || string.IsNullOrWhiteSpace(UserName))

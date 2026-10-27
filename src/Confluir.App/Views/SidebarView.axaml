@@ -85,6 +85,11 @@
                       ToolTip.Tip="{x:Static res:Strings.Action_Collapse}">
                 <Button.ContextMenu>
                   <ContextMenu>
+                    <MenuItem Header="{x:Static res:Strings.Account_Edit}" Command="{Binding EditCommand}">
+                      <MenuItem.Icon>
+                        <LucideIcon Kind="Settings" Size="16" />
+                      </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="{x:Static res:Strings.Account_Remove}" Command="{Binding AskRemoveCommand}">
                       <MenuItem.Icon>
                         <LucideIcon Kind="Trash" Size="16" />

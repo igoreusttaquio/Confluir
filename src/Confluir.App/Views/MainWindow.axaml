@@ -13,35 +13,73 @@
     <KeyBinding Gesture="Escape" Command="{Binding GoBackCommand}" />
   </Window.KeyBindings>
 
-  <Panel>
-    <!-- Raiz: caixa de email em 3 colunas. Fica só oculta durante a navegação, preservando o estado. -->
-    <Grid x:Name="Columns" IsVisible="{Binding Navigation.IsAtRoot}">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="260" MinWidth="200" MaxWidth="420" />
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="400" MinWidth="300" MaxWidth="720" />
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="*" MinWidth="360" />
-      </Grid.ColumnDefinitions>
+  <Window.Styles>
+    <!-- Caixa de email (lista + leitura): sai deslizando para a esquerda quando uma página é aberta. -->
+    <Style Selector="Grid#Columns > :is(Control).home">
+      <Setter Property="RenderTransform" Value="translateX(0px)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.22" Easing="CubicEaseOut" />
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Grid#Columns.navigated > :is(Control).home">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="RenderTransform" Value="translateX(-32px)" />
+    </Style>
 
-      <views:SidebarView Grid.Column="0" />
-      <GridSplitter Grid.Column="1" Theme="{StaticResource ColumnSplitterTheme}" />
-      <views:MessageListView Grid.Column="2" />
-      <GridSplitter Grid.Column="3" Theme="{StaticResource ColumnSplitterTheme}" />
-      <views:ReadingPaneView Grid.Column="4" />
-    </Grid>
+    <!-- Host de páginas: entra pela direita. -->
+    <Style Selector="Grid#Columns > Border#PageHost">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="RenderTransform" Value="translateX(48px)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.22" Easing="CubicEaseOut" />
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.26" Easing="CubicEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Grid#Columns.navigated > Border#PageHost">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+      <Setter Property="RenderTransform" Value="translateX(0px)" />
+    </Style>
+  </Window.Styles>
 
-    <!-- Telas navegadas (adicionar conta, configurações…) -->
-    <TransitioningContentControl Content="{Binding Navigation.CurrentPage}"
-                                 IsVisible="{Binding !Navigation.IsAtRoot}">
-      <TransitioningContentControl.PageTransition>
-        <CrossFade Duration="0:0:0.15" />
-      </TransitioningContentControl.PageTransition>
-      <TransitioningContentControl.DataTemplates>
-        <DataTemplate DataType="vm:AddAccountViewModel">
-          <views:AddAccountView />
-        </DataTemplate>
-      </TransitioningContentControl.DataTemplates>
-    </TransitioningContentControl>
-  </Panel>
+  <!-- A barra lateral fica sempre visível; a área de conteúdo alterna entre a caixa de email e as páginas. -->
+  <Grid x:Name="Columns" Classes.navigated="{Binding !Navigation.IsAtRoot}" ClipToBounds="True">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="260" MinWidth="200" MaxWidth="420" />
+      <ColumnDefinition Width="Auto" />
+      <ColumnDefinition Width="400" MinWidth="300" MaxWidth="720" />
+      <ColumnDefinition Width="Auto" />
+      <ColumnDefinition Width="*" MinWidth="360" />
+    </Grid.ColumnDefinitions>
+
+    <views:SidebarView Grid.Column="0" ZIndex="2" />
+    <GridSplitter Grid.Column="1" Theme="{StaticResource ColumnSplitterTheme}" ZIndex="2" />
+    <views:MessageListView Grid.Column="2" Classes="home" />
+    <GridSplitter Grid.Column="3" Classes="home" Theme="{StaticResource ColumnSplitterTheme}" />
+    <views:ReadingPaneView Grid.Column="4" Classes="home" />
+
+    <!-- Páginas navegadas (adicionar conta, configurações…) sobre a área de conteúdo -->
+    <Border x:Name="PageHost" Grid.Column="2" Grid.ColumnSpan="3" ZIndex="1" Background="{DynamicResource Background}">
+      <TransitioningContentControl Content="{Binding Navigation.DisplayedPage}">
+        <TransitioningContentControl.PageTransition>
+          <CompositePageTransition>
+            <CrossFade Duration="0:0:0.18" />
+            <PageSlide Duration="0:0:0.22" Orientation="Horizontal" SlideInEasing="CubicEaseOut" SlideOutEasing="CubicEaseIn" />
+          </CompositePageTransition>
+        </TransitioningContentControl.PageTransition>
+        <TransitioningContentControl.DataTemplates>
+          <DataTemplate DataType="vm:AccountEditorViewModel">
+            <views:AccountEditorView />
+          </DataTemplate>
+        </TransitioningContentControl.DataTemplates>
+      </TransitioningContentControl>
+    </Border>
+  </Grid>
 </Window>

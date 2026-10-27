@@ -28,6 +28,7 @@ public interface IAccountNodeHost
     void OnToggled(AccountNode node);
     Task ReloadFoldersAsync(AccountNode node);
     Task RemoveAccountAsync(AccountNode node);
+    void EditAccount(AccountNode node);
 }
 
 public sealed partial class AccountNode(MailAccount account, IAccountNodeHost host) : SidebarNode
@@ -62,6 +63,9 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
 
     [RelayCommand]
     private Task Retry() => host.ReloadFoldersAsync(this);
+
+    [RelayCommand]
+    private void Edit() => host.EditAccount(this);
 
     [RelayCommand]
     private void AskRemove() => IsConfirmingRemoval = true;

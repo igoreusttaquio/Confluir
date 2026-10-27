@@ -83,16 +83,23 @@ accountNode.CancelRemoveCommand.Execute(null);
 
 // Tela "Adicionar conta" (navegação dentro da janela): Gmail detectado.
 vm.AddAccountCommand.Execute(null);
-var gmail = (AddAccountViewModel)vm.Navigation.CurrentPage!;
+var gmail = (AccountEditorViewModel)vm.Navigation.CurrentPage!;
 gmail.Email = "voce@gmail.com";
 Pump(() => gmail.DetectionMessage is not null && !gmail.IsDetecting);
 Save(window, "add-account-gmail.png");
 vm.GoBackCommand.Execute(null);
 
+// Edição de conta existente.
+vm.SidebarNodes.OfType<AccountNode>().First().EditCommand.Execute(null);
+var editor = (AccountEditorViewModel)vm.Navigation.CurrentPage!;
+editor.AskRemoveCommand.Execute(null);
+Save(window, "edit-account.png");
+vm.GoBackCommand.Execute(null);
+
 // Domínio desconhecido, tema escuro, com resultado de teste.
 theme.SetTheme(ThemeMode.Dark);
 vm.AddAccountCommand.Execute(null);
-var custom = (AddAccountViewModel)vm.Navigation.CurrentPage!;
+var custom = (AccountEditorViewModel)vm.Navigation.CurrentPage!;
 custom.Email = "joana@exemplo-inexistente.dev";
 custom.Password = "senha";
 Pump(() => custom.ShowAdvanced && !custom.IsDetecting, 12000);
@@ -131,10 +138,10 @@ static void Pump(Func<bool> until, int timeoutMs = 5000)
     } while (!until() && Environment.TickCount64 < deadline);
 }
 
-void Save(Window w, string name)
+void Save(Window w, string name, int settleMs = 450)
 {
-    // Deixa terminar as transições (troca de tema, crossfade) antes de capturar.
-    var settle = Environment.TickCount64 + 450;
+    // Por padrão deixa terminar as transições (troca de tema, navegação) antes de capturar.
+    var settle = Environment.TickCount64 + settleMs;
     Pump(() => Environment.TickCount64 > settle, 1000);
     var frame = w.CaptureRenderedFrame() ?? throw new InvalidOperationException("Sem frame renderizado");
     var path = Path.Combine(outDir, name);

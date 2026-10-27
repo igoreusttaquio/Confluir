@@ -51,11 +51,12 @@ public static class AppHost
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IUrlLauncher, UrlLauncher>();
+        builder.Services.AddSingleton<AccountService>();
 
         builder.Services.AddSingleton<AppearanceViewModel>();
         builder.Services.AddSingleton<MainWindowViewModel>();
-        builder.Services.AddTransient<AddAccountViewModel>();
-        builder.Services.AddSingleton<Func<AddAccountViewModel>>(sp => sp.GetRequiredService<AddAccountViewModel>);
+        builder.Services.AddTransient<AccountEditorViewModel>();
+        builder.Services.AddSingleton<Func<AccountEditorViewModel>>(sp => sp.GetRequiredService<AccountEditorViewModel>);
         builder.Services.AddTransient<MainWindow>();
 
         return builder.Build();

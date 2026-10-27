@@ -55,12 +55,31 @@
 
   <data name="Account_Add"><value>Adicionar conta</value></data>
   <data name="Account_Remove"><value>Remover conta</value></data>
+  <data name="Account_Edit"><value>Editar conta</value></data>
+  <data name="Account_Remove_ConfirmButton"><value>Sim, remover</value></data>
+  <data name="EditAccount_Title"><value>Editar conta</value></data>
+  <data name="EditAccount_Subtitle"><value>Altere nome, cor, senha ou servidores. Mudanças na conexão são testadas antes de salvar.</value></data>
+  <data name="EditAccount_PasswordKeep"><value>Deixe em branco para manter a senha atual</value></data>
   <data name="Account_Remove_Confirm"><value>Remover esta conta do Confluir? A senha é apagada do cofre do sistema; nenhum email é apagado do servidor.</value></data>
   <data name="Account_LoadingFolders"><value>Carregando pastas…</value></data>
   <data name="NoAccounts_Title"><value>Nenhuma conta ainda</value></data>
   <data name="NoAccounts_Hint"><value>Adicione uma conta de email (Gmail, Yahoo ou qualquer servidor IMAP) para começar.</value></data>
 
   <data name="AddAccount_Title"><value>Adicionar conta</value></data>
+  <data name="AddAccount_Subtitle"><value>Conecte Gmail, Yahoo ou qualquer servidor IMAP. Testamos recebimento e envio antes de salvar.</value></data>
+  <data name="Breadcrumb_Accounts"><value>Contas</value></data>
+  <data name="AddAccount_Section_Account"><value>Conta</value></data>
+  <data name="AddAccount_Section_Auth"><value>Autenticação</value></data>
+  <data name="AddAccount_Section_Servers"><value>Servidores</value></data>
+  <data name="AddAccount_Section_Servers_Hint"><value>Preenchidos automaticamente. Altere só se o seu provedor indicar outros valores.</value></data>
+  <data name="AddAccount_EditServers"><value>Editar servidores</value></data>
+  <data name="AddAccount_TestResult"><value>Resultado do teste</value></data>
+  <data name="AddAccount_SaveAccount"><value>Salvar conta</value></data>
+  <data name="AddAccount_Help_Title"><value>Como funciona</value></data>
+  <data name="AddAccount_Help_1"><value>Digite seu email. Reconhecemos Gmail, Yahoo e milhares de provedores e preenchemos os servidores.</value></data>
+  <data name="AddAccount_Help_2"><value>Teste a conexão. Verificamos o recebimento (IMAP) e o envio (SMTP) antes de salvar.</value></data>
+  <data name="AddAccount_Help_3"><value>Sua senha fica no cofre do sistema operacional, nunca em texto no disco.</value></data>
+  <data name="AddAccount_Privacy"><value>Para descobrir os servidores, só o domínio do seu email é consultado na base pública do Thunderbird.</value></data>
   <data name="AddAccount_Email"><value>Endereço de email</value></data>
   <data name="AddAccount_DisplayName"><value>Nome da conta</value></data>
   <data name="AddAccount_DisplayName_Placeholder"><value>Ex.: Pessoal, Trabalho</value></data>

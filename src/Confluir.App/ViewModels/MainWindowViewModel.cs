@@ -17,8 +17,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     private readonly IMailboxService _mailbox;
     private readonly IAccountStore _accountStore;
-    private readonly ICredentialStore _credentials;
-    private readonly Func<AddAccountViewModel> _addAccountPage;
+    private readonly AccountService _accountService;
+    private readonly Func<AccountEditorViewModel> _accountEditor;
     private readonly TimeProvider _time;
     private readonly ILogger<MainWindowViewModel> _logger;
 
@@ -35,17 +35,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     public MainWindowViewModel(
         IMailboxService mailbox,
         IAccountStore accountStore,
-        ICredentialStore credentials,
+        AccountService accountService,
         NavigationService navigation,
-        Func<AddAccountViewModel> addAccountPage,
+        Func<AccountEditorViewModel> accountEditor,
         AppearanceViewModel appearance,
         TimeProvider time,
         ILogger<MainWindowViewModel> logger)
     {
         _mailbox = mailbox;
         _accountStore = accountStore;
-        _credentials = credentials;
-        _addAccountPage = addAccountPage;
+        _accountService = accountService;
+        _accountEditor = accountEditor;
         _time = time;
         _logger = logger;
         Navigation = navigation;
@@ -171,19 +171,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         }
     }
 
-    public async Task RemoveAccountAsync(AccountNode node)
+    public Task RemoveAccountAsync(AccountNode node) => _accountService.RemoveAsync(node.Account);
+
+    public void EditAccount(AccountNode node)
     {
-        try
-        {
-            await _credentials.DeleteAsync(CredentialKeys.Password(node.Account.Id));
-        }
-        catch (Exception ex)
-        {
-            // A conta sai mesmo assim; o segredo órfão não é usado por mais ninguém.
-            _logger.LogWarning(ex, "Falha ao apagar a credencial da conta {AccountId}", node.Account.Id);
-        }
-        _accountStore.Remove(node.Account.Id);
-        _logger.LogInformation("Conta {AccountId} removida", node.Account.Id);
+        var editor = _accountEditor();
+        editor.Load(node.Account);
+        Navigation.NavigateTo(editor);
     }
 
     public void OnToggled(AccountNode account)
@@ -200,7 +194,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     }
 
     [RelayCommand]
-    private void AddAccount() => Navigation.NavigateTo(_addAccountPage());
+    private void AddAccount() => Navigation.NavigateTo(_accountEditor());
 
     [RelayCommand]
     private void GoBack()
@@ -214,8 +208,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     partial void OnSelectedNodeChanged(SidebarNode? value)
     {
-        if (value is { IsSelectable: true })
-            _ = LoadListAsync(value);
+        if (value is not { IsSelectable: true })
+            return;
+        // Escolher uma pasta na barra lateral sempre leva de volta à caixa de email.
+        Navigation.GoToRoot();
+        _ = LoadListAsync(value);
     }
 
     partial void OnSelectedRowChanged(MessageListRow? value)

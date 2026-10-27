@@ -25,6 +25,9 @@
       <SolidColorBrush x:Key="Brand.Teal" Color="#14C7B4" />
       <SolidColorBrush x:Key="Brand.Amber" Color="#FFB938" />
 
+      <!-- Altura comum dos cabeçalhos de painel (lista e leitura), para as bordas ficarem alinhadas -->
+      <x:Double x:Key="PaneHeaderHeight">64</x:Double>
+
       <!-- Texto sobre as cores de conta (avatares), que são as mesmas nos dois temas -->
       <SolidColorBrush x:Key="OnAccountColor" Color="#0B1020" />
 

@@ -37,22 +37,20 @@
 
   <Border Classes="panel" Background="{DynamicResource Surface}">
     <DockPanel>
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="18,14,12,10">
-        <StackPanel>
-          <TextBlock Text="{Binding ListTitle}" FontSize="18" FontWeight="SemiBold"
-                     Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-          <TextBlock Text="{Binding ListSubtitle}" Classes="caption" Margin="0,2,0,0" />
-        </StackPanel>
-        <Button Grid.Column="1" Classes="accent" VerticalAlignment="Center" IsEnabled="False"
-                ToolTip.Tip="{x:Static res:Strings.Action_NewMessage}">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <LucideIcon Kind="SquarePen" Size="16" Foreground="{DynamicResource OnAccent}" />
-            <TextBlock Text="{x:Static res:Strings.Action_NewMessage}" />
+      <Border DockPanel.Dock="Top" Height="{StaticResource PaneHeaderHeight}" Padding="18,0,12,0"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding ListTitle}" FontSize="18" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding ListSubtitle}" Classes="caption" Margin="0,2,0,0" />
           </StackPanel>
-        </Button>
-      </Grid>
-
-      <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource Border}" />
+          <Button Grid.Column="1" Classes="accent iconOnly" VerticalAlignment="Center" Margin="8,0,0,0" IsEnabled="False"
+                  ToolTip.Tip="{x:Static res:Strings.Action_NewMessage}">
+            <LucideIcon Kind="SquarePen" Size="18" Foreground="{DynamicResource OnAccent}" />
+          </Button>
+        </Grid>
+      </Border>
       <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsListLoading}"
                    MinHeight="2" Height="2" Margin="0,-2,0,0" />
 
