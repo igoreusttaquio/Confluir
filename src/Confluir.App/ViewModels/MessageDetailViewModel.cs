@@ -112,6 +112,12 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     [RelayCommand]
     private Task RetryAsync() => LoadAsync(CancellationToken.None);
 
+    /// <summary>Definido por quem exibe a mensagem: abre esta mesma mensagem em tela própria.</summary>
+    public Action<MessageDetailViewModel>? OpenInPageRequested { get; set; }
+
+    [RelayCommand]
+    private void OpenInPage() => OpenInPageRequested?.Invoke(this);
+
     [RelayCommand]
     private void ShowImages()
     {

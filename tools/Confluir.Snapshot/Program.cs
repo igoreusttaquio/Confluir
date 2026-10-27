@@ -72,6 +72,27 @@ foreach (var mode in new[] { ThemeMode.Light, ThemeMode.Dark })
     panel.Close();
 }
 
+// Modo compacto (uma linha por mensagem) com a barra lateral recolhida.
+theme.SetTheme(ThemeMode.Light);
+vm.Appearance.CompactMode = true;
+vm.ToggleSidebarCommand.Execute(null);
+Save(window, "compact-collapsed.png");
+vm.ToggleSidebarCommand.Execute(null);
+vm.Appearance.CompactMode = false;
+
+// Duas colunas: a lista ocupa a largura; a mensagem abre em tela própria.
+vm.Appearance.IsTwoColumns = true;
+Save(window, "two-columns.png");
+vm.SelectedRow = vm.Rows.OfType<MessageRow>().First(r => r.HasAttachments);
+vm.OpenMessageCommand.Execute(null);
+var page = (MessagePageViewModel)vm.Navigation.CurrentPage!;
+Pump(() => !page.Detail.IsLoading);
+Save(window, "message-page.png");
+vm.GoBackCommand.Execute(null);
+vm.Appearance.IsThreeColumns = true;
+vm.SelectedRow = vm.Rows.OfType<MessageRow>().First(r => r.HasAttachments);
+Pump(() => vm.Detail is { IsLoading: false });
+
 // Troca de idioma ao vivo (pelo seletor de Aparência), com a mensagem aberta.
 foreach (var (code, name) in new[] { ("en", "en"), ("es", "es") })
 {

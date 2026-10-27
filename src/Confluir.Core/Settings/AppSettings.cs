@@ -33,8 +33,22 @@ public sealed class AppearanceSettings
     public string? Language { get; set; }
 }
 
+public enum ReadingLayout
+{
+    /// <summary>Barra lateral, lista e painel de leitura.</summary>
+    ThreeColumns,
+
+    /// <summary>Barra lateral e lista; a mensagem abre em tela própria.</summary>
+    TwoColumns,
+}
+
 public sealed class LayoutSettings
 {
     public double SidebarWidth { get; set; } = 260;
     public double MessageListWidth { get; set; } = 400;
+
+    /// <summary>Barra lateral reduzida a uma faixa de ícones.</summary>
+    public bool SidebarCollapsed { get; set; }
+
+    public ReadingLayout ReadingLayout { get; set; } = ReadingLayout.ThreeColumns;
 }

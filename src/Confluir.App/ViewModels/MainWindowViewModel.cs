@@ -7,6 +7,7 @@ using Confluir.App.Resources;
 using Confluir.App.Services;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
+using Confluir.Core.Settings;
 using Microsoft.Extensions.Logging;
 
 namespace Confluir.App.ViewModels;
@@ -63,6 +64,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Appearance = appearance;
 
         _accountStore.Changed += (_, _) => Dispatcher.UIThread.Post(() => _ = ReloadAsync());
+        appearance.LayoutChanged += (_, _) => OnLayoutChanged();
+        SidebarNodes.CollectionChanged += (_, _) => OnPropertyChanged(nameof(AccountNodes));
 
         // A sincronização roda em segundo plano; tudo que mexe na interface volta para a thread de UI.
         _mailbox.MailboxChanged += (_, e) => Dispatcher.UIThread.Post(() => ScheduleRefresh(e.AccountId));
@@ -316,17 +319,86 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         if (_suppressSelection)
             return;
         _detailCts?.Cancel();
-        if (value is not MessageRow row)
+        // Em duas colunas a seleção só marca a linha; a mensagem abre em tela própria (OpenMessageCommand).
+        if (value is not MessageRow row || IsTwoColumnLayout)
         {
             Detail = null;
             return;
         }
 
         MarkRead(row);
-        var detail = new MessageDetailViewModel(row, _reading);
-        Detail = detail;
+        Detail = CreateDetail(row);
+    }
+
+    private MessageDetailViewModel CreateDetail(MessageRow row)
+    {
+        var detail = new MessageDetailViewModel(row, _reading) { OpenInPageRequested = OpenInPage };
         _detailCts = new CancellationTokenSource();
         _ = detail.LoadAsync(_detailCts.Token);
+        return detail;
+    }
+
+    /// <summary>Abre a mensagem selecionada em tela própria (clique em duas colunas, duplo clique ou Enter).</summary>
+    [RelayCommand]
+    private void OpenMessage()
+    {
+        if (SelectedRow is not MessageRow row)
+            return;
+        MarkRead(row);
+        // No layout de três colunas reaproveita o que já está carregado no painel de leitura.
+        var detail = Detail is { } current && current.Row.Summary.Id == row.Summary.Id ? current : CreateDetail(row);
+        OpenInPage(detail);
+    }
+
+    private void OpenInPage(MessageDetailViewModel detail) =>
+        Navigation.NavigateTo(new MessagePageViewModel(detail, () => Navigation.GoBack()));
+
+    // Layout ------------------------------------------------------------------------------------------
+
+    public bool IsTwoColumnLayout => _reading.Settings.Current.Layout.ReadingLayout == ReadingLayout.TwoColumns;
+
+    public bool IsSidebarCollapsed
+    {
+        get => _reading.Settings.Current.Layout.SidebarCollapsed;
+        private set
+        {
+            if (value == IsSidebarCollapsed)
+                return;
+            _reading.Settings.Current.Layout.SidebarCollapsed = value;
+            _reading.Settings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsSidebarExpanded));
+        }
+    }
+
+    public bool IsSidebarExpanded => !IsSidebarCollapsed;
+
+    public UnifiedInboxNode UnifiedInbox => _unified;
+
+    /// <summary>Contas para a barra lateral recolhida (uma bolinha colorida por conta).</summary>
+    public IEnumerable<AccountNode> AccountNodes => SidebarNodes.OfType<AccountNode>();
+
+    [RelayCommand]
+    private void ToggleSidebar() => IsSidebarCollapsed = !IsSidebarCollapsed;
+
+    /// <summary>Na barra recolhida: abre a caixa de entrada da conta (ou a unificada, sem conta).</summary>
+    [RelayCommand]
+    private void SelectAccountInbox(AccountNode? account)
+    {
+        SelectedNode = account?.Folders.FirstOrDefault(f => f.Folder.Kind == SpecialFolderKind.Inbox)
+                       ?? (SidebarNode)_unified;
+    }
+
+    [RelayCommand]
+    private void SelectUnified() => SelectedNode = _unified;
+
+    private void OnLayoutChanged()
+    {
+        OnPropertyChanged(nameof(IsTwoColumnLayout));
+        if (IsTwoColumnLayout)
+            Detail = null; // a mensagem passa a abrir em tela própria
+        else if (SelectedRow is MessageRow row && Detail is null)
+            Detail = CreateDetail(row);
     }
 
     private void InsertFolders(AccountNode account)

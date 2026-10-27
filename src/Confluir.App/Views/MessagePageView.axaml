@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:views="using:Confluir.App.Views"
+             x:Class="Confluir.App.Views.MessagePageView"
+             x:DataType="vm:MessagePageViewModel">
+  <!-- Mensagem em tela própria: o mesmo conteúdo do painel de leitura, ocupando a área toda. -->
+  <Border Classes="panel" Background="{DynamicResource Surface}">
+    <views:MessageDetailView DataContext="{Binding Detail}" ShowBack="True"
+                             BackCommand="{Binding $parent[views:MessagePageView].((vm:MessagePageViewModel)DataContext).BackCommand}"
+                             IsBodyActive="{Binding $parent[views:MessagePageView].((vm:MessagePageViewModel)DataContext).IsActive}" />
+  </Border>
+</UserControl>

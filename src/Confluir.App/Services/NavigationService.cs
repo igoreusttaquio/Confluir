@@ -3,9 +3,15 @@ using Confluir.App.ViewModels;
 
 namespace Confluir.App.Services;
 
+/// <summary>Página que precisa saber quando está na frente (ex.: para mostrar um WebView nativo só nesse momento).</summary>
+public interface INavigationPage
+{
+    bool IsActive { get; set; }
+}
+
 /// <summary>
 /// Navegação dentro da janela principal. A raiz (página nula) é a caixa de email; outras telas
-/// (adicionar conta, configurações…) ocupam a área de conteúdo, com a barra lateral sempre visível,
+/// (adicionar conta, mensagem em tela própria…) ocupam a área de conteúdo, com a barra lateral sempre visível,
 /// e voltam com <see cref="GoBack"/>. O app prefere navegar a abrir janelas ou diálogos modais.
 /// </summary>
 public sealed partial class NavigationService : ObservableObject
@@ -24,6 +30,14 @@ public sealed partial class NavigationService : ObservableObject
     public partial ViewModelBase? DisplayedPage { get; private set; }
 
     public bool IsAtRoot => CurrentPage is null;
+
+    partial void OnCurrentPageChanged(ViewModelBase? oldValue, ViewModelBase? newValue)
+    {
+        if (oldValue is INavigationPage oldPage)
+            oldPage.IsActive = false;
+        if (newValue is INavigationPage newPage)
+            newPage.IsActive = true;
+    }
 
     public void NavigateTo(ViewModelBase page)
     {

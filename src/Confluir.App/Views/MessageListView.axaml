@@ -18,20 +18,30 @@
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
     </Style>
-    <Style Selector="StackPanel.unread TextBlock.from, StackPanel.unread TextBlock.subject">
+    <Style Selector=":is(Control).unread TextBlock.from, :is(Control).unread TextBlock.subject">
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
-    <Style Selector="StackPanel.unread TextBlock.date">
+    <Style Selector=":is(Control).unread TextBlock.date">
       <Setter Property="Foreground" Value="{DynamicResource Accent}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
-    <!-- Modo compacto: sem prévia e com menos respiro -->
-    <Style Selector="ListBox.compact TextBlock.preview">
+    <!-- Modo compacto: uma linha por mensagem (remetente, assunto, ícones e data) -->
+    <Style Selector="ListBox:not(.compact) Grid.compactRow">
       <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="ListBox.compact StackPanel.message">
-      <Setter Property="Margin" Value="10,5,12,5" />
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="ListBox.compact Border.strip">
+      <Setter Property="Margin" Value="8,5,0,5" />
+    </Style>
+    <Style Selector="ListBox.compact TextBlock.groupHeader">
+      <Setter Property="Margin" Value="20,8,12,2" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="Grid.compactRow TextBlock">
+      <Setter Property="FontSize" Value="13" />
     </Style>
   </UserControl.Styles>
 
@@ -95,7 +105,7 @@
         </StackPanel>
 
         <!-- ListBox usa VirtualizingStackPanel: só os itens visíveis têm containers. -->
-        <ListBox ItemsSource="{Binding Rows}"
+        <ListBox x:Name="Messages" ItemsSource="{Binding Rows}"
                  SelectedItem="{Binding SelectedRow}"
                  Classes.compact="{Binding Appearance.CompactMode}"
                  ItemContainerTheme="{StaticResource MessageItemTheme}"
@@ -103,14 +113,14 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
           <ListBox.DataTemplates>
             <DataTemplate DataType="vm:DateHeaderRow">
-              <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
+              <TextBlock Classes="groupHeader" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextSecondary}" Margin="20,14,12,4" />
             </DataTemplate>
 
             <DataTemplate DataType="vm:MessageRow">
               <Grid ColumnDefinitions="Auto,*">
                 <!-- Faixa com a cor da conta -->
-                <Border Width="3" CornerRadius="2" Margin="8,8,0,8"
+                <Border Classes="strip" Width="3" CornerRadius="2" Margin="8,8,0,8"
                         Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
                         ToolTip.Tip="{Binding Account.DisplayName}" />
                 <StackPanel Grid.Column="1" Classes="message" Classes.unread="{Binding IsUnread}"
@@ -133,6 +143,23 @@
                   </Grid>
                   <TextBlock Classes="preview" Text="{Binding Preview}" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
+                <Grid Grid.Column="1" Classes="compactRow" Classes.unread="{Binding IsUnread}" Margin="10,6,12,6"
+                      ColumnDefinitions="Auto,0.38*,0.62*,Auto,Auto">
+                  <Ellipse Width="7" Height="7" Margin="0,0,7,0" VerticalAlignment="Center"
+                           Fill="{DynamicResource Accent}" IsVisible="{Binding IsUnread}" />
+                  <TextBlock Grid.Column="1" Classes="from" Text="{Binding From}" TextTrimming="CharacterEllipsis"
+                             Margin="0,0,10,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Classes="subject" Text="{Binding Subject}" TextTrimming="CharacterEllipsis"
+                             VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0" VerticalAlignment="Center">
+                    <LucideIcon Kind="Paperclip" Size="12" Foreground="{DynamicResource TextSecondary}"
+                                IsVisible="{Binding HasAttachments}" />
+                    <LucideIcon Kind="Flag" Size="12" Foreground="{DynamicResource Warning}"
+                                IsVisible="{Binding IsFlagged}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="4" Classes="caption date" Text="{Binding DateText}"
+                             Margin="10,0,0,0" VerticalAlignment="Center" />
+                </Grid>
               </Grid>
             </DataTemplate>
           </ListBox.DataTemplates>

@@ -36,6 +36,11 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
     public MailAccount Account { get; } = account;
     public override bool IsSelectable => false;
 
+    /// <summary>Inicial do nome da conta, para a barra lateral recolhida.</summary>
+    public string Initial => string.IsNullOrWhiteSpace(Account.DisplayName)
+        ? "?"
+        : Account.DisplayName.Trim()[..1].ToUpperInvariant();
+
     public IReadOnlyList<FolderNode> Folders { get; set; } = [];
 
     [ObservableProperty]

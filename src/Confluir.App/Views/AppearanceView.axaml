@@ -46,6 +46,24 @@
     </StackPanel>
 
     <StackPanel Spacing="6">
+      <TextBlock Text="{l:Tr Layout}" Classes="caption" />
+      <UniformGrid Columns="2" ColumnSpacing="6">
+        <RadioButton Classes="themeOption" GroupName="layout" IsChecked="{Binding IsThreeColumns}">
+          <StackPanel Spacing="4">
+            <LucideIcon Kind="Columns3" Size="18" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:Tr Layout_ThreeColumns}" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="themeOption" GroupName="layout" IsChecked="{Binding IsTwoColumns}">
+          <StackPanel Spacing="4">
+            <LucideIcon Kind="Columns2" Size="18" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:Tr Layout_TwoColumns}" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+      </UniformGrid>
+    </StackPanel>
+
+    <StackPanel Spacing="6">
       <TextBlock Text="{l:Tr AccentColor}" Classes="caption" />
       <ListBox Classes="swatches" ItemsSource="{Binding AccentOptions}" SelectedItem="{Binding SelectedAccent}"
                Background="Transparent">

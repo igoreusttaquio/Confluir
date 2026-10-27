@@ -60,10 +60,10 @@
     </Grid.ColumnDefinitions>
 
     <views:SidebarView Grid.Column="0" ZIndex="2" />
-    <GridSplitter Grid.Column="1" Theme="{StaticResource ColumnSplitterTheme}" ZIndex="2" />
+    <GridSplitter x:Name="SidebarSplitter" Grid.Column="1" Theme="{StaticResource ColumnSplitterTheme}" ZIndex="2" />
     <views:MessageListView Grid.Column="2" Classes="home" />
-    <GridSplitter Grid.Column="3" Classes="home" Theme="{StaticResource ColumnSplitterTheme}" />
-    <views:ReadingPaneView Grid.Column="4" Classes="home" />
+    <GridSplitter x:Name="ReadingSplitter" Grid.Column="3" Classes="home" Theme="{StaticResource ColumnSplitterTheme}" />
+    <views:ReadingPaneView x:Name="ReadingPane" Grid.Column="4" Classes="home" />
 
     <!-- Páginas navegadas (adicionar conta, configurações…) sobre a área de conteúdo -->
     <Border x:Name="PageHost" Grid.Column="2" Grid.ColumnSpan="3" ZIndex="1" Background="{DynamicResource Background}">
@@ -77,6 +77,9 @@
         <TransitioningContentControl.DataTemplates>
           <DataTemplate DataType="vm:AccountEditorViewModel">
             <views:AccountEditorView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:MessagePageViewModel">
+            <views:MessagePageView />
           </DataTemplate>
         </TransitioningContentControl.DataTemplates>
       </TransitioningContentControl>

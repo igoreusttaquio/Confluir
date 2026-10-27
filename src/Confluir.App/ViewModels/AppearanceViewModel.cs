@@ -59,6 +59,32 @@ public sealed partial class AppearanceViewModel : ViewModelBase
 
     public IReadOnlyList<AccentOption> AccentOptions { get; }
 
+    /// <summary>O layout (duas/três colunas) mudou.</summary>
+    public event EventHandler? LayoutChanged;
+
+    public bool IsThreeColumns
+    {
+        get => _settings.Current.Layout.ReadingLayout == ReadingLayout.ThreeColumns;
+        set { if (value) SetLayout(ReadingLayout.ThreeColumns); }
+    }
+
+    public bool IsTwoColumns
+    {
+        get => _settings.Current.Layout.ReadingLayout == ReadingLayout.TwoColumns;
+        set { if (value) SetLayout(ReadingLayout.TwoColumns); }
+    }
+
+    private void SetLayout(ReadingLayout layout)
+    {
+        if (_settings.Current.Layout.ReadingLayout == layout)
+            return;
+        _settings.Current.Layout.ReadingLayout = layout;
+        _settings.Save();
+        OnPropertyChanged(nameof(IsThreeColumns));
+        OnPropertyChanged(nameof(IsTwoColumns));
+        LayoutChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public IReadOnlyList<LanguageOption> LanguageOptions { get; }
 
     [ObservableProperty]

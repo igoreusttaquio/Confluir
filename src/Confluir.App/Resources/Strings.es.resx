@@ -151,6 +151,12 @@
   <data name="OAuth_SignInFailed"><value>No se pudo iniciar sesión con Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Inicia sesión con Microsoft para continuar.</value></data>
   <data name="Error_ReauthenticationRequired"><value>Tu sesión de Microsoft caducó. Edita la cuenta e inicia sesión de nuevo.</value></data>
+  <data name="Action_OpenInPage"><value>Abrir en su propia vista</value></data>
+  <data name="Action_CollapseSidebar"><value>Contraer barra lateral</value></data>
+  <data name="Action_ExpandSidebar"><value>Expandir barra lateral</value></data>
+  <data name="Layout"><value>Diseño</value></data>
+  <data name="Layout_ThreeColumns"><value>Tres columnas</value></data>
+  <data name="Layout_TwoColumns"><value>Dos columnas</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

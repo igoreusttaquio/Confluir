@@ -30,16 +30,96 @@
     <Style Selector="LucideIcon.chevron.collapsed">
       <Setter Property="RenderTransform" Value="rotate(-90deg)" />
     </Style>
+    <!-- Contador sobre o ícone na barra recolhida -->
+    <Style Selector="Border.railBadge">
+      <Setter Property="Background" Value="{DynamicResource Accent}" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="MinWidth" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Margin" Value="0,-9,-12,0" />
+    </Style>
+    <Style Selector="Border.railBadge > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
   </UserControl.Styles>
 
   <Border Classes="panel" Background="{DynamicResource SurfaceAlt}">
-    <DockPanel>
-      <!-- Marca -->
-      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="18,16,18,12">
-        <Image Source="{StaticResource LogoImage}" Width="28" Height="28" />
-        <TextBlock Text="{l:Tr AppTitle}" FontSize="17" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+    <Panel>
+    <!-- Barra recolhida: faixa de ícones (caixa unificada, uma bolinha por conta e o rodapé). -->
+    <DockPanel IsVisible="{Binding IsSidebarCollapsed}">
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,12,0,8" HorizontalAlignment="Center">
+        <Button Classes="icon" Command="{Binding ToggleSidebarCommand}" HorizontalAlignment="Center"
+                ToolTip.Tip="{l:Tr Action_ExpandSidebar}" AutomationProperties.Name="{l:Tr Action_ExpandSidebar}">
+          <LucideIcon Kind="PanelLeftOpen" />
+        </Button>
+        <Border Height="1" Margin="8,6" Background="{DynamicResource Border}" />
+        <Button Classes="icon" Command="{Binding SelectUnifiedCommand}" HorizontalAlignment="Center"
+                ToolTip.Tip="{l:Tr UnifiedInbox}" AutomationProperties.Name="{l:Tr UnifiedInbox}">
+          <Panel>
+            <LucideIcon Kind="Mails" Foreground="{DynamicResource Accent}" />
+            <Border Classes="railBadge" IsVisible="{Binding UnifiedInbox.HasUnread}">
+              <TextBlock Text="{Binding UnifiedInbox.UnreadCount, StringFormat={}{0:N0}}" />
+            </Border>
+          </Panel>
+        </Button>
       </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,6,0,10" HorizontalAlignment="Center">
+        <Button Classes="icon" ToolTip.Tip="{l:Tr Account_Add}" AutomationProperties.Name="{l:Tr Account_Add}" Command="{Binding AddAccountCommand}">
+          <LucideIcon Kind="UserPlus" />
+        </Button>
+        <Button Classes="icon" ToolTip.Tip="{l:Tr Appearance}" AutomationProperties.Name="{l:Tr Appearance}">
+          <LucideIcon Kind="Palette" />
+          <Button.Flyout>
+            <Flyout Placement="RightEdgeAlignedBottom">
+              <views:AppearanceView DataContext="{Binding Appearance}" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" IsEnabled="False">
+          <LucideIcon Kind="Settings" />
+        </Button>
+      </StackPanel>
+
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+        <ItemsControl ItemsSource="{Binding AccountNodes}" HorizontalAlignment="Center">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:AccountNode">
+              <Button Classes="icon" Margin="0,3" Padding="4" ToolTip.Tip="{Binding Account.DisplayName}"
+                      AutomationProperties.Name="{Binding Account.DisplayName}"
+                      Command="{Binding $parent[views:SidebarView].((vm:MainWindowViewModel)DataContext).SelectAccountInboxCommand}"
+                      CommandParameter="{Binding}">
+                <Border Width="30" Height="30" CornerRadius="15"
+                        Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}">
+                  <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" FontSize="13"
+                             Foreground="{DynamicResource OnAccountColor}"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </DockPanel>
+
+    <DockPanel IsVisible="{Binding IsSidebarExpanded}">
+      <!-- Marca e botão de recolher -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="18,14,10,10">
+        <Image Source="{StaticResource LogoImage}" Width="28" Height="28" />
+        <TextBlock Grid.Column="1" Text="{l:Tr AppTitle}" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0"
+                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+        <Button Grid.Column="2" Classes="icon" Command="{Binding ToggleSidebarCommand}" VerticalAlignment="Center"
+                ToolTip.Tip="{l:Tr Action_CollapseSidebar}" AutomationProperties.Name="{l:Tr Action_CollapseSidebar}">
+          <LucideIcon Kind="PanelLeftClose" />
+        </Button>
+      </Grid>
 
       <!-- Rodapé: aparência e configurações -->
       <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="10,6">
@@ -158,5 +238,6 @@
         </ListBox.DataTemplates>
       </ListBox>
     </DockPanel>
+    </Panel>
   </Border>
 </UserControl>

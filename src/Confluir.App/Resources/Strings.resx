@@ -151,6 +151,12 @@
   <data name="OAuth_SignInFailed"><value>Não foi possível entrar com a Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Entre com a Microsoft para continuar.</value></data>
   <data name="Error_ReauthenticationRequired"><value>Sua sessão da Microsoft expirou. Edite a conta e entre novamente.</value></data>
+  <data name="Action_OpenInPage"><value>Abrir em tela própria</value></data>
+  <data name="Action_CollapseSidebar"><value>Recolher barra lateral</value></data>
+  <data name="Action_ExpandSidebar"><value>Expandir barra lateral</value></data>
+  <data name="Layout"><value>Layout</value></data>
+  <data name="Layout_ThreeColumns"><value>Três colunas</value></data>
+  <data name="Layout_TwoColumns"><value>Duas colunas</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>
