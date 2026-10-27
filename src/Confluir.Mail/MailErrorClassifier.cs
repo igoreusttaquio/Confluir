@@ -16,6 +16,7 @@ public static class MailErrorClassifier
 
         return ex switch
         {
+            ReauthenticationRequiredException reauth => new(ConnectionError.ReauthenticationRequired, reauth.Message),
             AuthenticationException auth => new(ClassifyAuthentication(auth.Message, provider), auth.Message),
             // O Gmail recusa credenciais no SMTP com "5.7.8 ... not accepted" e fecha a conexão;
             // o MailKit reporta isso como erro de protocolo, não de autenticação.

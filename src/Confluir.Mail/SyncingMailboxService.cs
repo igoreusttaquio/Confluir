@@ -23,7 +23,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     private readonly IAccountStore _accounts;
     private readonly IMailCache _cache;
     private readonly ImapSyncEngine _engine;
-    private readonly ICredentialStore _credentials;
+    private readonly MailAuthenticator _authenticator;
     private readonly ILogger<SyncingMailboxService> _logger;
     private readonly ConcurrentDictionary<Guid, AccountRunner> _runners = new();
     private bool _started;
@@ -32,13 +32,13 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         IAccountStore accounts,
         IMailCache cache,
         ImapSyncEngine engine,
-        ICredentialStore credentials,
+        MailAuthenticator authenticator,
         ILogger<SyncingMailboxService> logger)
     {
         _accounts = accounts;
         _cache = cache;
         _engine = engine;
-        _credentials = credentials;
+        _authenticator = authenticator;
         _logger = logger;
     }
 
@@ -163,7 +163,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         if (!_runners.TryAdd(account.Id, runner))
             return;
         runner.Loop = Task.Run(() => RunAccountAsync(runner));
-        var idle = new ImapIdleWorker(account, _credentials, () =>
+        var idle = new ImapIdleWorker(account, _authenticator, () =>
         {
             runner.Wake(inbox: true);
             return Task.CompletedTask;

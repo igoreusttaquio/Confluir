@@ -106,7 +106,6 @@
   <data name="AddAccount_Detected_Known"><value>{0} detectado. Servidores preenchidos.</value></data>
   <data name="AddAccount_Detected_Autoconfig"><value>Configuração encontrada para {0}.</value></data>
   <data name="AddAccount_Detected_Guess"><value>Não encontramos a configuração de {0}. Sugerimos servidores padrão; confira em Configuração avançada.</value></data>
-  <data name="AddAccount_OAuthRequired"><value>O Outlook/Hotmail exige login pela Microsoft (OAuth2), que chega numa próxima versão. Por enquanto não é possível adicionar esta conta.</value></data>
   <data name="AddAccount_AppPasswordHint_Gmail"><value>O Gmail exige uma senha de app (com verificação em duas etapas ativa). Sua senha normal não funciona aqui.</value></data>
   <data name="AddAccount_AppPasswordHint_Yahoo"><value>O Yahoo exige uma senha de app. Sua senha normal não funciona aqui.</value></data>
   <data name="AddAccount_AppPasswordLink"><value>Como gerar uma senha de app</value></data>
@@ -145,6 +144,13 @@
   <data name="Reading_AlwaysShowImages"><value>Sempre mostrar deste remetente</value></data>
   <data name="Attachment_OpenBlocked"><value>Por segurança, arquivos executáveis só podem ser salvos.</value></data>
   <data name="Attachment_Error"><value>Não foi possível baixar o anexo.</value></data>
+  <data name="OAuth_SignIn"><value>Entrar com a Microsoft</value></data>
+  <data name="OAuth_SignInHint"><value>O Outlook/Hotmail usa o login da Microsoft. Uma página da Microsoft abre no seu navegador; depois de entrar, volte para o Confluir.</value></data>
+  <data name="OAuth_SignedInAs"><value>Conectado como {0}</value></data>
+  <data name="OAuth_NotConfigured"><value>O login da Microsoft (necessário para Outlook/Hotmail) não está configurado nesta instalação. Informe o ID do aplicativo registrado no Entra ID em appsettings.json (Microsoft:ClientId) — veja o README.</value></data>
+  <data name="OAuth_SignInFailed"><value>Não foi possível entrar com a Microsoft: {0}</value></data>
+  <data name="OAuth_SignInRequired"><value>Entre com a Microsoft para continuar.</value></data>
+  <data name="Error_ReauthenticationRequired"><value>Sua sessão da Microsoft expirou. Edite a conta e entre novamente.</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

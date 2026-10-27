@@ -14,7 +14,7 @@ namespace Confluir.Mail;
 /// </summary>
 public sealed class ImapIdleWorker(
     MailAccount account,
-    ICredentialStore credentials,
+    MailAuthenticator authenticator,
     Func<Task> onInboxChanged,
     ILogger logger)
 {
@@ -62,10 +62,7 @@ public sealed class ImapIdleWorker(
         using var client = new ImapClient { Timeout = 60_000 };
         await client.ConnectAsync(account.Servers.Imap.Host, account.Servers.Imap.Port,
             account.Servers.Imap.Security.ToSocketOptions(), ct);
-        var password = await credentials.GetAsync(CredentialKeys.Password(account.Id), ct)
-            ?? throw new AuthenticationException("Senha não encontrada no cofre do sistema.");
-        client.AuthenticationMechanisms.Remove("XOAUTH2");
-        await client.AuthenticateAsync(account.UserName, password, ct);
+        await authenticator.AuthenticateAsync(client, account, ct);
 
         var inbox = client.Inbox;
         await inbox.OpenAsync(FolderAccess.ReadOnly, ct);

@@ -14,21 +14,22 @@ public sealed class ConnectionTester(ILogger<ConnectionTester> logger) : IConnec
     private const int TimeoutMs = 20_000;
 
     public async Task<ConnectionTestResult> TestAsync(
-        MailProvider provider, ServerSettings servers, string userName, string password, CancellationToken ct = default)
+        MailProvider provider, ServerSettings servers, string userName, string secret,
+        AuthMethod auth = AuthMethod.Password, CancellationToken ct = default)
     {
         var imap = TestAsync("IMAP", servers.Imap, provider, ct, async token =>
         {
             using var client = new ImapClient { Timeout = TimeoutMs };
-            await AuthenticateAsync(client, servers.Imap, userName, password, token);
+            await AuthenticateAsync(client, servers.Imap, userName, secret, auth, token);
         });
-        var smtp = TestSmtpAsync(servers.Smtp, provider, userName, password, ct);
+        var smtp = TestSmtpAsync(servers.Smtp, provider, userName, secret, auth, ct);
 
         var smtpResult = await smtp;
         ServerEndpoint? alternative = null;
         if (IsReachabilityError(smtpResult) && KnownProviders.AlternativeSmtp(servers.Smtp) is { } alt)
         {
             logger.LogInformation("SMTP {Port} sem resposta; tentando a porta {AltPort}", servers.Smtp.Port, alt.Port);
-            var altResult = await TestSmtpAsync(alt, provider, userName, password, ct);
+            var altResult = await TestSmtpAsync(alt, provider, userName, secret, auth, ct);
             if (altResult.Success)
             {
                 smtpResult = altResult;
@@ -39,22 +40,21 @@ public sealed class ConnectionTester(ILogger<ConnectionTester> logger) : IConnec
     }
 
     private Task<ProtocolTestResult> TestSmtpAsync(
-        ServerEndpoint endpoint, MailProvider provider, string userName, string password, CancellationToken ct) =>
+        ServerEndpoint endpoint, MailProvider provider, string userName, string secret, AuthMethod auth, CancellationToken ct) =>
         TestAsync("SMTP", endpoint, provider, ct, async token =>
         {
             using var client = new SmtpClient { Timeout = TimeoutMs };
-            await AuthenticateAsync(client, endpoint, userName, password, token);
+            await AuthenticateAsync(client, endpoint, userName, secret, auth, token);
         });
 
     private static bool IsReachabilityError(ProtocolTestResult r) =>
         r.Error is ConnectionError.Timeout or ConnectionError.ServerUnreachable or ConnectionError.SecureConnectionFailed;
 
     private static async Task AuthenticateAsync(
-        MailService client, ServerEndpoint endpoint, string userName, string password, CancellationToken ct)
+        MailService client, ServerEndpoint endpoint, string userName, string secret, AuthMethod auth, CancellationToken ct)
     {
         await client.ConnectAsync(endpoint.Host, endpoint.Port, endpoint.Security.ToSocketOptions(), ct);
-        client.AuthenticationMechanisms.Remove("XOAUTH2");
-        await client.AuthenticateAsync(userName, password, ct);
+        await MailAuthenticator.AuthenticateAsync(client, userName, secret, auth, ct);
         await client.DisconnectAsync(quit: true, ct);
     }
 

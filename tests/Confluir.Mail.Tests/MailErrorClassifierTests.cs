@@ -62,6 +62,14 @@ public class MailErrorClassifierTests
     }
 
     [Fact]
+    public void Sessao_OAuth_expirada_pede_novo_login()
+    {
+        var ex = new ReauthenticationRequiredException("refresh token expirado");
+        Assert.Equal(ConnectionError.ReauthenticationRequired,
+            MailErrorClassifier.Classify(ex, MailProvider.Outlook, TestContext.Current.CancellationToken).Error);
+    }
+
+    [Fact]
     public void Falha_de_TLS()
     {
         var ex = new SslHandshakeException("certificado inválido");

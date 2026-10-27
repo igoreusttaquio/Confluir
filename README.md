@@ -15,6 +15,8 @@ O plano completo está em [PLANO_CONFLUIR.md](PLANO_CONFLUIR.md).
 
 - **Fase 4 — HTML seguro**: corpo em HTML num WebView nativo, sanitizado e com CSP; imagens remotas bloqueadas por padrão ("Mostrar imagens" / "Sempre mostrar deste remetente"), imagens embutidas (`cid:`) exibidas; emails sem estilo próprio seguem o tema (claro/escuro) e os com fundo próprio aparecem em "papel" branco; texto puro com links clicáveis; links sempre no navegador padrão; anexos com Salvar (seletor do sistema) e Abrir (arquivo temporário + programa padrão; executáveis só podem ser salvos).
 
+- **Fase 5 — Múltiplas contas e OAuth2**: caixa de entrada unificada e cores por conta (desde as fases 1–3) e login da Microsoft para Outlook/Hotmail com MSAL (navegador do sistema, retorno em `http://localhost`, escopos `IMAP.AccessAsUser.All` e `SMTP.Send`, renovação silenciosa, cache de tokens no cofre do sistema). IMAP, IDLE e o teste de conexão autenticam por XOAUTH2. **Ainda não testado contra a Microsoft**: requer o registro no Entra ID (abaixo).
+
 Limitações conhecidas: remoções são detectadas com `UID SEARCH ALL` (QRESYNC/VANISHED ainda não é usado); sem busca (fase 8). Outlook/Hotmail aguarda o OAuth2 (fase 5).
 
 Para ver a interface com dados de exemplo, sem tocar em servidores: `dotnet run --project src/Confluir.App -- --dados-falsos`.
@@ -94,4 +96,14 @@ O Outlook exige OAuth2 (XOAUTH2). É preciso um app registrado:
 3. URI de redirecionamento: plataforma **Aplicativos móveis e da área de trabalho**, valor `http://localhost`.
 4. Em **Autenticação**, habilite **Permitir fluxos de cliente público**.
 5. Em **Permissões de API** → **Adicionar** → **APIs que minha organização usa** → *Office 365 Exchange Online* → permissões delegadas `IMAP.AccessAsUser.All` e `SMTP.Send` (além de `offline_access`).
-6. Copie o **ID do aplicativo (cliente)**; ele vai na configuração do Confluir (nunca no código).
+6. Copie o **ID do aplicativo (cliente)** e informe ao Confluir (nunca no código), de uma destas formas — a última que existir vale:
+   - `appsettings.json` ao lado do executável (já vem com o campo vazio);
+   - `%APPDATA%\Confluir\appsettings.json` (sobrevive a atualizações do app);
+   - variável de ambiente `CONFLUIR_Microsoft__ClientId`.
+
+   ```json
+   { "Microsoft": { "ClientId": "00000000-0000-0000-0000-000000000000", "Tenant": "common" } }
+   ```
+7. No Outlook.com, IMAP/POP precisa estar ativo: Configurações → Email → Encaminhamento e IMAP.
+
+Ao adicionar uma conta Outlook/Hotmail, use **Entrar com a Microsoft**: o navegador abre, você entra, e o Confluir testa IMAP e SMTP com o token. Os tokens ficam no cofre do sistema (`msal.cache`, cifrado) e são renovados sozinhos; se a sessão expirar, a conta mostra "Sua sessão da Microsoft expirou" e basta editá-la e entrar de novo.

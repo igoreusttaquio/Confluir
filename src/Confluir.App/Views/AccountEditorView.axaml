@@ -101,16 +101,16 @@
               </StackPanel>
             </StackPanel>
 
-            <!-- Outlook: OAuth2 ainda não disponível -->
-            <Border Classes="notice" IsVisible="{Binding RequiresOAuth}">
+            <!-- Outlook: login da Microsoft sem ID de aplicativo configurado -->
+            <Border Classes="notice" IsVisible="{Binding ShowOAuthNotConfigured}">
               <Grid ColumnDefinitions="Auto,*">
                 <LucideIcon Kind="TriangleAlert" Size="18" Foreground="{DynamicResource Warning}" VerticalAlignment="Top" />
                 <TextBlock Grid.Column="1" Margin="10,0,0,0" TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}"
-                           Text="{l:Tr AddAccount_OAuthRequired}" />
+                           Text="{l:Tr OAuth_NotConfigured}" />
               </Grid>
             </Border>
 
-            <Grid ColumnDefinitions="*,24,Auto" IsVisible="{Binding !RequiresOAuth}">
+            <Grid ColumnDefinitions="*,24,Auto" IsVisible="{Binding !ShowOAuthNotConfigured}">
               <StackPanel>
                 <TextBlock Classes="label" Text="{l:Tr AddAccount_DisplayName}" />
                 <TextBox Text="{Binding DisplayName}" PlaceholderText="{l:Tr AddAccount_DisplayName_Placeholder}" />
@@ -144,10 +144,28 @@
         </Border>
 
         <!-- Autenticação -->
-        <Border Classes="section" IsVisible="{Binding !RequiresOAuth}">
+        <Border Classes="section" IsVisible="{Binding !ShowOAuthNotConfigured}">
           <StackPanel Spacing="14">
             <TextBlock Classes="sectionTitle" Text="{l:Tr AddAccount_Section_Auth}" />
-            <StackPanel>
+
+            <!-- Outlook/Hotmail: login da Microsoft no navegador (OAuth2) -->
+            <StackPanel Spacing="10" IsVisible="{Binding ShowOAuthSignIn}">
+              <TextBlock Text="{l:Tr OAuth_SignInHint}" TextWrapping="Wrap" FontSize="13" Classes="secondary" />
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Classes="accent" Command="{Binding SignInWithMicrosoftCommand}" IsEnabled="{Binding !IsBusy}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="ExternalLink" Size="16" Foreground="{DynamicResource OnAccent}" />
+                    <TextBlock Text="{l:Tr OAuth_SignIn}" />
+                  </StackPanel>
+                </Button>
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding IsOAuthSignedIn}">
+                  <LucideIcon Kind="CircleCheck" Size="16" Foreground="{DynamicResource Success}" />
+                  <TextBlock Text="{Binding OAuthSignedInText}" Foreground="{DynamicResource TextPrimary}" FontSize="13" />
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding !RequiresOAuth}">
               <TextBlock Classes="label" Text="{Binding PasswordLabel}" />
               <TextBox Text="{Binding Password}" PasswordChar="•" Classes="revealPasswordButton"
                        PlaceholderText="{Binding PasswordPlaceholder}" />
@@ -167,7 +185,7 @@
         </Border>
 
         <!-- Servidores -->
-        <Border Classes="section" IsVisible="{Binding !RequiresOAuth}">
+        <Border Classes="section" IsVisible="{Binding !ShowOAuthNotConfigured}">
           <StackPanel Spacing="14">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="2">

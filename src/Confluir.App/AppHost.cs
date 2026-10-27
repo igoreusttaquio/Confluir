@@ -10,8 +10,10 @@ using Confluir.Core.Settings;
 using Confluir.Data;
 using Confluir.Mail;
 using Confluir.Mail.Autoconfig;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace Confluir.App;
@@ -34,6 +36,17 @@ public static class AppHost
                 retainedFileCountLimit: 14));
 
         builder.Services.Configure<ConsoleLifetimeOptions>(o => o.SuppressStatusMessages = true);
+
+        // Configuração (ex.: Microsoft:ClientId): appsettings.json ao lado do executável, depois o da pasta de
+        // dados (sobrevive a atualizações) e por fim variáveis de ambiente CONFLUIR_* (ex.: CONFLUIR_Microsoft__ClientId).
+        builder.Configuration
+            .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: true)
+            .AddJsonFile(Path.Combine(paths.DataDirectory, "appsettings.json"), optional: true)
+            .AddEnvironmentVariables("CONFLUIR_");
+        var microsoft = builder.Configuration.GetSection("Microsoft").Get<MicrosoftAuthOptions>() ?? new MicrosoftAuthOptions();
+        builder.Services.AddSingleton<IOAuthTokenProvider>(sp => new MicrosoftOAuthProvider(
+            microsoft, paths.DataDirectory, sp.GetRequiredService<ILogger<MicrosoftOAuthProvider>>()));
+        builder.Services.AddSingleton<MailAuthenticator>();
 
         builder.Services.AddSingleton(paths);
         builder.Services.AddSingleton(TimeProvider.System);

@@ -95,6 +95,14 @@ Pump(() => gmail.DetectionMessage is not null && !gmail.IsDetecting);
 Save(window, "add-account-gmail.png");
 vm.GoBackCommand.Execute(null);
 
+// Outlook sem ID do Entra ID configurado.
+vm.AddAccountCommand.Execute(null);
+var outlook = (AccountEditorViewModel)vm.Navigation.CurrentPage!;
+outlook.Email = "ana@hotmail.com";
+Pump(() => outlook.DetectionMessage is not null && !outlook.IsDetecting);
+Save(window, "add-account-outlook.png");
+vm.GoBackCommand.Execute(null);
+
 // Edição de conta existente.
 vm.SidebarNodes.OfType<AccountNode>().First().EditCommand.Execute(null);
 var editor = (AccountEditorViewModel)vm.Navigation.CurrentPage!;

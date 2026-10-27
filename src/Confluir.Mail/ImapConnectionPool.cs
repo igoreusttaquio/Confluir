@@ -18,14 +18,14 @@ public sealed class ImapConnectionPool : IAsyncDisposable, IDisposable
     private const int TimeoutMs = 30_000;
 
     private readonly IAccountStore _accounts;
-    private readonly ICredentialStore _credentials;
+    private readonly MailAuthenticator _authenticator;
     private readonly ILogger<ImapConnectionPool> _logger;
     private readonly ConcurrentDictionary<Guid, Connection> _connections = new();
 
-    public ImapConnectionPool(IAccountStore accounts, ICredentialStore credentials, ILogger<ImapConnectionPool> logger)
+    public ImapConnectionPool(IAccountStore accounts, MailAuthenticator authenticator, ILogger<ImapConnectionPool> logger)
     {
         _accounts = accounts;
-        _credentials = credentials;
+        _authenticator = authenticator;
         _logger = logger;
         _accounts.Changed += (_, _) => _ = DropStaleConnectionsAsync();
     }
@@ -88,10 +88,7 @@ public sealed class ImapConnectionPool : IAsyncDisposable, IDisposable
         }
         if (!client.IsAuthenticated)
         {
-            var password = await _credentials.GetAsync(CredentialKeys.Password(account.Id), ct)
-                ?? throw new AuthenticationException("A senha desta conta não foi encontrada no cofre do sistema.");
-            client.AuthenticationMechanisms.Remove("XOAUTH2");
-            await client.AuthenticateAsync(account.UserName, password, ct);
+            await _authenticator.AuthenticateAsync(client, account, ct);
         }
     }
 

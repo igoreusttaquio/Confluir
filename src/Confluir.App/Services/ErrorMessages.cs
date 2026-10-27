@@ -17,6 +17,7 @@ public static class ErrorMessages
         ConnectionError.SecureConnectionFailed => Strings.Error_SecureConnectionFailed,
         ConnectionError.Timeout => Strings.Error_Timeout,
         ConnectionError.Canceled => Strings.Error_Canceled,
+        ConnectionError.ReauthenticationRequired => Strings.Error_ReauthenticationRequired,
         _ => string.Format(Strings.Error_Unknown, result.ServerMessage ?? "?"),
     };
 

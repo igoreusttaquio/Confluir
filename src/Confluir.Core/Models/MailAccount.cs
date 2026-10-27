@@ -9,4 +9,5 @@ public sealed record MailAccount(
     string ColorHex,
     string UserName,
     ServerSettings Servers,
-    AuthMethod Auth = AuthMethod.Password);
+    AuthMethod Auth = AuthMethod.Password,
+    string? OAuthAccountId = null);

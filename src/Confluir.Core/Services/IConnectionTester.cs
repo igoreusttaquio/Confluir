@@ -12,6 +12,8 @@ public enum ConnectionError
     SecureConnectionFailed,
     Timeout,
     Canceled,
+    /// <summary>Sessão OAuth expirada/revogada: entrar de novo com o provedor.</summary>
+    ReauthenticationRequired,
     Unknown,
 }
 
@@ -35,8 +37,10 @@ public sealed record ConnectionTestResult(
 /// <summary>Valida IMAP e SMTP com as credenciais antes de salvar uma conta.</summary>
 public interface IConnectionTester
 {
+    /// <param name="secret">Senha, ou o token de acesso quando <paramref name="auth"/> é OAuth2.</param>
     Task<ConnectionTestResult> TestAsync(
-        MailProvider provider, ServerSettings servers, string userName, string password, CancellationToken ct = default);
+        MailProvider provider, ServerSettings servers, string userName, string secret,
+        AuthMethod auth = AuthMethod.Password, CancellationToken ct = default);
 }
 
 /// <summary>Sugere servidores para um endereço: provedores conhecidos, autoconfiguração ou palpite.</summary>

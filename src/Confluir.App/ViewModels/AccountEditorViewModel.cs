@@ -64,6 +64,11 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     private readonly IUrlLauncher _urls;
     private readonly NavigationService _navigation;
     private readonly AccountService _accountService;
+    private readonly IOAuthTokenProvider _oauth;
+
+    // Sessão OAuth obtida nesta tela (ou a da conta em edição) e o token para o teste de conexão.
+    private string? _oauthAccountId;
+    private string? _oauthToken;
     private readonly ILogger<AccountEditorViewModel> _logger;
 
     private CancellationTokenSource? _detectCts;
@@ -82,8 +87,10 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         IUrlLauncher urls,
         NavigationService navigation,
         AccountService accountService,
+        IOAuthTokenProvider oauth,
         ILogger<AccountEditorViewModel> logger)
     {
+        _oauth = oauth;
         _accountService = accountService;
         _resolver = resolver;
         _tester = tester;
@@ -123,6 +130,8 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     public void Load(MailAccount account)
     {
         _editing = account;
+        _oauthAccountId = account.OAuthAccountId;
+        OAuthSignedInAs = account.Auth == AuthMethod.OAuth2 ? account.UserName : null;
         _applyingPreset = true;
         try
         {
@@ -222,7 +231,7 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     public partial MailProvider Provider { get; private set; } = MailProvider.Imap;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RequiresOAuth), nameof(CanSubmit))]
+    [NotifyPropertyChangedFor(nameof(RequiresOAuth), nameof(CanSubmit), nameof(ShowOAuthSignIn), nameof(ShowOAuthNotConfigured))]
     public partial AuthMethod Auth { get; private set; } = AuthMethod.Password;
 
     [ObservableProperty]
@@ -243,7 +252,60 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     public bool HasDetectionMessage => DetectionMessage is not null;
     public bool HasError => ErrorMessage is not null;
     public bool RequiresOAuth => Auth == AuthMethod.OAuth2;
-    public bool CanSubmit => !IsBusy && !RequiresOAuth;
+    public bool CanSubmit => !IsBusy && (!RequiresOAuth || IsOAuthConfigured);
+
+    /// <summary>O app tem um ID de aplicativo da Microsoft configurado.</summary>
+    public bool IsOAuthConfigured => _oauth.IsConfigured;
+
+    public bool ShowOAuthSignIn => RequiresOAuth && IsOAuthConfigured;
+    public bool ShowOAuthNotConfigured => RequiresOAuth && !IsOAuthConfigured;
+
+    /// <summary>E-mail com que o usuário entrou na Microsoft; nulo se ainda não entrou.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOAuthSignedIn), nameof(OAuthSignedInText))]
+    public partial string? OAuthSignedInAs { get; private set; }
+
+    public bool IsOAuthSignedIn => OAuthSignedInAs is not null;
+    public string OAuthSignedInText => OAuthSignedInAs is null ? "" : string.Format(Strings.OAuth_SignedInAs, OAuthSignedInAs);
+
+    [RelayCommand]
+    private async Task SignInWithMicrosoftAsync(CancellationToken ct)
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            var result = await _oauth.SignInAsync(string.IsNullOrWhiteSpace(Email) ? null : Email, ct);
+            _oauthAccountId = result.AccountId;
+            _oauthToken = result.AccessToken;
+            if (string.IsNullOrWhiteSpace(Email))
+                Email = result.Email;
+            _suppressInvalidate = true;
+            try
+            {
+                UserName = result.Email;
+            }
+            finally
+            {
+                _suppressInvalidate = false;
+            }
+            OAuthSignedInAs = result.Email;
+            // Já testa IMAP e SMTP com o token, para o usuário poder salvar em seguida.
+            await RunTestAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Login da Microsoft falhou");
+            ErrorMessage = string.Format(Strings.OAuth_SignInFailed, ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
 
     public string PasswordLabel => Provider is MailProvider.Gmail or MailProvider.Yahoo
         ? Strings.AddAccount_AppPassword
@@ -340,10 +402,11 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
                 SelectedColor.Hex,
                 UserName.Trim(),
                 BuildServers(),
-                Auth);
+                Auth,
+                Auth == AuthMethod.OAuth2 ? _oauthAccountId ?? _editing?.OAuthAccountId : null);
 
             // Na edição, senha em branco mantém a atual.
-            if (!IsEditing || Password.Length > 0)
+            if (Auth == AuthMethod.Password && (!IsEditing || Password.Length > 0))
             {
                 try
                 {
@@ -394,10 +457,13 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         try
         {
             // Na edição com senha em branco, testa com a senha guardada no cofre.
-            var password = Password.Length == 0 && _editing is not null
-                ? await _credentials.GetAsync(CredentialKeys.Password(_editing.Id), ct) ?? ""
-                : Password;
-            var result = await _tester.TestAsync(Provider, BuildServers(), UserName.Trim(), password, ct);
+            var secret = Auth == AuthMethod.OAuth2
+                ? _oauthToken ?? (_editing is { OAuthAccountId: not null } ? await _oauth.GetAccessTokenAsync(_editing, ct) : "")
+                // Na edição com senha em branco, testa com a senha guardada no cofre.
+                : Password.Length == 0 && _editing is not null
+                    ? await _credentials.GetAsync(CredentialKeys.Password(_editing.Id), ct) ?? ""
+                    : Password;
+            var result = await _tester.TestAsync(Provider, BuildServers(), UserName.Trim(), secret, Auth, ct);
             ImapStatus.Set(result.Imap.Success ? TestState.Ok : TestState.Failed, ErrorMessages.For(result.Imap));
             SmtpStatus.Set(result.Smtp.Success ? TestState.Ok : TestState.Failed, ErrorMessages.For(result.Smtp));
             if (result.SmtpAlternative is { } alt)
@@ -425,6 +491,15 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         {
             ImapStatus.Set(TestState.Idle);
             SmtpStatus.Set(TestState.Idle);
+            return false;
+        }
+        catch (ReauthenticationRequiredException)
+        {
+            ImapStatus.Set(TestState.Idle);
+            SmtpStatus.Set(TestState.Idle);
+            _oauthToken = null;
+            OAuthSignedInAs = null;
+            ErrorMessage = Strings.Error_ReauthenticationRequired;
             return false;
         }
     }
@@ -515,8 +590,15 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     {
         if (KnownProviders.GetDomain(Email) is null)
             return Strings.AddAccount_Invalid_Email;
-        if (string.IsNullOrEmpty(Password) && !IsEditing)
+        if (Auth == AuthMethod.OAuth2)
+        {
+            if (_oauthToken is null && (_oauthAccountId ?? _editing?.OAuthAccountId) is null)
+                return Strings.OAuth_SignInRequired;
+        }
+        else if (string.IsNullOrEmpty(Password) && !IsEditing)
+        {
             return Strings.AddAccount_Invalid_Password;
+        }
         if (string.IsNullOrWhiteSpace(ImapHost) || string.IsNullOrWhiteSpace(SmtpHost) ||
             !IsValidPort(ImapPort) || !IsValidPort(SmtpPort) || string.IsNullOrWhiteSpace(UserName))
         {

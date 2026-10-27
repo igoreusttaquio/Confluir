@@ -5,14 +5,21 @@ using Microsoft.Extensions.Logging;
 namespace Confluir.App.Services;
 
 /// <summary>Operações sobre contas usadas por mais de uma tela.</summary>
-public sealed class AccountService(IAccountStore accounts, ICredentialStore credentials, ILogger<AccountService> logger)
+public sealed class AccountService(
+    IAccountStore accounts,
+    ICredentialStore credentials,
+    IOAuthTokenProvider oauth,
+    ILogger<AccountService> logger)
 {
-    /// <summary>Remove a conta do Confluir e apaga a senha do cofre. Nada é apagado no servidor.</summary>
+    /// <summary>Remove a conta do Confluir e apaga a senha/sessão do cofre. Nada é apagado no servidor.</summary>
     public async Task RemoveAsync(MailAccount account)
     {
         try
         {
-            await credentials.DeleteAsync(CredentialKeys.Password(account.Id));
+            if (account.Auth == AuthMethod.OAuth2)
+                await oauth.SignOutAsync(account);
+            else
+                await credentials.DeleteAsync(CredentialKeys.Password(account.Id));
         }
         catch (Exception ex)
         {
