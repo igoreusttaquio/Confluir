@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Confluir.App.ViewModels;
 
-public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost
+public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost, IMessageActions
 {
     private readonly LocalizationService _loc;
     private readonly ReadingServices _reading;
@@ -125,10 +125,86 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     private void OnOperationFailed(OperationFailedEventArgs e)
     {
-        // O cache já foi revertido; desfaz também a linha exibida.
-        if (Rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == e.MessageId) is { IsRead: true } row &&
-            e.Kind == OperationKind.MarkRead)
-            SetRead(row, false);
+        // O cache já foi revertido; desfaz também a linha exibida (arquivar/excluir voltam pela sincronização).
+        if (Rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == e.MessageId) is not { } row)
+            return;
+        switch (e.Kind)
+        {
+            case OperationKind.MarkRead when row.IsRead:
+                SetRead(row, false);
+                break;
+            case OperationKind.MarkUnread when !row.IsRead:
+                SetRead(row, true);
+                break;
+            case OperationKind.Flag or OperationKind.Unflag:
+                row.IsFlagged = e.Kind == OperationKind.Unflag;
+                break;
+        }
+    }
+
+    // Ações sobre mensagens ---------------------------------------------------------------------------
+
+    public bool CanArchive(MessageDetailViewModel message) =>
+        _folderNodes.Values.Any(f => f.Account.Id == message.Row.Account.Id && f.Folder.Kind == SpecialFolderKind.Archive) &&
+        !(_folderNodes.TryGetValue(message.Row.Summary.FolderId, out var current) && current.Folder.Kind == SpecialFolderKind.Archive);
+
+    public Task ArchiveAsync(MessageDetailViewModel message) => RemoveFromListAsync(message, _mailbox.ArchiveAsync);
+
+    public Task DeleteAsync(MessageDetailViewModel message) => RemoveFromListAsync(message, _mailbox.DeleteAsync);
+
+    public async Task ToggleFlagAsync(MessageDetailViewModel message)
+    {
+        var row = message.Row;
+        row.IsFlagged = !row.IsFlagged;
+        await _mailbox.SetFlaggedAsync(row.Summary.Id, row.IsFlagged);
+    }
+
+    public async Task ToggleReadAsync(MessageDetailViewModel message)
+    {
+        var row = message.Row;
+        SetRead(row, !row.IsRead);
+        await _mailbox.SetReadAsync(row.Summary.Id, row.IsRead);
+    }
+
+    /// <summary>
+    /// Arquivar/excluir: tira a mensagem da lista na hora, ajusta contadores, fecha a tela própria (se aberta)
+    /// e seleciona a mensagem seguinte.
+    /// </summary>
+    private async Task RemoveFromListAsync(MessageDetailViewModel message, Func<Guid, CancellationToken, Task> action)
+    {
+        var row = message.Row;
+        var messages = Rows.OfType<MessageRow>().ToList();
+        var index = messages.FindIndex(r => r.Summary.Id == row.Summary.Id);
+        var next = index >= 0 && index + 1 < messages.Count ? messages[index + 1]
+                 : index > 0 ? messages[index - 1]
+                 : null;
+
+        await action(row.Summary.Id, CancellationToken.None);
+
+        if (!row.IsRead && _folderNodes.TryGetValue(row.Summary.FolderId, out var folder))
+            folder.UnreadCount = Math.Max(0, folder.UnreadCount - 1);
+        RecountUnified();
+
+        if (Navigation.CurrentPage is MessagePageViewModel page && page.Detail == message)
+            Navigation.GoBack();
+
+        _listMessages = _listMessages.Where(m => m.Id != row.Summary.Id).ToList();
+        var rows = BuildRows(_listMessages);
+        _suppressSelection = true;
+        try
+        {
+            Rows = rows;
+            SelectedRow = null;
+        }
+        finally
+        {
+            _suppressSelection = false;
+        }
+        Detail = null;
+        if (next is not null)
+            SelectedRow = rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == next.Summary.Id);
+        if (SelectedNode is { } node)
+            UpdateSubtitle(node);
     }
 
     [RelayCommand]
@@ -332,7 +408,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     private MessageDetailViewModel CreateDetail(MessageRow row)
     {
-        var detail = new MessageDetailViewModel(row, _reading) { OpenInPageRequested = OpenInPage };
+        var detail = new MessageDetailViewModel(row, _reading) { OpenInPageRequested = OpenInPage, Actions = this };
         _detailCts = new CancellationTokenSource();
         _ = detail.LoadAsync(_detailCts.Token);
         return detail;
@@ -484,7 +560,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     {
         try
         {
-            await _mailbox.MarkAsReadAsync(row.Summary.Id);
+            await _mailbox.SetReadAsync(row.Summary.Id, true);
         }
         catch (Exception ex)
         {

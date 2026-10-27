@@ -22,6 +22,15 @@ public sealed record ReadingServices(
     AttachmentService Attachments,
     ILogger<MessageDetailViewModel> Logger);
 
+public interface IMessageActions
+{
+    bool CanArchive(MessageDetailViewModel message);
+    Task ArchiveAsync(MessageDetailViewModel message);
+    Task DeleteAsync(MessageDetailViewModel message);
+    Task ToggleFlagAsync(MessageDetailViewModel message);
+    Task ToggleReadAsync(MessageDetailViewModel message);
+}
+
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
 public sealed partial class MessageDetailViewModel : ViewModelBase
 {
@@ -117,6 +126,38 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private void OpenInPage() => OpenInPageRequested?.Invoke(this);
+
+    /// <summary>Quem executa arquivar/excluir/sinalizar (precisa mexer na lista e nos contadores).</summary>
+    public IMessageActions? Actions { get; set; }
+
+    public bool CanArchive => Actions?.CanArchive(this) ?? false;
+
+    public string FlagTooltip => Row.IsFlagged ? Strings.Action_Unflag : Strings.Action_Flag;
+    public string ReadTooltip => Row.IsRead ? Strings.Action_MarkUnread : Strings.Action_MarkRead;
+
+    [RelayCommand]
+    private Task Archive() => Actions?.ArchiveAsync(this) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task Delete() => Actions?.DeleteAsync(this) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private async Task ToggleFlag()
+    {
+        if (Actions is null)
+            return;
+        await Actions.ToggleFlagAsync(this);
+        OnPropertyChanged(nameof(FlagTooltip));
+    }
+
+    [RelayCommand]
+    private async Task ToggleRead()
+    {
+        if (Actions is null)
+            return;
+        await Actions.ToggleReadAsync(this);
+        OnPropertyChanged(nameof(ReadTooltip));
+    }
 
     [RelayCommand]
     private void ShowImages()

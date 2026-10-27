@@ -6,6 +6,11 @@
              xmlns:views="using:Confluir.App.Views"
              x:Class="Confluir.App.Views.MessageDetailView"
              x:DataType="vm:MessageDetailViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.icon.flagged LucideIcon">
+      <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+    </Style>
+  </UserControl.Styles>
   <DockPanel>
     <!-- Ações (responder etc. chegam na fase de envio) -->
     <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
@@ -29,14 +34,19 @@
           <LucideIcon Kind="Forward" />
         </Button>
         <Border Width="1" Margin="6,6" Background="{DynamicResource Border}" />
-        <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Archive}" AutomationProperties.Name="{l:Tr Action_Archive}">
+        <Button Classes="icon" Command="{Binding ArchiveCommand}" IsEnabled="{Binding CanArchive}" ToolTip.Tip="{l:Tr Action_Archive}" AutomationProperties.Name="{l:Tr Action_Archive}">
           <LucideIcon Kind="Archive" />
         </Button>
-        <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Delete}" AutomationProperties.Name="{l:Tr Action_Delete}">
+        <Button Classes="icon" Command="{Binding DeleteCommand}" ToolTip.Tip="{l:Tr Action_Delete}" AutomationProperties.Name="{l:Tr Action_Delete}">
           <LucideIcon Kind="Trash" />
         </Button>
-        <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Flag}" AutomationProperties.Name="{l:Tr Action_Flag}">
+        <Button Classes="icon" Command="{Binding ToggleFlagCommand}" Classes.flagged="{Binding Row.IsFlagged}"
+                ToolTip.Tip="{Binding FlagTooltip}" AutomationProperties.Name="{l:Tr Action_Flag}">
           <LucideIcon Kind="Flag" />
+        </Button>
+        <Button Classes="icon" Command="{Binding ToggleReadCommand}"
+                ToolTip.Tip="{Binding ReadTooltip}" AutomationProperties.Name="{l:Tr Action_MarkUnread}">
+          <LucideIcon Kind="MailOpen" />
         </Button>
       </StackPanel>
       <Button Grid.Column="1" Classes="icon" Command="{Binding OpenInPageCommand}" VerticalAlignment="Center"

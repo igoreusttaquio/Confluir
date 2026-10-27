@@ -18,9 +18,16 @@ public enum OperationKind
 {
     MarkRead,
     MarkUnread,
+    Flag,
+    Unflag,
+    /// <summary>Mover para a pasta Arquivo da conta.</summary>
+    Archive,
+    /// <summary>Mover para a Lixeira; já na Lixeira, excluir definitivamente.</summary>
+    Delete,
 }
 
-public sealed record PendingOperation(long Id, Guid AccountId, Guid MessageId, OperationKind Kind, int Attempts);
+/// <param name="Location">Onde a mensagem estava ao enfileirar (necessário para mover/excluir, que a tiram do cache na hora).</param>
+public sealed record PendingOperation(long Id, Guid AccountId, Guid MessageId, OperationKind Kind, int Attempts, MessageLocation? Location = null);
 
 /// <summary>Cache local (offline) de pastas, cabeçalhos, corpos e operações pendentes.</summary>
 public interface IMailCache
@@ -54,6 +61,11 @@ public interface IMailCache
 
     Task SetReadAsync(Guid messageId, bool isRead, CancellationToken ct = default);
 
+    Task SetFlaggedAsync(Guid messageId, bool isFlagged, CancellationToken ct = default);
+
+    /// <summary>Remove uma mensagem do cache (ex.: arquivada ou excluída; a pasta de destino traz a cópia ao sincronizar).</summary>
+    Task DeleteMessageAsync(Guid messageId, CancellationToken ct = default);
+
     Task<MessageLocation?> GetLocationAsync(Guid messageId, CancellationToken ct = default);
 
     // Corpos
@@ -62,7 +74,7 @@ public interface IMailCache
     Task SaveBodyAsync(MessageBody body, CancellationToken ct = default);
 
     // Fila de operações
-    Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, CancellationToken ct = default);
+    Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null, CancellationToken ct = default);
 
     Task<IReadOnlyList<PendingOperation>> GetPendingAsync(Guid accountId, CancellationToken ct = default);
 

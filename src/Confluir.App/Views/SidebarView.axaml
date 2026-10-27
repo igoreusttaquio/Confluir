@@ -173,7 +173,7 @@
           <DataTemplate DataType="vm:UnifiedInboxNode">
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,8">
               <LucideIcon Kind="Mails" Size="18" StrokeWidth="1.75" Foreground="{DynamicResource Accent}" />
-              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" FontWeight="SemiBold"
+              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" FontWeight="SemiBold" FontSize="{DynamicResource SidebarItemFontSize}"
                          Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"
                          VerticalAlignment="Center" />
               <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasUnread}">
@@ -206,9 +206,9 @@
                   <Ellipse Grid.Column="1" Width="9" Height="9" Margin="8,0"
                            Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
                   <StackPanel Grid.Column="2">
-                    <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="13"
+                    <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="{DynamicResource SidebarAccountFontSize}"
                                Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Account.Email}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Account.Email}" Classes="caption" FontSize="{DynamicResource SidebarCaptionFontSize}" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                   <Panel Grid.Column="3">
                     <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"
@@ -251,7 +251,7 @@
           <DataTemplate DataType="vm:FolderNode">
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="32,6,10,6">
               <LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="1.75" Foreground="{DynamicResource TextSecondary}" />
-              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" Foreground="{DynamicResource TextPrimary}"
+              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource SidebarItemFontSize}"
                          TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
               <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasUnread}">
                 <TextBlock Text="{Binding UnreadCount, StringFormat={}{0:N0}}" />

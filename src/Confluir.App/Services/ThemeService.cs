@@ -72,6 +72,18 @@ public sealed class ThemeService(ISettingsStore settings)
         app.Resources["ListSubjectFontSize"] = subject;
         app.Resources["ListPreviewFontSize"] = preview;
         app.Resources["ListMetaFontSize"] = meta;
+
+        // Barra de contas e pastas acompanha o mesmo tamanho.
+        var (item, account, caption, badge) = Appearance.ListTextSize switch
+        {
+            ListTextSize.Small => (13.0, 12.0, 11.0, 10.0),
+            ListTextSize.Large => (16.0, 15.0, 13.0, 12.0),
+            _ => (14.0, 13.0, 12.0, 11.0),
+        };
+        app.Resources["SidebarItemFontSize"] = item;
+        app.Resources["SidebarAccountFontSize"] = account;
+        app.Resources["SidebarCaptionFontSize"] = caption;
+        app.Resources["SidebarBadgeFontSize"] = badge;
     }
 
     public void ApplyAll()

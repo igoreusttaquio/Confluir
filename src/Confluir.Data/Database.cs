@@ -78,6 +78,13 @@ public sealed class Database
         """
         DELETE FROM bodies;
         """,
+
+        // v4: operações que tiram a mensagem do cache (arquivar/excluir) guardam onde ela estava no servidor.
+        """
+        ALTER TABLE pending_ops ADD COLUMN folder_name TEXT;
+        ALTER TABLE pending_ops ADD COLUMN folder_id TEXT;
+        ALTER TABLE pending_ops ADD COLUMN uid INTEGER;
+        """,
     ];
 
     private readonly string _connectionString;

@@ -35,7 +35,8 @@ public sealed partial class MessageRow(MessageSummary summary, MailAccount accou
     public string Subject => string.IsNullOrWhiteSpace(Summary.Subject) ? Strings.NoSubject : Summary.Subject;
     public string Preview => Summary.Preview;
     public string DateText { get; } = dateText;
-    public bool IsFlagged => Summary.IsFlagged;
+    [ObservableProperty]
+    public partial bool IsFlagged { get; set; } = summary.IsFlagged;
     public bool HasAttachments => Summary.HasAttachments;
 
     [ObservableProperty]

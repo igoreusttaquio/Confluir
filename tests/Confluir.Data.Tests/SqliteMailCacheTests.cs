@@ -79,7 +79,13 @@ public sealed class SqliteMailCacheTests : IDisposable
         await using (var c = await db.OpenAsync(_ct))
         await using (var cmd = c.CreateCommand())
         {
-            cmd.CommandText = "PRAGMA user_version = 1;";
+            // Desfaz o que as migrações seguintes criaram (v4 adiciona colunas) e volta para a versão 1.
+            cmd.CommandText = """
+                ALTER TABLE pending_ops DROP COLUMN folder_name;
+                ALTER TABLE pending_ops DROP COLUMN folder_id;
+                ALTER TABLE pending_ops DROP COLUMN uid;
+                PRAGMA user_version = 1;
+                """;
             await cmd.ExecuteNonQueryAsync(_ct);
         }
         SqliteConnection.ClearAllPools();
@@ -187,9 +193,9 @@ public sealed class SqliteMailCacheTests : IDisposable
     public async Task Fila_guarda_so_a_ultima_intencao_e_conta_falhas()
     {
         var message = Guid.NewGuid();
-        await _cache.EnqueueAsync(_account, message, OperationKind.MarkRead, _ct);
-        await _cache.EnqueueAsync(_account, message, OperationKind.MarkUnread, _ct);
-        await _cache.EnqueueAsync(Guid.NewGuid(), Guid.NewGuid(), OperationKind.MarkRead, _ct); // outra conta
+        await _cache.EnqueueAsync(_account, message, OperationKind.MarkRead, ct: _ct);
+        await _cache.EnqueueAsync(_account, message, OperationKind.MarkUnread, ct: _ct);
+        await _cache.EnqueueAsync(Guid.NewGuid(), Guid.NewGuid(), OperationKind.MarkRead, ct: _ct); // outra conta
 
         var op = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
         Assert.Equal(OperationKind.MarkUnread, op.Kind);
@@ -202,12 +208,49 @@ public sealed class SqliteMailCacheTests : IDisposable
     }
 
     [Fact]
+    public async Task Arquivar_guarda_o_local_no_servidor_mesmo_apos_sair_do_cache()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        var message = Message(inbox, 42);
+        await _cache.UpsertMessagesAsync(inbox.Id, [message], _ct);
+        var location = await _cache.GetLocationAsync(message.Summary.Id, _ct);
+
+        await _cache.DeleteMessageAsync(message.Summary.Id, _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Archive, location, _ct);
+
+        Assert.Empty(await _cache.GetMessagesAsync(inbox.Id, _ct));
+        var op = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
+        Assert.Equal(OperationKind.Archive, op.Kind);
+        Assert.Equal(location, op.Location);
+    }
+
+    [Fact]
+    public async Task Sinalizar_muda_o_cache_e_fila_guarda_a_ultima_intencao()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        var message = Message(inbox, 7);
+        await _cache.UpsertMessagesAsync(inbox.Id, [message], _ct);
+
+        await _cache.SetFlaggedAsync(message.Summary.Id, true, _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Flag, ct: _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Unflag, ct: _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.MarkRead, ct: _ct); // tipo diferente: fica
+
+        Assert.True((await _cache.GetMessagesAsync(inbox.Id, _ct)).Single().IsFlagged);
+        var ops = await _cache.GetPendingAsync(_account, _ct);
+        Assert.Equal([OperationKind.Unflag, OperationKind.MarkRead], ops.Select(o => o.Kind));
+        Assert.All(ops, o => Assert.Null(o.Location));
+    }
+
+    [Fact]
     public async Task Apagar_conta_remove_pastas_mensagens_e_fila()
     {
         var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
         await _cache.SaveFoldersAsync(_account, [inbox], _ct);
         await _cache.UpsertMessagesAsync(inbox.Id, [Message(inbox, 1)], _ct);
-        await _cache.EnqueueAsync(_account, Guid.NewGuid(), OperationKind.MarkRead, _ct);
+        await _cache.EnqueueAsync(_account, Guid.NewGuid(), OperationKind.MarkRead, ct: _ct);
 
         await _cache.DeleteAccountAsync(_account, _ct);
 

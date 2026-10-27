@@ -185,15 +185,46 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
             return MessageConverter.ReadAttachment(mime, index, token);
         }, ct);
 
-    public Task ApplyAsync(OperationKind kind, MessageLocation location, CancellationToken ct) =>
+    /// <param name="folders">Pastas da conta, para achar Arquivo e Lixeira.</param>
+    public Task ApplyAsync(OperationKind kind, MessageLocation location, IReadOnlyList<MailFolder> folders, CancellationToken ct) =>
         pool.RunAsync(location.AccountId, async (client, token) =>
         {
             var f = await OpenAsync(client, location.FolderFullName, FolderAccess.ReadWrite, token);
             var uid = new UniqueId(f.UidValidity, location.Uid);
-            var action = kind == OperationKind.MarkRead ? StoreAction.Add : StoreAction.Remove;
-            await f.StoreAsync(uid, new StoreFlagsRequest(action, MessageFlags.Seen) { Silent = true }, token);
+            switch (kind)
+            {
+                case OperationKind.MarkRead or OperationKind.MarkUnread:
+                    await StoreAsync(f, uid, kind == OperationKind.MarkRead, MessageFlags.Seen, token);
+                    break;
+                case OperationKind.Flag or OperationKind.Unflag:
+                    await StoreAsync(f, uid, kind == OperationKind.Flag, MessageFlags.Flagged, token);
+                    break;
+                case OperationKind.Archive:
+                    var archive = folders.FirstOrDefault(x => x.Kind == SpecialFolderKind.Archive)
+                        ?? throw new InvalidOperationException("A conta não tem pasta de arquivo.");
+                    if (archive.FullName != location.FolderFullName)
+                        await f.MoveToAsync(uid, await client.GetFolderAsync(archive.FullName, token), token);
+                    break;
+                case OperationKind.Delete:
+                    var trash = folders.FirstOrDefault(x => x.Kind == SpecialFolderKind.Trash);
+                    if (trash is not null && trash.FullName != location.FolderFullName)
+                    {
+                        await f.MoveToAsync(uid, await client.GetFolderAsync(trash.FullName, token), token);
+                        break;
+                    }
+                    // Já na Lixeira (ou sem Lixeira): exclusão definitiva só desta mensagem.
+                    await StoreAsync(f, uid, true, MessageFlags.Deleted, token);
+                    if (client.Capabilities.HasFlag(ImapCapabilities.UidPlus))
+                        await f.ExpungeAsync([uid], token);
+                    else
+                        await f.ExpungeAsync(token);
+                    break;
+            }
             return true;
         }, ct);
+
+    private static Task StoreAsync(IMailFolder folder, UniqueId uid, bool add, MessageFlags flag, CancellationToken ct) =>
+        folder.StoreAsync(uid, new StoreFlagsRequest(add ? StoreAction.Add : StoreAction.Remove, flag) { Silent = true }, ct);
 
     private static async Task<IMailFolder> OpenAsync(ImapClient client, string fullName, FolderAccess access, CancellationToken ct)
     {

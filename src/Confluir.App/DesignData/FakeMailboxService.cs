@@ -132,7 +132,20 @@ public sealed class FakeMailboxService : IMailboxService
         return new MessageBody(m.Id, [new MailAddress(account.DisplayName, account.Email)], cc, body, attachments, html);
     }
 
-    public Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task SetReadAsync(Guid messageId, bool isRead, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task SetFlaggedAsync(Guid messageId, bool isFlagged, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task ArchiveAsync(Guid messageId, CancellationToken ct = default) => Remove(messageId);
+
+    public Task DeleteAsync(Guid messageId, CancellationToken ct = default) => Remove(messageId);
+
+    private Task Remove(Guid messageId)
+    {
+        if (_byId.Remove(messageId, out var m))
+            _messages[m.FolderId].Remove(m);
+        return Task.CompletedTask;
+    }
 
     public Task<byte[]> GetAttachmentAsync(Guid messageId, int attachmentIndex, CancellationToken ct = default) =>
         Task.FromResult(System.Text.Encoding.UTF8.GetBytes("Anexo de exemplo do Confluir.\n"));

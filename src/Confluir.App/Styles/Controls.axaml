@@ -109,7 +109,7 @@
   </Style>
   <Style Selector="Border.badge > TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource Accent}" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource SidebarBadgeFontSize}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>

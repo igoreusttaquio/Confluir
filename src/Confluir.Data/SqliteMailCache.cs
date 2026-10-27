@@ -179,6 +179,15 @@ public sealed class SqliteMailCache(Database db) : IMailCache
             "UPDATE messages SET is_read = @read WHERE id = @id",
             new { id = messageId.ToString(), read = isRead }, tx, cancellationToken: ct)), ct);
 
+    public Task SetFlaggedAsync(Guid messageId, bool isFlagged, CancellationToken ct = default) =>
+        WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition(
+            "UPDATE messages SET is_flagged = @flagged WHERE id = @id",
+            new { id = messageId.ToString(), flagged = isFlagged }, tx, cancellationToken: ct)), ct);
+
+    public Task DeleteMessageAsync(Guid messageId, CancellationToken ct = default) =>
+        WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition(
+            "DELETE FROM messages WHERE id = @id", new { id = messageId.ToString() }, tx, cancellationToken: ct)), ct);
+
     public async Task<MessageLocation?> GetLocationAsync(Guid messageId, CancellationToken ct = default)
     {
         await using var c = await db.OpenAsync(ct);
@@ -217,35 +226,57 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     // Fila --------------------------------------------------------------------------------------
 
-    public Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, CancellationToken ct = default) =>
+    public Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null,
+        CancellationToken ct = default) =>
         WriteAsync(async (c, tx) =>
         {
-            // Marcar como lida/não lida: só a última intenção importa.
-            await c.ExecuteAsync(new CommandDefinition(
-                "DELETE FROM pending_ops WHERE message_id = @m AND kind IN (@read, @unread)",
-                new { m = messageId.ToString(), read = (int)OperationKind.MarkRead, unread = (int)OperationKind.MarkUnread },
-                tx, cancellationToken: ct));
-            await c.ExecuteAsync(new CommandDefinition(
-                "INSERT INTO pending_ops (account_id, message_id, kind, created_at) VALUES (@a, @m, @k, @t)",
+            // Lida/não lida e sinalizada/não sinalizada: só a última intenção importa.
+            int[] opposites = kind switch
+            {
+                OperationKind.MarkRead or OperationKind.MarkUnread => [(int)OperationKind.MarkRead, (int)OperationKind.MarkUnread],
+                OperationKind.Flag or OperationKind.Unflag => [(int)OperationKind.Flag, (int)OperationKind.Unflag],
+                _ => [],
+            };
+            if (opposites.Length > 0)
+            {
+                await c.ExecuteAsync(new CommandDefinition(
+                    "DELETE FROM pending_ops WHERE message_id = @m AND kind IN @kinds",
+                    new { m = messageId.ToString(), kinds = opposites }, tx, cancellationToken: ct));
+            }
+            await c.ExecuteAsync(new CommandDefinition("""
+                INSERT INTO pending_ops (account_id, message_id, kind, created_at, folder_name, folder_id, uid)
+                VALUES (@a, @m, @k, @t, @folderName, @folderId, @uid)
+                """,
                 new
                 {
                     a = accountId.ToString(),
                     m = messageId.ToString(),
                     k = (int)kind,
                     t = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                    folderName = location?.FolderFullName,
+                    folderId = location?.FolderId.ToString(),
+                    uid = location is null ? (long?)null : location.Uid,
                 }, tx, cancellationToken: ct));
         }, ct);
 
     public async Task<IReadOnlyList<PendingOperation>> GetPendingAsync(Guid accountId, CancellationToken ct = default)
     {
         await using var c = await db.OpenAsync(ct);
-        var rows = await c.QueryAsync<PendingRow>(new CommandDefinition(
-            "SELECT id AS Id, account_id AS AccountId, message_id AS MessageId, kind AS Kind, attempts AS Attempts FROM pending_ops WHERE account_id = @a ORDER BY id",
-            new { a = accountId.ToString() }, cancellationToken: ct));
-        return rows.Select(r => new PendingOperation(r.Id, Guid.Parse(r.AccountId), Guid.Parse(r.MessageId),
-            (OperationKind)r.Kind, (int)r.Attempts)).ToList();
+        var rows = await c.QueryAsync<PendingRow>(new CommandDefinition("""
+            SELECT id AS Id, account_id AS AccountId, message_id AS MessageId, kind AS Kind, attempts AS Attempts,
+                   folder_name AS FolderName, folder_id AS FolderId, uid AS Uid
+            FROM pending_ops WHERE account_id = @a ORDER BY id
+            """, new { a = accountId.ToString() }, cancellationToken: ct));
+        return rows.Select(r =>
+        {
+            var account = Guid.Parse(r.AccountId);
+            var message = Guid.Parse(r.MessageId);
+            var location = r.FolderName is not null && r.FolderId is not null && r.Uid is { } uid
+                ? new MessageLocation(message, account, Guid.Parse(r.FolderId), r.FolderName, (uint)uid)
+                : null;
+            return new PendingOperation(r.Id, account, message, (OperationKind)r.Kind, (int)r.Attempts, location);
+        }).ToList();
     }
-
     public Task CompleteAsync(long operationId, CancellationToken ct = default) =>
         WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition(
             "DELETE FROM pending_ops WHERE id = @id", new { id = operationId }, tx, cancellationToken: ct)), ct);
@@ -338,5 +369,8 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         public string MessageId { get; set; } = "";
         public long Kind { get; set; }
         public long Attempts { get; set; }
+        public string? FolderName { get; set; }
+        public string? FolderId { get; set; }
+        public long? Uid { get; set; }
     }
 }

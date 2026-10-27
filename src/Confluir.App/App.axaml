@@ -33,6 +33,10 @@
       <x:Double x:Key="ListSubjectFontSize">13</x:Double>
       <x:Double x:Key="ListPreviewFontSize">13</x:Double>
       <x:Double x:Key="ListMetaFontSize">12</x:Double>
+      <x:Double x:Key="SidebarItemFontSize">14</x:Double>
+      <x:Double x:Key="SidebarAccountFontSize">13</x:Double>
+      <x:Double x:Key="SidebarCaptionFontSize">12</x:Double>
+      <x:Double x:Key="SidebarBadgeFontSize">11</x:Double>
 
       <!-- Texto sobre as cores de conta (avatares), que são as mesmas nos dois temas -->
       <SolidColorBrush x:Key="OnAccountColor" Color="#0B1020" />

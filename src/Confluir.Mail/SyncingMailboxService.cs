@@ -84,14 +84,31 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
 
     // Ações -----------------------------------------------------------------------------------------
 
-    public async Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default)
+    // Otimista: o cache muda já; o servidor recebe pela fila (e, offline, quando a conexão voltar).
+
+    public Task SetReadAsync(Guid messageId, bool isRead, CancellationToken ct = default) =>
+        EnqueueAsync(messageId, isRead ? OperationKind.MarkRead : OperationKind.MarkUnread,
+            () => _cache.SetReadAsync(messageId, isRead, ct), keepLocation: false, ct);
+
+    public Task SetFlaggedAsync(Guid messageId, bool isFlagged, CancellationToken ct = default) =>
+        EnqueueAsync(messageId, isFlagged ? OperationKind.Flag : OperationKind.Unflag,
+            () => _cache.SetFlaggedAsync(messageId, isFlagged, ct), keepLocation: false, ct);
+
+    public Task ArchiveAsync(Guid messageId, CancellationToken ct = default) =>
+        EnqueueAsync(messageId, OperationKind.Archive, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct);
+
+    public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
+        EnqueueAsync(messageId, OperationKind.Delete, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct);
+
+    /// <param name="keepLocation">A ação tira a mensagem do cache: a fila guarda onde ela estava no servidor.</param>
+    private async Task EnqueueAsync(Guid messageId, OperationKind kind, Func<Task> applyLocally, bool keepLocation,
+        CancellationToken ct)
     {
         var location = await _cache.GetLocationAsync(messageId, ct);
         if (location is null)
             return;
-        // Otimista: o cache muda já; o servidor recebe pela fila (e, offline, quando a conexão voltar).
-        await _cache.SetReadAsync(messageId, true, ct);
-        await _cache.EnqueueAsync(location.AccountId, messageId, OperationKind.MarkRead, ct);
+        await applyLocally();
+        await _cache.EnqueueAsync(location.AccountId, messageId, kind, keepLocation ? location : null, ct);
         if (_runners.TryGetValue(location.AccountId, out var runner))
             runner.Wake(queue: true);
     }
@@ -257,9 +274,15 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
 
     private async Task ProcessQueueAsync(MailAccount account, CancellationToken ct)
     {
-        foreach (var op in await _cache.GetPendingAsync(account.Id, ct))
+        var pending = await _cache.GetPendingAsync(account.Id, ct);
+        if (pending.Count == 0)
+            return;
+        var folders = await _cache.GetFoldersAsync(account.Id, ct);
+
+        foreach (var op in pending)
         {
-            var location = await _cache.GetLocationAsync(op.MessageId, ct);
+            // Mover/excluir já tiraram a mensagem do cache: usam o local guardado na fila.
+            var location = op.Location ?? await _cache.GetLocationAsync(op.MessageId, ct);
             if (location is null)
             {
                 await _cache.CompleteAsync(op.Id, ct); // a mensagem saiu do servidor
@@ -268,7 +291,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
 
             try
             {
-                await _engine.ApplyAsync(op.Kind, location, ct);
+                await _engine.ApplyAsync(op.Kind, location, folders, ct);
                 await _cache.CompleteAsync(op.Id, ct);
             }
             catch (Exception ex) when (IsPermanent(ex, account))
@@ -280,10 +303,28 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
                 // Recusada de vez: desfaz no cache e avisa a interface.
                 _logger.LogWarning(ex, "Operação {Kind} recusada pelo servidor; desfazendo", op.Kind);
                 await _cache.CompleteAsync(op.Id, ct);
-                await _cache.SetReadAsync(op.MessageId, op.Kind != OperationKind.MarkRead, ct);
+                await RevertAsync(op, ct);
                 OperationFailed?.Invoke(this, new OperationFailedEventArgs(op.MessageId, op.Kind));
                 RaiseChanged(account.Id, foldersChanged: false);
             }
+        }
+    }
+
+    private async Task RevertAsync(PendingOperation op, CancellationToken ct)
+    {
+        switch (op.Kind)
+        {
+            case OperationKind.MarkRead or OperationKind.MarkUnread:
+                await _cache.SetReadAsync(op.MessageId, op.Kind == OperationKind.MarkUnread, ct);
+                break;
+            case OperationKind.Flag or OperationKind.Unflag:
+                await _cache.SetFlaggedAsync(op.MessageId, op.Kind == OperationKind.Unflag, ct);
+                break;
+            default:
+                // Arquivar/excluir: a mensagem continua no servidor; a próxima sincronização a traz de volta.
+                if (_runners.TryGetValue(op.AccountId, out var runner))
+                    runner.Wake(full: true, signal: false);
+                break;
         }
     }
 

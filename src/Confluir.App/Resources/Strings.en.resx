@@ -157,10 +157,13 @@
   <data name="Layout"><value>Layout</value></data>
   <data name="Layout_ThreeColumns"><value>Three columns</value></data>
   <data name="Layout_TwoColumns"><value>Two columns</value></data>
-  <data name="ListTextSize"><value>List text</value></data>
+  <data name="ListTextSize"><value>Text size</value></data>
   <data name="ListTextSize_Small"><value>Small</value></data>
   <data name="ListTextSize_Medium"><value>Medium</value></data>
   <data name="ListTextSize_Large"><value>Large</value></data>
+  <data name="Action_Unflag"><value>Remove flag</value></data>
+  <data name="Action_MarkUnread"><value>Mark as unread</value></data>
+  <data name="Action_MarkRead"><value>Mark as read</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>

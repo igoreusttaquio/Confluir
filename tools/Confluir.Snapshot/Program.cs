@@ -110,6 +110,16 @@ vm.Appearance.IsThreeColumns = true;
 vm.SelectedRow = vm.Rows.OfType<MessageRow>().First(r => r.HasAttachments);
 Pump(() => vm.Detail is { IsLoading: false });
 
+// Ações: sinalizar e depois arquivar (a mensagem sai da lista e a seguinte é selecionada).
+var archived = (MessageRow)vm.SelectedRow!;
+await vm.Detail!.ToggleFlagCommand.ExecuteAsync(null);
+Save(window, "action-flagged.png");
+await vm.Detail!.ArchiveCommand.ExecuteAsync(null);
+Pump(() => vm.Detail is { IsLoading: false });
+Console.WriteLine($"arquivada saiu da lista: {vm.Rows.OfType<MessageRow>().All(r => r.Summary.Id != archived.Summary.Id)}; " +
+                  $"selecionada agora: {(vm.SelectedRow as MessageRow)?.Subject}");
+Save(window, "action-archived.png");
+
 // Troca de idioma ao vivo (pelo seletor de Aparência), com a mensagem aberta.
 foreach (var (code, name) in new[] { ("en", "en"), ("es", "es") })
 {

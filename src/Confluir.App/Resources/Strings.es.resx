@@ -157,10 +157,13 @@
   <data name="Layout"><value>Diseño</value></data>
   <data name="Layout_ThreeColumns"><value>Tres columnas</value></data>
   <data name="Layout_TwoColumns"><value>Dos columnas</value></data>
-  <data name="ListTextSize"><value>Texto de la lista</value></data>
+  <data name="ListTextSize"><value>Tamaño del texto</value></data>
   <data name="ListTextSize_Small"><value>Pequeño</value></data>
   <data name="ListTextSize_Medium"><value>Mediano</value></data>
   <data name="ListTextSize_Large"><value>Grande</value></data>
+  <data name="Action_Unflag"><value>Quitar marca</value></data>
+  <data name="Action_MarkUnread"><value>Marcar como no leído</value></data>
+  <data name="Action_MarkRead"><value>Marcar como leído</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>
