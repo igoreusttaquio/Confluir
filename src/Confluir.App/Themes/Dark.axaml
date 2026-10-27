@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Tokens de tema (escuro). Contraste WCAG AA verificado nos pares texto/fundo. -->
+  <SolidColorBrush x:Key="Background" Color="#0B1020" />
+  <SolidColorBrush x:Key="Surface" Color="#111833" />
+  <SolidColorBrush x:Key="SurfaceAlt" Color="#1A2347" />
+  <SolidColorBrush x:Key="Border" Color="#26305A" />
+  <SolidColorBrush x:Key="TextPrimary" Color="#E8ECFF" />
+  <SolidColorBrush x:Key="TextSecondary" Color="#9AA3C7" />
+  <SolidColorBrush x:Key="Accent" Color="#7B97FF" />
+  <SolidColorBrush x:Key="OnAccent" Color="#0B1020" />
+  <SolidColorBrush x:Key="Success" Color="#4ADE80" />
+  <SolidColorBrush x:Key="Warning" Color="#FBBF24" />
+  <SolidColorBrush x:Key="Danger" Color="#FF8A80" />
+
+  <!-- Derivados: Accent a ~12% sobre Surface para seleção -->
+  <SolidColorBrush x:Key="AccentSubtle" Color="#1F7B97FF" />
+</ResourceDictionary>

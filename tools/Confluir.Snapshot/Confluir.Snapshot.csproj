@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Avalonia.Skia" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Confluir.App\Confluir.App.csproj" />
+  </ItemGroup>
+</Project>

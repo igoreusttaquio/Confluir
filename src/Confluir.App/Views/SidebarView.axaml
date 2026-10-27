@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:views="using:Confluir.App.Views"
+             xmlns:conv="using:Confluir.App.Converters"
+             xmlns:res="using:Confluir.App.Resources"
+             x:Class="Confluir.App.Views.SidebarView"
+             x:DataType="vm:MainWindowViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.accountHeader">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="10,12,10,6" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Button.accountHeader:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                     Button.accountHeader:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="LucideIcon.chevron">
+      <Setter Property="RenderTransform" Value="rotate(0deg)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="LucideIcon.chevron.collapsed">
+      <Setter Property="RenderTransform" Value="rotate(-90deg)" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border Classes="panel" Background="{DynamicResource SurfaceAlt}">
+    <DockPanel>
+      <!-- Marca -->
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="18,16,18,12">
+        <Image Source="{StaticResource LogoImage}" Width="28" Height="28" />
+        <TextBlock Text="{x:Static res:Strings.AppTitle}" FontSize="17" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- Rodapé: aparência e configurações -->
+      <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="10,6">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Appearance}">
+            <LucideIcon Kind="Palette" />
+            <Button.Flyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <views:AppearanceView DataContext="{Binding Appearance}" />
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+          <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Settings}" IsEnabled="False">
+            <LucideIcon Kind="Settings" />
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <ListBox ItemsSource="{Binding SidebarNodes}"
+               SelectedItem="{Binding SelectedNode}"
+               ItemContainerTheme="{StaticResource SidebarItemTheme}"
+               Background="Transparent"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox.DataTemplates>
+          <DataTemplate DataType="vm:UnifiedInboxNode">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,8">
+              <LucideIcon Kind="Mails" Size="18" StrokeWidth="1.75" Foreground="{DynamicResource Accent}" />
+              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"
+                         VerticalAlignment="Center" />
+              <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasUnread}">
+                <TextBlock Text="{Binding UnreadCount, StringFormat={}{0:N0}}" />
+              </Border>
+            </Grid>
+          </DataTemplate>
+
+          <DataTemplate DataType="vm:AccountNode">
+            <Button Classes="accountHeader" Command="{Binding ToggleCommand}"
+                    ToolTip.Tip="{x:Static res:Strings.Action_Collapse}">
+              <Grid ColumnDefinitions="Auto,Auto,*">
+                <LucideIcon Classes="chevron" Classes.collapsed="{Binding !IsExpanded}"
+                            Kind="ChevronDown" Size="14" Foreground="{DynamicResource TextSecondary}" />
+                <Ellipse Grid.Column="1" Width="9" Height="9" Margin="8,0"
+                         Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                <StackPanel Grid.Column="2">
+                  <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="13"
+                             Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding Account.Email}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Grid>
+            </Button>
+          </DataTemplate>
+
+          <DataTemplate DataType="vm:FolderNode">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="32,6,10,6">
+              <LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="1.75" Foreground="{DynamicResource TextSecondary}" />
+              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" Foreground="{DynamicResource TextPrimary}"
+                         TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasUnread}">
+                <TextBlock Text="{Binding UnreadCount, StringFormat={}{0:N0}}" />
+              </Border>
+            </Grid>
+          </DataTemplate>
+        </ListBox.DataTemplates>
+      </ListBox>
+    </DockPanel>
+  </Border>
+</UserControl>

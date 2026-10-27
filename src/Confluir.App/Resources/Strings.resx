@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="AppTitle"><value>Confluir</value></data>
+  <data name="UnifiedInbox"><value>Caixa de entrada unificada</value></data>
+
+  <data name="Folder_Inbox"><value>Caixa de entrada</value></data>
+  <data name="Folder_Sent"><value>Enviados</value></data>
+  <data name="Folder_Drafts"><value>Rascunhos</value></data>
+  <data name="Folder_Trash"><value>Lixeira</value></data>
+  <data name="Folder_Junk"><value>Spam</value></data>
+  <data name="Folder_Archive"><value>Arquivo</value></data>
+
+  <data name="Group_Today"><value>Hoje</value></data>
+  <data name="Group_Yesterday"><value>Ontem</value></data>
+  <data name="Group_ThisWeek"><value>Esta semana</value></data>
+  <data name="Group_Older"><value>Mais antigos</value></data>
+
+  <data name="MessageList_Count"><value>{0:N0} mensagens</value></data>
+  <data name="MessageList_UnreadCount"><value>{0:N0} não lidas</value></data>
+  <data name="MessageList_Empty"><value>Nenhuma mensagem nesta pasta</value></data>
+  <data name="NoSubject"><value>(sem assunto)</value></data>
+
+  <data name="Reading_Empty_Title"><value>Nenhuma mensagem selecionada</value></data>
+  <data name="Reading_Empty_Hint"><value>Escolha uma mensagem na lista para ler aqui.</value></data>
+  <data name="Reading_To"><value>Para</value></data>
+  <data name="Reading_Cc"><value>Cc</value></data>
+  <data name="Reading_Attachments"><value>Anexos</value></data>
+  <data name="Attachment_Save"><value>Salvar</value></data>
+  <data name="Attachment_Open"><value>Abrir</value></data>
+
+  <data name="Action_NewMessage"><value>Nova mensagem</value></data>
+  <data name="Action_Reply"><value>Responder</value></data>
+  <data name="Action_ReplyAll"><value>Responder a todos</value></data>
+  <data name="Action_Forward"><value>Encaminhar</value></data>
+  <data name="Action_Archive"><value>Arquivar</value></data>
+  <data name="Action_Delete"><value>Excluir</value></data>
+  <data name="Action_Flag"><value>Sinalizar</value></data>
+  <data name="Action_Collapse"><value>Recolher ou expandir</value></data>
+
+  <data name="Settings"><value>Configurações</value></data>
+  <data name="Appearance"><value>Aparência</value></data>
+  <data name="Theme"><value>Tema</value></data>
+  <data name="Theme_Light"><value>Claro</value></data>
+  <data name="Theme_Dark"><value>Escuro</value></data>
+  <data name="Theme_System"><value>Seguir o sistema</value></data>
+  <data name="AccentColor"><value>Cor de destaque</value></data>
+  <data name="Accent_Default"><value>Padrão</value></data>
+  <data name="Accent_Custom"><value>Personalizada</value></data>
+  <data name="CompactMode"><value>Modo compacto</value></data>
+
+  <data name="Color_Blue"><value>Azul</value></data>
+  <data name="Color_Coral"><value>Coral</value></data>
+  <data name="Color_Teal"><value>Turquesa</value></data>
+  <data name="Color_Amber"><value>Âmbar</value></data>
+  <data name="Color_Violet"><value>Violeta</value></data>
+  <data name="Color_Pink"><value>Rosa</value></data>
+  <data name="Color_Green"><value>Verde</value></data>
+  <data name="Color_Cyan"><value>Ciano</value></data>
+</root>

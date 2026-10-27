@@ -1,0 +1,16 @@
+namespace Confluir.Core;
+
+/// <summary>Pastas de dados do app (<c>&lt;AppData&gt;/Confluir</c> por padrão).</summary>
+public sealed class AppPaths
+{
+    public AppPaths(string? dataDirectory = null)
+    {
+        DataDirectory = dataDirectory ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Confluir");
+    }
+
+    public string DataDirectory { get; }
+    public string LogsDirectory => Path.Combine(DataDirectory, "logs");
+    public string FontsDirectory => Path.Combine(DataDirectory, "fonts");
+    public string SettingsFile => Path.Combine(DataDirectory, "settings.json");
+}

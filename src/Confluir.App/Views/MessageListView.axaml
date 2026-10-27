@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:conv="using:Confluir.App.Converters"
+             xmlns:res="using:Confluir.App.Resources"
+             x:Class="Confluir.App.Views.MessageListView"
+             x:DataType="vm:MainWindowViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.from">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="TextBlock.subject">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="TextBlock.preview">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    </Style>
+    <Style Selector="StackPanel.unread TextBlock.from, StackPanel.unread TextBlock.subject">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="StackPanel.unread TextBlock.date">
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Modo compacto: sem prévia e com menos respiro -->
+    <Style Selector="ListBox.compact TextBlock.preview">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="ListBox.compact StackPanel.message">
+      <Setter Property="Margin" Value="10,5,12,5" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border Classes="panel" Background="{DynamicResource Surface}">
+    <DockPanel>
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="18,14,12,10">
+        <StackPanel>
+          <TextBlock Text="{Binding ListTitle}" FontSize="18" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding ListSubtitle}" Classes="caption" Margin="0,2,0,0" />
+        </StackPanel>
+        <Button Grid.Column="1" Classes="accent" VerticalAlignment="Center" IsEnabled="False"
+                ToolTip.Tip="{x:Static res:Strings.Action_NewMessage}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <LucideIcon Kind="SquarePen" Size="16" Foreground="{DynamicResource OnAccent}" />
+            <TextBlock Text="{x:Static res:Strings.Action_NewMessage}" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource Border}" />
+
+      <Grid>
+        <TextBlock Text="{x:Static res:Strings.MessageList_Empty}" Classes="secondary"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsVisible="{Binding IsListEmpty}" />
+
+        <!-- ListBox usa VirtualizingStackPanel: só os itens visíveis têm containers. -->
+        <ListBox ItemsSource="{Binding Rows}"
+                 SelectedItem="{Binding SelectedRow}"
+                 Classes.compact="{Binding Appearance.CompactMode}"
+                 ItemContainerTheme="{StaticResource MessageItemTheme}"
+                 Background="Transparent"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.DataTemplates>
+            <DataTemplate DataType="vm:DateHeaderRow">
+              <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextSecondary}" Margin="20,14,12,4" />
+            </DataTemplate>
+
+            <DataTemplate DataType="vm:MessageRow">
+              <Grid ColumnDefinitions="Auto,*">
+                <!-- Faixa com a cor da conta -->
+                <Border Width="3" CornerRadius="2" Margin="8,8,0,8"
+                        Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                        ToolTip.Tip="{Binding Account.DisplayName}" />
+                <StackPanel Grid.Column="1" Classes="message" Classes.unread="{Binding IsUnread}"
+                            Margin="10,9,12,9" Spacing="2">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Ellipse Width="7" Height="7" Margin="0,0,7,0" VerticalAlignment="Center"
+                             Fill="{DynamicResource Accent}" IsVisible="{Binding IsUnread}" />
+                    <TextBlock Grid.Column="1" Classes="from" Text="{Binding From}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Classes="caption date" Text="{Binding DateText}"
+                               Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="subject" Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0">
+                      <LucideIcon Kind="Paperclip" Size="13" Foreground="{DynamicResource TextSecondary}"
+                                  IsVisible="{Binding HasAttachments}" />
+                      <LucideIcon Kind="Flag" Size="13" Foreground="{DynamicResource Warning}"
+                                  IsVisible="{Binding IsFlagged}" />
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Classes="preview" Text="{Binding Preview}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ListBox.DataTemplates>
+        </ListBox>
+      </Grid>
+    </DockPanel>
+  </Border>
+</UserControl>

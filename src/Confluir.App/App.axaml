@@ -1,0 +1,36 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sty="using:FluentAvalonia.Styling"
+             x:Class="Confluir.App.App"
+             Name="Confluir"
+             RequestedThemeVariant="Default">
+  <Application.Styles>
+    <sty:FluentAvaloniaTheme PreferSystemTheme="False"
+                             PreferUserAccentColor="False"
+                             CustomAccentColor="#2F5BEA" />
+    <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+    <StyleInclude Source="avares://Confluir/Styles/Controls.axaml" />
+  </Application.Styles>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceInclude x:Key="Light" Source="avares://Confluir/Themes/Light.axaml" />
+        <ResourceInclude x:Key="Dark" Source="avares://Confluir/Themes/Dark.axaml" />
+      </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Marca: ícone, splash, ilustrações -->
+      <SolidColorBrush x:Key="Brand.Blue" Color="#3D6BFF" />
+      <SolidColorBrush x:Key="Brand.Coral" Color="#FF7A66" />
+      <SolidColorBrush x:Key="Brand.Teal" Color="#14C7B4" />
+      <SolidColorBrush x:Key="Brand.Amber" Color="#FFB938" />
+
+      <!-- Texto sobre as cores de conta (avatares), que são as mesmas nos dois temas -->
+      <SolidColorBrush x:Key="OnAccountColor" Color="#0B1020" />
+
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Confluir/Styles/Logo.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

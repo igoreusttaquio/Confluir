@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:conv="using:Confluir.App.Converters"
+             xmlns:res="using:Confluir.App.Resources"
+             x:Class="Confluir.App.Views.ReadingPaneView"
+             x:DataType="vm:MainWindowViewModel">
+  <Border Classes="panel" Background="{DynamicResource Surface}">
+    <Grid>
+      <!-- Estado vazio -->
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10"
+                  IsVisible="{Binding !HasSelection}">
+        <Image Source="{StaticResource LogoImage}" Width="88" Height="88" Opacity="0.9" />
+        <TextBlock Text="{x:Static res:Strings.Reading_Empty_Title}" FontSize="16" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,8,0,0" />
+        <TextBlock Text="{x:Static res:Strings.Reading_Empty_Hint}" Classes="secondary" HorizontalAlignment="Center" />
+      </StackPanel>
+
+      <TransitioningContentControl Content="{Binding Detail}" IsVisible="{Binding HasSelection}">
+        <TransitioningContentControl.PageTransition>
+          <CrossFade Duration="0:0:0.15" />
+        </TransitioningContentControl.PageTransition>
+        <TransitioningContentControl.ContentTemplate>
+          <DataTemplate DataType="vm:MessageDetailViewModel">
+            <DockPanel>
+              <!-- Ações (ativadas nas fases de sincronização e envio) -->
+              <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+                      Padding="12,6">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Reply}">
+                    <LucideIcon Kind="Reply" />
+                  </Button>
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_ReplyAll}">
+                    <LucideIcon Kind="ReplyAll" />
+                  </Button>
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Forward}">
+                    <LucideIcon Kind="Forward" />
+                  </Button>
+                  <Border Width="1" Margin="6,6" Background="{DynamicResource Border}" />
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Archive}">
+                    <LucideIcon Kind="Archive" />
+                  </Button>
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Delete}">
+                    <LucideIcon Kind="Trash" />
+                  </Button>
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Flag}">
+                    <LucideIcon Kind="Flag" />
+                  </Button>
+                </StackPanel>
+              </Border>
+
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="32,24,32,32" Spacing="16" MaxWidth="860" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding Subject}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimary}" />
+                    <Border Background="{DynamicResource SurfaceAlt}" CornerRadius="10" Padding="8,3"
+                            HorizontalAlignment="Left">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="{Binding AccountColor, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                        <TextBlock Text="{Binding AccountName}" Classes="caption" />
+                      </StackPanel>
+                    </Border>
+                  </StackPanel>
+
+                  <!-- Remetente, destinatários e data -->
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Width="40" Height="40" CornerRadius="20" VerticalAlignment="Top"
+                            Background="{Binding AvatarColor, Converter={x:Static conv:HexToBrushConverter.Instance}}">
+                      <TextBlock Text="{Binding Initials}" Foreground="{DynamicResource OnAccountColor}" FontWeight="SemiBold"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0" Spacing="2">
+                      <SelectableTextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}">
+                        <Run Text="{Binding FromName}" />
+                        <Run Text="{Binding FromAddress, StringFormat='&lt;{0}&gt;'}" FontWeight="Normal"
+                             Foreground="{DynamicResource TextSecondary}" FontSize="13" />
+                      </SelectableTextBlock>
+                      <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap">
+                        <Run Text="{x:Static res:Strings.Reading_To}" /><Run Text=": " /><Run Text="{Binding To}" />
+                      </SelectableTextBlock>
+                      <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" IsVisible="{Binding HasCc}">
+                        <Run Text="{x:Static res:Strings.Reading_Cc}" /><Run Text=": " /><Run Text="{Binding Cc}" />
+                      </SelectableTextBlock>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding DateText}" Classes="caption" />
+                  </Grid>
+
+                  <Border Height="1" Background="{DynamicResource Border}" />
+
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" />
+
+                  <SelectableTextBlock Text="{Binding Body}" TextWrapping="Wrap" FontSize="15" LineHeight="24"
+                                       Foreground="{DynamicResource TextPrimary}" />
+
+                  <!-- Anexos -->
+                  <StackPanel Spacing="8" IsVisible="{Binding HasAttachments}">
+                    <TextBlock Text="{x:Static res:Strings.Reading_Attachments}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}" />
+                    <ItemsControl ItemsSource="{Binding Attachments}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel ItemSpacing="8" LineSpacing="8" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:AttachmentViewModel">
+                          <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8"
+                                  Padding="10,8" Background="{DynamicResource Background}" Width="260">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                              <LucideIcon Kind="{Binding Icon}" Size="22" StrokeWidth="1.5"
+                                          Foreground="{DynamicResource Accent}" />
+                              <StackPanel Grid.Column="1" Margin="10,0">
+                                <TextBlock Text="{Binding FileName}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="{Binding SizeText}" Classes="caption" />
+                              </StackPanel>
+                              <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <Button Classes="icon" Padding="6" IsEnabled="False"
+                                        ToolTip.Tip="{x:Static res:Strings.Attachment_Save}">
+                                  <LucideIcon Kind="Download" />
+                                </Button>
+                                <Button Classes="icon" Padding="6" IsEnabled="False"
+                                        ToolTip.Tip="{x:Static res:Strings.Attachment_Open}">
+                                  <LucideIcon Kind="ExternalLink" />
+                                </Button>
+                              </StackPanel>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </StackPanel>
+              </ScrollViewer>
+            </DockPanel>
+          </DataTemplate>
+        </TransitioningContentControl.ContentTemplate>
+      </TransitioningContentControl>
+    </Grid>
+  </Border>
+</UserControl>

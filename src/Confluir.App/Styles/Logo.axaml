@@ -1,0 +1,49 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Ícone do app, convertido de assets/confluir-icone.svg (viewBox 512×512). -->
+  <DrawingImage x:Key="LogoImage">
+    <DrawingGroup>
+      <GeometryDrawing>
+        <GeometryDrawing.Geometry>
+          <RectangleGeometry Rect="16,16,480,480" RadiusX="112" RadiusY="112" />
+        </GeometryDrawing.Geometry>
+        <GeometryDrawing.Brush>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="512,512">
+            <GradientStop Offset="0" Color="#1E2A4A" />
+            <GradientStop Offset="1" Color="#0F1629" />
+          </LinearGradientBrush>
+        </GeometryDrawing.Brush>
+        <GeometryDrawing.Pen>
+          <Pen Brush="#B33A4A80" Thickness="6" />
+        </GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M100,150 C190,150 210,256 290,256">
+        <GeometryDrawing.Pen>
+          <Pen Brush="#FF8A7A" Thickness="38" LineCap="Round" />
+        </GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M100,362 C190,362 210,256 290,256">
+        <GeometryDrawing.Pen>
+          <Pen Brush="#7C9CFF" Thickness="38" LineCap="Round" />
+        </GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M100,256 L290,256">
+        <GeometryDrawing.Pen>
+          <Pen Brush="#FFC857" Thickness="38" LineCap="Round" />
+        </GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M270,256 L410,256">
+        <GeometryDrawing.Pen>
+          <Pen Thickness="72" LineCap="Round">
+            <Pen.Brush>
+              <LinearGradientBrush StartPoint="270,0" EndPoint="410,0">
+                <GradientStop Offset="0" Color="#7C9CFF" />
+                <GradientStop Offset="1" Color="#5EEAD4" />
+              </LinearGradientBrush>
+            </Pen.Brush>
+          </Pen>
+        </GeometryDrawing.Pen>
+      </GeometryDrawing>
+    </DrawingGroup>
+  </DrawingImage>
+</ResourceDictionary>

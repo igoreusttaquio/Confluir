@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <AvaloniaVersion>12.1.4</AvaloniaVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- UI -->
+    <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Controls.ColorPicker" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="FluentAvaloniaUI" Version="3.1.0" />
+    <PackageVersion Include="Lucide.Avalonia" Version="0.2.28" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="Svg.Skia" Version="5.2.3" />
+    <!-- Host / logs -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+    <!-- Testes -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+  </ItemGroup>
+</Project>
