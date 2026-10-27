@@ -7,15 +7,15 @@
              x:DataType="vm:MainWindowViewModel">
   <UserControl.Styles>
     <Style Selector="TextBlock.from">
-      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontSize" Value="{DynamicResource ListFromFontSize}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     </Style>
     <Style Selector="TextBlock.subject">
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontSize" Value="{DynamicResource ListSubjectFontSize}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     </Style>
     <Style Selector="TextBlock.preview">
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontSize" Value="{DynamicResource ListPreviewFontSize}" />
       <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
     </Style>
     <Style Selector=":is(Control).unread TextBlock.from, :is(Control).unread TextBlock.subject">
@@ -40,8 +40,11 @@
       <Setter Property="Margin" Value="20,8,12,2" />
       <Setter Property="FontSize" Value="11" />
     </Style>
-    <Style Selector="Grid.compactRow TextBlock">
-      <Setter Property="FontSize" Value="13" />
+    <Style Selector="Grid.compactRow TextBlock.from, Grid.compactRow TextBlock.subject">
+      <Setter Property="FontSize" Value="{DynamicResource ListSubjectFontSize}" />
+    </Style>
+    <Style Selector="TextBlock.date">
+      <Setter Property="FontSize" Value="{DynamicResource ListMetaFontSize}" />
     </Style>
   </UserControl.Styles>
 

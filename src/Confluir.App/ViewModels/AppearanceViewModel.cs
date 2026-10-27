@@ -59,6 +59,34 @@ public sealed partial class AppearanceViewModel : ViewModelBase
 
     public IReadOnlyList<AccentOption> AccentOptions { get; }
 
+    public bool IsListTextSmall
+    {
+        get => _theme.ListTextSize == ListTextSize.Small;
+        set { if (value) SetListTextSize(ListTextSize.Small); }
+    }
+
+    public bool IsListTextMedium
+    {
+        get => _theme.ListTextSize == ListTextSize.Medium;
+        set { if (value) SetListTextSize(ListTextSize.Medium); }
+    }
+
+    public bool IsListTextLarge
+    {
+        get => _theme.ListTextSize == ListTextSize.Large;
+        set { if (value) SetListTextSize(ListTextSize.Large); }
+    }
+
+    private void SetListTextSize(ListTextSize size)
+    {
+        if (_theme.ListTextSize == size)
+            return;
+        _theme.SetListTextSize(size);
+        OnPropertyChanged(nameof(IsListTextSmall));
+        OnPropertyChanged(nameof(IsListTextMedium));
+        OnPropertyChanged(nameof(IsListTextLarge));
+    }
+
     /// <summary>O layout (duas/três colunas) mudou.</summary>
     public event EventHandler? LayoutChanged;
 

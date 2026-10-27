@@ -26,13 +26,52 @@ public partial class MainWindow : Window
         Opened += async (_, _) => await viewModel.InitializeAsync();
     }
 
+    private static readonly TimeSpan SidebarAnimation = TimeSpan.FromMilliseconds(220);
+    private int _sidebarAnimationId;
+
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.IsSidebarCollapsed) or nameof(MainWindowViewModel.IsTwoColumnLayout))
+        if (e.PropertyName == nameof(MainWindowViewModel.IsSidebarCollapsed))
+        {
+            SaveWidths();
+            AnimateSidebar();
+        }
+        else if (e.PropertyName == nameof(MainWindowViewModel.IsTwoColumnLayout))
         {
             SaveWidths();
             ApplyLayout();
         }
+    }
+
+    /// <summary>Anima a largura da barra lateral quadro a quadro (ColumnDefinition não tem transições).</summary>
+    private void AnimateSidebar()
+    {
+        if (_settings is null || _vm is null)
+            return;
+        var column = Columns.ColumnDefinitions[0];
+        var from = column.ActualWidth;
+        var to = _vm.IsSidebarCollapsed ? CollapsedSidebarWidth : _settings.Current.Layout.SidebarWidth;
+        var id = ++_sidebarAnimationId;
+        var started = DateTime.UtcNow;
+
+        // Libera os limites durante a animação; os definitivos voltam no fim (ApplyLayout).
+        column.MinWidth = Math.Min(from, to);
+        column.MaxWidth = Math.Max(from, to);
+        SidebarSplitter.IsVisible = false;
+
+        void Frame(TimeSpan _)
+        {
+            if (id != _sidebarAnimationId)
+                return; // outra animação começou
+            var t = Math.Clamp((DateTime.UtcNow - started) / SidebarAnimation, 0, 1);
+            var eased = 1 - Math.Pow(1 - t, 3); // desacelera no fim
+            column.Width = new GridLength(from + (to - from) * eased);
+            if (t < 1)
+                RequestAnimationFrame(Frame);
+            else
+                ApplyLayout();
+        }
+        RequestAnimationFrame(Frame);
     }
 
     /// <summary>

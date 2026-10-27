@@ -16,7 +16,8 @@
     </Style>
   </UserControl.Styles>
 
-  <StackPanel Spacing="14" Margin="4">
+  <ScrollViewer MaxHeight="620" HorizontalScrollBarVisibility="Disabled">
+  <StackPanel Spacing="14" Margin="4,4,12,4">
     <TextBlock Text="{l:Tr Appearance}" FontSize="16" FontWeight="SemiBold"
                Foreground="{DynamicResource TextPrimary}" />
 
@@ -111,7 +112,32 @@
       </ComboBox>
     </StackPanel>
 
+    <StackPanel Spacing="6">
+      <TextBlock Text="{l:Tr ListTextSize}" Classes="caption" />
+      <UniformGrid Columns="3" ColumnSpacing="6">
+        <RadioButton Classes="themeOption" GroupName="listText" IsChecked="{Binding IsListTextSmall}">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Aa" FontSize="12" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:Tr ListTextSize_Small}" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="themeOption" GroupName="listText" IsChecked="{Binding IsListTextMedium}">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Aa" FontSize="15" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:Tr ListTextSize_Medium}" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="themeOption" GroupName="listText" IsChecked="{Binding IsListTextLarge}">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Aa" FontSize="18" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:Tr ListTextSize_Large}" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+      </UniformGrid>
+    </StackPanel>
+
     <ToggleSwitch Content="{l:Tr CompactMode}" IsChecked="{Binding CompactMode}"
                   OnContent="" OffContent="" />
   </StackPanel>
+  </ScrollViewer>
 </UserControl>

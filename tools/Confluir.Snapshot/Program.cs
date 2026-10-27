@@ -75,10 +75,27 @@ foreach (var mode in new[] { ThemeMode.Light, ThemeMode.Dark })
 // Modo compacto (uma linha por mensagem) com a barra lateral recolhida.
 theme.SetTheme(ThemeMode.Light);
 vm.Appearance.CompactMode = true;
+Pump(() => true);
+var sidebarColumn = window.FindControl<Grid>("Columns")!.ColumnDefinitions[0];
+var widths = new List<string>();
+var t0 = Environment.TickCount64;
 vm.ToggleSidebarCommand.Execute(null);
+for (var i = 0; i < 16; i++)
+{
+    Dispatcher.UIThread.RunJobs();
+    AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+    widths.Add($"{Environment.TickCount64 - t0}ms={sidebarColumn.Width.Value:0}");
+    Thread.Sleep(20);
+}
+Console.WriteLine("animacao barra lateral: " + string.Join(" ", widths));
 Save(window, "compact-collapsed.png");
 vm.ToggleSidebarCommand.Execute(null);
 vm.Appearance.CompactMode = false;
+
+// Texto da lista grande.
+vm.Appearance.IsListTextLarge = true;
+Save(window, "list-text-large.png");
+vm.Appearance.IsListTextMedium = true;
 
 // Duas colunas: a lista ocupa a largura; a mensagem abre em tela própria.
 vm.Appearance.IsTwoColumns = true;

@@ -30,6 +30,27 @@
     <Style Selector="LucideIcon.chevron.collapsed">
       <Setter Property="RenderTransform" Value="rotate(-90deg)" />
     </Style>
+    <!-- Troca entre barra completa e faixa recolhida -->
+    <Style Selector="Panel.sidebarRoot > DockPanel">
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.16" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Panel.sidebarRoot > DockPanel.rail">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="Panel.sidebarRoot.collapsed > DockPanel.rail">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+    <Style Selector="Panel.sidebarRoot.collapsed > DockPanel.full">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+
     <!-- Contador sobre o ícone na barra recolhida -->
     <Style Selector="Border.railBadge">
       <Setter Property="Background" Value="{DynamicResource Accent}" />
@@ -50,14 +71,15 @@
     </Style>
   </UserControl.Styles>
 
-  <Border Classes="panel" Background="{DynamicResource SurfaceAlt}">
-    <Panel>
+  <Border Classes="panel" Background="{DynamicResource SurfaceAlt}" ClipToBounds="True">
+    <!-- As duas versões ficam sobrepostas e trocam por esmaecimento enquanto a coluna anima a largura. -->
+    <Panel Classes="sidebarRoot" Classes.collapsed="{Binding IsSidebarCollapsed}">
     <!-- Barra recolhida: faixa de ícones (caixa unificada, uma bolinha por conta e o rodapé). -->
-    <DockPanel IsVisible="{Binding IsSidebarCollapsed}">
-      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,12,0,8" HorizontalAlignment="Center">
+    <DockPanel Classes="rail" Width="64" HorizontalAlignment="Left">
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,14,0,8" HorizontalAlignment="Center">
         <Button Classes="icon" Command="{Binding ToggleSidebarCommand}" HorizontalAlignment="Center"
                 ToolTip.Tip="{l:Tr Action_ExpandSidebar}" AutomationProperties.Name="{l:Tr Action_ExpandSidebar}">
-          <LucideIcon Kind="PanelLeftOpen" />
+          <LucideIcon Kind="Menu" />
         </Button>
         <Border Height="1" Margin="8,6" Background="{DynamicResource Border}" />
         <Button Classes="icon" Command="{Binding SelectUnifiedCommand}" HorizontalAlignment="Center"
@@ -109,16 +131,17 @@
       </ScrollViewer>
     </DockPanel>
 
-    <DockPanel IsVisible="{Binding IsSidebarExpanded}">
-      <!-- Marca e botão de recolher -->
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="18,14,10,10">
-        <Image Source="{StaticResource LogoImage}" Width="28" Height="28" />
-        <TextBlock Grid.Column="1" Text="{l:Tr AppTitle}" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0"
-                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-        <Button Grid.Column="2" Classes="icon" Command="{Binding ToggleSidebarCommand}" VerticalAlignment="Center"
+    <!-- Largura mínima fixa: ao recolher, o conteúdo é cortado (não espremido) enquanto a coluna diminui. -->
+    <DockPanel Classes="full" MinWidth="200">
+      <!-- Menu (recolher) no mesmo lugar do botão da faixa recolhida, e a marca -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*" Margin="15,14,10,10">
+        <Button Classes="icon" Command="{Binding ToggleSidebarCommand}" VerticalAlignment="Center"
                 ToolTip.Tip="{l:Tr Action_CollapseSidebar}" AutomationProperties.Name="{l:Tr Action_CollapseSidebar}">
-          <LucideIcon Kind="PanelLeftClose" />
+          <LucideIcon Kind="Menu" />
         </Button>
+        <Image Grid.Column="1" Source="{StaticResource LogoImage}" Width="26" Height="26" Margin="8,0,0,0" />
+        <TextBlock Grid.Column="2" Text="{l:Tr AppTitle}" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0"
+                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
       </Grid>
 
       <!-- Rodapé: aparência e configurações -->

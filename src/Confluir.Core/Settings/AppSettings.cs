@@ -29,8 +29,18 @@ public sealed class AppearanceSettings
 
     public bool CompactMode { get; set; }
 
+    /// <summary>Tamanho do texto na lista de mensagens.</summary>
+    public ListTextSize ListTextSize { get; set; } = ListTextSize.Medium;
+
     /// <summary>Idioma da interface ("pt-BR", "en", "es"); nulo segue o sistema.</summary>
     public string? Language { get; set; }
+}
+
+public enum ListTextSize
+{
+    Small,
+    Medium,
+    Large,
 }
 
 public enum ReadingLayout

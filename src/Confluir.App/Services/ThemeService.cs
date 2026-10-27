@@ -48,10 +48,37 @@ public sealed class ThemeService(ISettingsStore settings)
 
     public string? AccentColor => Appearance.AccentColor;
 
+    public ListTextSize ListTextSize => Appearance.ListTextSize;
+
+    public void SetListTextSize(ListTextSize size)
+    {
+        Appearance.ListTextSize = size;
+        ApplyListTextSize();
+        settings.Save();
+    }
+
+    /// <summary>Tamanhos de fonte da lista (remetente, assunto, prévia, data), lidos via DynamicResource.</summary>
+    private void ApplyListTextSize()
+    {
+        if (Application.Current is not { } app)
+            return;
+        var (from, subject, preview, meta) = Appearance.ListTextSize switch
+        {
+            ListTextSize.Small => (13.0, 12.0, 12.0, 11.0),
+            ListTextSize.Large => (16.0, 15.0, 14.0, 13.0),
+            _ => (14.0, 13.0, 13.0, 12.0),
+        };
+        app.Resources["ListFromFontSize"] = from;
+        app.Resources["ListSubjectFontSize"] = subject;
+        app.Resources["ListPreviewFontSize"] = preview;
+        app.Resources["ListMetaFontSize"] = meta;
+    }
+
     public void ApplyAll()
     {
         ApplyTheme();
         ApplyAccent();
+        ApplyListTextSize();
         if (!_watching && Application.Current is { } app)
         {
             // Inclui a troca pelo sistema operacional quando o tema é "seguir o sistema".
