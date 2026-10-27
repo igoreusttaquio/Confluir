@@ -119,6 +119,17 @@ public sealed class FakeMailboxService : IMailboxService
 
     public Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default) => Task.CompletedTask;
 
+    // Dados falsos não sincronizam: os eventos nunca disparam.
+    public event EventHandler<MailboxChangedEventArgs>? MailboxChanged { add { } remove { } }
+    public event EventHandler<AccountStatusEventArgs>? AccountStatusChanged { add { } remove { } }
+    public event EventHandler<OperationFailedEventArgs>? OperationFailed { add { } remove { } }
+
+    public void RequestSync(Guid? accountId = null)
+    {
+    }
+
+    public SyncStatus GetStatus(Guid accountId) => SyncStatus.UpToDate;
+
     private void AddAccount(string name, string email, MailProvider provider, AccountColor color,
         DateTimeOffset now, Random random, string? extraFolder)
     {

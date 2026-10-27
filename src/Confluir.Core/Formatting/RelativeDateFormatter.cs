@@ -10,7 +10,7 @@ public static class RelativeDateFormatter
     /// </summary>
     public static string Format(DateTimeOffset date, DateTimeOffset now, CultureInfo culture, string yesterdayLabel)
     {
-        var local = date.ToOffset(now.Offset);
+        var local = DateGrouping.SafeToOffset(date, now.Offset);
         return DateGrouping.GetGroup(date, now, culture) switch
         {
             DateGroup.Today => local.ToString("t", culture),

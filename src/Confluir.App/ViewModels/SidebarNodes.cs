@@ -26,7 +26,7 @@ public sealed partial class UnifiedInboxNode : SidebarNode
 public interface IAccountNodeHost
 {
     void OnToggled(AccountNode node);
-    Task ReloadFoldersAsync(AccountNode node);
+    void RetryAccount(AccountNode node);
     Task RemoveAccountAsync(AccountNode node);
     void EditAccount(AccountNode node);
 }
@@ -41,8 +41,13 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
     [ObservableProperty]
     public partial bool IsExpanded { get; set; } = true;
 
+    /// <summary>Sincronizando com o servidor.</summary>
     [ObservableProperty]
     public partial bool IsLoading { get; set; }
+
+    /// <summary>Sem conexão: exibindo o que está em cache.</summary>
+    [ObservableProperty]
+    public partial bool IsOffline { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
@@ -62,7 +67,7 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
     }
 
     [RelayCommand]
-    private Task Retry() => host.ReloadFoldersAsync(this);
+    private void Retry() => host.RetryAccount(this);
 
     [RelayCommand]
     private void Edit() => host.EditAccount(this);

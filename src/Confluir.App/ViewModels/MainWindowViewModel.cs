@@ -58,7 +58,73 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Appearance = appearance;
 
         _accountStore.Changed += (_, _) => Dispatcher.UIThread.Post(() => _ = ReloadAsync());
+
+        // A sincronização roda em segundo plano; tudo que mexe na interface volta para a thread de UI.
+        _mailbox.MailboxChanged += (_, e) => Dispatcher.UIThread.Post(() => ScheduleRefresh(e.AccountId));
+        _mailbox.AccountStatusChanged += (_, e) => Dispatcher.UIThread.Post(() => OnAccountStatus(e));
+        _mailbox.OperationFailed += (_, e) => Dispatcher.UIThread.Post(() => OnOperationFailed(e));
     }
+
+    // Atualização a partir da sincronização ---------------------------------------------------------
+
+    private static readonly TimeSpan RefreshDelay = TimeSpan.FromMilliseconds(700);
+    private readonly HashSet<Guid> _pendingRefresh = [];
+    private bool _refreshScheduled;
+
+    /// <summary>Junta avisos seguidos (lotes da sincronização inicial) numa única atualização da tela.</summary>
+    private void ScheduleRefresh(Guid accountId)
+    {
+        _pendingRefresh.Add(accountId);
+        if (_refreshScheduled)
+            return;
+        _refreshScheduled = true;
+        DispatcherTimer.RunOnce(() => _ = RefreshAsync(), RefreshDelay);
+    }
+
+    private async Task RefreshAsync()
+    {
+        _refreshScheduled = false;
+        var accounts = _pendingRefresh.ToList();
+        _pendingRefresh.Clear();
+
+        foreach (var node in SidebarNodes.OfType<AccountNode>().Where(n => accounts.Contains(n.Account.Id)).ToList())
+            await ReloadFoldersAsync(node);
+
+        var affectsList = SelectedNode switch
+        {
+            UnifiedInboxNode => true,
+            FolderNode f => accounts.Contains(f.Account.Id),
+            _ => false,
+        };
+        if (affectsList && SelectedNode is { } selected)
+            await LoadListAsync(selected, keepSelection: true);
+    }
+
+    private void OnAccountStatus(AccountStatusEventArgs e)
+    {
+        if (SidebarNodes.OfType<AccountNode>().FirstOrDefault(n => n.Account.Id == e.AccountId) is { } node)
+            ApplyStatus(node, e.Status, e.Error);
+    }
+
+    private static void ApplyStatus(AccountNode node, SyncStatus status, Exception? error)
+    {
+        node.IsLoading = status == SyncStatus.Syncing;
+        node.IsOffline = status == SyncStatus.Offline;
+        node.Error = status == SyncStatus.Error && error is not null
+            ? ErrorMessages.For(error, node.Account.Provider)
+            : null;
+    }
+
+    private void OnOperationFailed(OperationFailedEventArgs e)
+    {
+        // O cache já foi revertido; desfaz também a linha exibida.
+        if (Rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == e.MessageId) is { IsRead: true } row &&
+            e.Kind == OperationKind.MarkRead)
+            SetRead(row, false);
+    }
+
+    [RelayCommand]
+    private void Refresh() => _mailbox.RequestSync();
 
     public AppearanceViewModel Appearance { get; }
 
@@ -135,6 +201,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         {
             _accounts[account.Id] = account;
             var node = new AccountNode(account, this);
+            ApplyStatus(node, _mailbox.GetStatus(account.Id), null);
             nodes.Add(node);
             SidebarNodes.Add(node);
         }
@@ -145,37 +212,55 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         await Task.WhenAll(nodes.Select(ReloadFoldersAsync));
     }
 
+    /// <summary>
+    /// Atualiza as pastas da conta a partir do cache. Reaproveita os nós existentes (mesmo id), para que a
+    /// pasta selecionada continue selecionada enquanto a sincronização atualiza contadores.
+    /// </summary>
     public async Task ReloadFoldersAsync(AccountNode node)
     {
-        node.IsLoading = true;
-        node.Error = null;
+        IReadOnlyList<MailFolder> folders;
         try
         {
-            var folders = await _mailbox.GetFoldersAsync(node.Account.Id);
-            var folderNodes = folders.Select(f => new FolderNode(f, node.Account)).ToList();
+            folders = await _mailbox.GetFoldersAsync(node.Account.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao ler as pastas da conta {AccountId} do cache", node.Account.Id);
+            return;
+        }
 
+        var existing = node.Folders.ToDictionary(f => f.Folder.Id);
+        var updated = folders.Select(f =>
+        {
+            if (existing.TryGetValue(f.Id, out var current) && current.Folder with { UnreadCount = 0 } == f with { UnreadCount = 0 })
+            {
+                current.UnreadCount = f.UnreadCount;
+                return current;
+            }
+            return new FolderNode(f, node.Account);
+        }).ToList();
+
+        if (!updated.SequenceEqual(node.Folders))
+        {
             foreach (var old in node.Folders)
             {
                 _folderNodes.Remove(old.Folder.Id);
                 SidebarNodes.Remove(old);
             }
-            node.Folders = folderNodes;
-            foreach (var f in folderNodes)
+            node.Folders = updated;
+            foreach (var f in updated)
                 _folderNodes[f.Folder.Id] = f;
             if (node.IsExpanded)
                 InsertFolders(node);
-            RecountUnified();
+            if (SelectedNode is FolderNode selected && !_folderNodes.ContainsKey(selected.Folder.Id))
+                SelectedNode = _unified; // a pasta selecionada sumiu do servidor
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Falha ao carregar pastas da conta {AccountId}", node.Account.Id);
-            node.Error = ErrorMessages.For(ex, node.Account.Provider);
-        }
-        finally
-        {
-            node.IsLoading = false;
-        }
+        RecountUnified();
+        if (SelectedNode is { } selectedNode)
+            UpdateSubtitle(selectedNode);
     }
+
+    public void RetryAccount(AccountNode node) => _mailbox.RequestSync(node.Account.Id);
 
     public Task RemoveAccountAsync(AccountNode node) => _accountService.RemoveAsync(node.Account);
 
@@ -248,12 +333,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
             SidebarNodes.Insert(index + 1 + i, account.Folders[i]);
     }
 
-    private async Task LoadListAsync(SidebarNode node)
+    /// <param name="keepSelection">
+    /// Atualização vinda da sincronização: sem indicador de carregamento e mantendo a mensagem aberta.
+    /// </param>
+    private async Task LoadListAsync(SidebarNode node, bool keepSelection = false)
     {
         _listCts?.Cancel();
         var cts = _listCts = new CancellationTokenSource();
         ListError = null;
-        IsListLoading = true;
+        IsListLoading = !keepSelection;
         var provider = MailProvider.Imap;
         try
         {
@@ -277,8 +365,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
                 return;
 
             _listMessages = messages;
-            SelectedRow = null;
-            Rows = rows;
+            if (keepSelection)
+            {
+                ReplaceRowsKeepingSelection(rows);
+            }
+            else
+            {
+                SelectedRow = null;
+                Rows = rows;
+            }
             UpdateSubtitle(node);
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -357,6 +452,29 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
             : count;
     }
 
+    /// <summary>
+    /// Troca as linhas mantendo a mensagem aberta, sem disparar nova leitura. A supressão cobre também a troca
+    /// de Rows: o ListBox limpa a seleção ao receber novos itens. Se a mensagem sumiu, fecha o painel.
+    /// </summary>
+    private void ReplaceRowsKeepingSelection(List<MessageListRow> rows)
+    {
+        var selectedId = (SelectedRow as MessageRow)?.Summary.Id;
+        _suppressSelection = true;
+        try
+        {
+            Rows = rows;
+            SelectedRow = selectedId is { } id
+                ? rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == id)
+                : null;
+        }
+        finally
+        {
+            _suppressSelection = false;
+        }
+        if (SelectedRow is null)
+            Detail = null;
+    }
+
     private void UpdateListTitle(SidebarNode node) => ListTitle = node switch
     {
         UnifiedInboxNode u => u.Title,
@@ -373,23 +491,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         foreach (var node in SidebarNodes)
             node.OnLanguageChanged();
 
-        // Reconstrói as linhas mantendo a mensagem aberta, sem disparar nova leitura.
-        // A supressão cobre também a troca de Rows: o ListBox limpa a seleção ao receber novos itens.
-        var selectedId = (SelectedRow as MessageRow)?.Summary.Id;
-        _suppressSelection = true;
-        try
-        {
-            Rows = BuildRows(_listMessages);
-            SelectedRow = selectedId is { } id
-                ? Rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == id)
-                : null;
-        }
-        finally
-        {
-            _suppressSelection = false;
-        }
-        if (SelectedRow is null)
-            Detail = null;
+        ReplaceRowsKeepingSelection(BuildRows(_listMessages));
         if (SelectedNode is { } selected)
         {
             UpdateListTitle(selected);

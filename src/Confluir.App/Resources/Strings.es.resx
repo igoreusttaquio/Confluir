@@ -68,7 +68,6 @@
   <data name="EditAccount_Subtitle"><value>Cambia el nombre, el color, la contraseña o los servidores. Los cambios de conexión se prueban antes de guardar.</value></data>
   <data name="EditAccount_PasswordKeep"><value>Déjalo en blanco para mantener la contraseña actual</value></data>
   <data name="Account_Remove_Confirm"><value>¿Quitar esta cuenta de Confluir? La contraseña se borra del almacén del sistema; no se borra ningún correo del servidor.</value></data>
-  <data name="Account_LoadingFolders"><value>Cargando carpetas…</value></data>
   <data name="NoAccounts_Title"><value>Aún no hay cuentas</value></data>
   <data name="NoAccounts_Hint"><value>Añade una cuenta de correo (Gmail, Yahoo o cualquier servidor IMAP) para empezar.</value></data>
 
@@ -136,6 +135,10 @@
   <data name="Reading_Error"><value>No se pudo cargar este mensaje.</value></data>
   <data name="Folders_Error"><value>Error al cargar las carpetas.</value></data>
   <data name="Action_Retry"><value>Reintentar</value></data>
+  <data name="Account_Syncing"><value>Sincronizando…</value></data>
+  <data name="Account_Offline"><value>Sin conexión. Mostrando los mensajes guardados en este equipo.</value></data>
+  <data name="Action_Sync"><value>Sincronizar ahora</value></data>
+  <data name="Reading_NotAvailableOffline"><value>Este mensaje aún no se ha descargado y no hay conexión con el servidor.</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

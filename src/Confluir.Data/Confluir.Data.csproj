@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Dapper" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Confluir.Core\Confluir.Core.csproj" />
   </ItemGroup>

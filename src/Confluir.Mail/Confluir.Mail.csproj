@@ -2,6 +2,7 @@
   <ItemGroup>
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Confluir.Core\Confluir.Core.csproj" />

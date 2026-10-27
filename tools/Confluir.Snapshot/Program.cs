@@ -131,7 +131,16 @@ using (var emptyHost = AppHost.Build(emptyDir))
     emptyWindow.Close();
 }
 
-Directory.Delete(dataDir, recursive: true);
+// O pool do SQLite mantém o arquivo do banco aberto até ser limpo.
+Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+try
+{
+    Directory.Delete(dataDir, recursive: true);
+}
+catch (IOException)
+{
+    // Pasta temporária: se algo ainda estiver aberto, o sistema limpa depois.
+}
 
 static void Pump(Func<bool> until, int timeoutMs = 5000)
 {

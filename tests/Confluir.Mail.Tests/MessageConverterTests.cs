@@ -48,6 +48,20 @@ public class MessageConverterTests
     }
 
     [Fact]
+    public void Data_usa_o_cabecalho_ou_a_data_de_recebimento_quando_ele_falta_ou_e_absurdo()
+    {
+        var header = new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.FromHours(-3));
+        var received = new DateTimeOffset(2026, 10, 20, 12, 1, 0, TimeSpan.Zero);
+
+        Assert.Equal(header, MessageConverter.BestDate(header, received));
+        Assert.Equal(received, MessageConverter.BestDate(null, received));
+        Assert.Equal(received, MessageConverter.BestDate(new DateTimeOffset(1, 1, 1, 0, 0, 0, TimeSpan.Zero), received));
+        Assert.Equal(received, MessageConverter.BestDate(DateTimeOffset.UtcNow.AddYears(30), received));
+        Assert.Equal(DateTimeOffset.UnixEpoch, MessageConverter.BestDate(null, null));
+        Assert.Equal(DateTimeOffset.UnixEpoch, MessageConverter.BestDate(DateTimeOffset.MinValue, DateTimeOffset.MinValue));
+    }
+
+    [Fact]
     public void Sem_texto_puro_usa_o_HTML_convertido()
     {
         var message = new MimeMessage

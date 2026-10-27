@@ -45,10 +45,14 @@
                        Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
             <TextBlock Text="{Binding ListSubtitle}" Classes="caption" Margin="0,2,0,0" />
           </StackPanel>
-          <Button Grid.Column="1" Classes="accent iconOnly" VerticalAlignment="Center" Margin="8,0,0,0" IsEnabled="False"
-                  ToolTip.Tip="{l:Tr Action_NewMessage}">
-            <LucideIcon Kind="SquarePen" Size="18" Foreground="{DynamicResource OnAccent}" />
-          </Button>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0" VerticalAlignment="Center">
+            <Button Classes="icon" Command="{Binding RefreshCommand}" ToolTip.Tip="{l:Tr Action_Sync}">
+              <LucideIcon Kind="RefreshCw" />
+            </Button>
+            <Button Classes="accent iconOnly" IsEnabled="False" ToolTip.Tip="{l:Tr Action_NewMessage}">
+              <LucideIcon Kind="SquarePen" Size="18" Foreground="{DynamicResource OnAccent}" />
+            </Button>
+          </StackPanel>
         </Grid>
       </Border>
       <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsListLoading}"

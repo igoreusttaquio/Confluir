@@ -18,7 +18,7 @@ public static class DateGrouping
     /// </summary>
     public static DateGroup GetGroup(DateTimeOffset date, DateTimeOffset now, DayOfWeek firstDayOfWeek)
     {
-        var day = date.ToOffset(now.Offset).Date;
+        var day = SafeToOffset(date, now.Offset).Date;
         var today = now.Date;
 
         if (day >= today)
@@ -32,4 +32,19 @@ public static class DateGrouping
 
     public static DateGroup GetGroup(DateTimeOffset date, DateTimeOffset now, CultureInfo culture) =>
         GetGroup(date, now, culture.DateTimeFormat.FirstDayOfWeek);
+
+    /// <summary>
+    /// Converte para outro fuso sem estourar nos extremos: datas a menos de um dia de
+    /// <see cref="DateTimeOffset.MinValue"/>/<see cref="DateTimeOffset.MaxValue"/> (cabeçalhos inválidos)
+    /// ficam presas ao limite em vez de lançar exceção.
+    /// </summary>
+    public static DateTimeOffset SafeToOffset(DateTimeOffset date, TimeSpan offset)
+    {
+        var utc = date.UtcDateTime;
+        if (utc < DateTime.MinValue.AddDays(1))
+            return new DateTimeOffset(DateTime.MinValue.AddDays(1).Ticks, TimeSpan.Zero).ToOffset(offset);
+        if (utc > DateTime.MaxValue.AddDays(-1))
+            return new DateTimeOffset(DateTime.MaxValue.AddDays(-1).Ticks, TimeSpan.Zero).ToOffset(offset);
+        return date.ToOffset(offset);
+    }
 }

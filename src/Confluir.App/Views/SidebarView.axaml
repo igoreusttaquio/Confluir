@@ -107,9 +107,14 @@
                                Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="{Binding Account.Email}" Classes="caption" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
-                  <LucideIcon Grid.Column="3" Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"
-                              Foreground="{DynamicResource TextSecondary}"
-                              ToolTip.Tip="{l:Tr Account_LoadingFolders}" />
+                  <Panel Grid.Column="3">
+                    <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"
+                                Foreground="{DynamicResource TextSecondary}"
+                                ToolTip.Tip="{l:Tr Account_Syncing}" />
+                    <LucideIcon Kind="CloudOff" Size="14" IsVisible="{Binding IsOffline}"
+                                Foreground="{DynamicResource TextSecondary}"
+                                ToolTip.Tip="{l:Tr Account_Offline}" />
+                  </Panel>
                 </Grid>
               </Button>
               <!-- Confirmação de remoção (inline, sem diálogo) -->

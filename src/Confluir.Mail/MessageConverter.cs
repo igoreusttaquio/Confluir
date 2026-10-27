@@ -24,10 +24,26 @@ public static partial class MessageConverter
             FromAddress: from?.Address ?? "",
             Subject: m.Envelope?.Subject ?? m.NormalizedSubject ?? "",
             Preview: Collapse(m.PreviewText ?? "", PreviewLength),
-            Date: m.Envelope?.Date ?? m.InternalDate ?? DateTimeOffset.MinValue,
+            Date: BestDate(m.Envelope?.Date, m.InternalDate),
             IsRead: m.Flags?.HasFlag(MessageFlags.Seen) ?? false,
             IsFlagged: m.Flags?.HasFlag(MessageFlags.Flagged) ?? false,
             HasAttachments: m.Body is not null && m.Attachments.Any());
+    }
+
+    /// <summary>
+    /// Data do cabeçalho <c>Date</c>; se faltar ou for absurda (antes de 1970 ou mais de um dia no futuro),
+    /// usa a data de recebimento no servidor (INTERNALDATE); sem nenhuma, 1/1/1970.
+    /// </summary>
+    public static DateTimeOffset BestDate(DateTimeOffset? header, DateTimeOffset? internalDate)
+    {
+        var limit = DateTimeOffset.UtcNow.AddDays(1);
+        static bool Plausible(DateTimeOffset d, DateTimeOffset max) => d >= DateTimeOffset.UnixEpoch && d <= max;
+
+        if (header is { } h && Plausible(h, limit))
+            return h;
+        if (internalDate is { } i && i >= DateTimeOffset.UnixEpoch)
+            return i;
+        return DateTimeOffset.UnixEpoch;
     }
 
     public static MessageBody ToBody(MimeMessage message, Guid id)

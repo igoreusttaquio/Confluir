@@ -11,7 +11,9 @@ O plano completo está em [PLANO_CONFLUIR.md](PLANO_CONFLUIR.md).
 
 - **Idiomas**: Português (Brasil), English e Español, com troca instantânea em Aparência → Idioma (padrão: seguir o sistema; English se o idioma do sistema não for suportado). Datas e números seguem o idioma. Detalhes em [docs/PLANO_IDIOMAS.md](docs/PLANO_IDIOMAS.md).
 
-Limitações conhecidas até a fase 3: sem cache local (tudo vem do servidor a cada abertura), só as 200 mensagens mais recentes por pasta, sem IDLE. Outlook/Hotmail aguarda o OAuth2 (fase 5).
+- **Fase 3 — Cache e sincronização**: banco SQLite local (`confluir.db`) com contas, pastas, cabeçalhos, corpos e fila de operações; a interface lê sempre do cache (abre na hora e funciona offline). Sincronização incremental por UID (novas mensagens, preenchimento das antigas em lotes do mais novo para o mais antigo, remoções e reset quando o `UIDVALIDITY` muda), flags por CONDSTORE quando disponível, IMAP IDLE na Caixa de entrada com reconexão exponencial, sincronização completa a cada 10 minutos e ao voltar a rede, e "marcar como lida" otimista com fila persistente (reenviada quando a conexão voltar; desfeita se o servidor recusar).
+
+Limitações conhecidas: remoções são detectadas com `UID SEARCH ALL` (QRESYNC/VANISHED ainda não é usado); sem busca (fase 8). Outlook/Hotmail aguarda o OAuth2 (fase 5).
 
 Para ver a interface com dados de exemplo, sem tocar em servidores: `dotnet run --project src/Confluir.App -- --dados-falsos`.
 
@@ -60,7 +62,8 @@ tools/              Snapshot e IconGen
 | Navegação | Telas dentro da janela principal (`NavigationService`, Esc volta) em vez de janelas/diálogos modais; confirmações são inline | Preferência do projeto. |
 | Email | MailKit/MimeKit 4.18 | Uma conexão IMAP por conta (`ImapConnectionPool`), reconexão automática se o servidor derrubar a conexão ociosa. |
 | Cofre de credenciais | `Microsoft.Identity.Client.Extensions.Msal` (`SystemCredentialStore`) | Mantido pela Microsoft e já necessário para o MSAL (fase 5). Windows: arquivo cifrado com DPAPI do usuário; macOS: Keychain; Linux: libsecret. Se o cofre não estiver disponível, falha em vez de gravar em texto puro. **Testado só no Windows até agora.** |
-| Contas | `accounts.json` na pasta de dados | Só metadados e servidores; nada de segredo. Migra para o SQLite na fase 3. |
+| Banco local | SQLite (`Microsoft.Data.Sqlite` + Dapper), modo WAL, migrações por `PRAGMA user_version` | Leituras da interface não bloqueiam a sincronização que escreve em segundo plano. Contas ficam na tabela `accounts` (sem segredos); o `accounts.json` da fase 2 é importado e renomeado para `.migrado`. |
+| Sincronização | `SyncingMailboxService` (um laço e um IDLE por conta) + `ImapSyncEngine` + `SyncPlanner` | O planejador compara UIDs do servidor com os do cache e é testado isoladamente; cada lote usa a conexão só pelo tempo necessário, para não atrasar a abertura de mensagens. |
 | Autoconfiguração | ISPDB do Thunderbird (`autoconfig.thunderbird.net`) | Cobre milhares de provedores. Só o **domínio** é enviado, nunca o endereço. |
 | WebView para HTML | *A decidir na fase 4* | |
 

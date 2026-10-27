@@ -4,8 +4,10 @@ using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Localization;
 using Confluir.App.Resources;
 using Confluir.App.Services;
+using Confluir.Core.Formatting;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
+using Confluir.Mail;
 using Lucide.Avalonia;
 using Microsoft.Extensions.Logging;
 
@@ -46,7 +48,7 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     {
         get
         {
-            var local = Row.Summary.Date.ToLocalTime();
+            var local = DateGrouping.SafeToOffset(Row.Summary.Date, DateTimeOffset.Now.Offset);
             return $"{local.ToString("D", Culture)}, {local.ToString("t", Culture)}";
         }
     }
@@ -99,7 +101,10 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Falha ao carregar o corpo da mensagem {MessageId}", Row.Summary.Id);
-            Error = $"{Strings.Reading_Error} {ErrorMessages.For(ex, Row.Account.Provider)}";
+            var result = MailErrorClassifier.Classify(ex, Row.Account.Provider);
+            Error = result.Error is ConnectionError.ServerUnreachable or ConnectionError.Timeout
+                ? Strings.Reading_NotAvailableOffline
+                : $"{Strings.Reading_Error} {ErrorMessages.For(result)}";
         }
         finally
         {

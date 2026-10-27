@@ -7,6 +7,7 @@ using Confluir.Auth;
 using Confluir.Core;
 using Confluir.Core.Services;
 using Confluir.Core.Settings;
+using Confluir.Data;
 using Confluir.Mail;
 using Confluir.Mail.Autoconfig;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,17 +38,28 @@ public static class AppHost
         builder.Services.AddSingleton(paths);
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<ISettingsStore>(_ => new JsonSettingsStore(paths.SettingsFile));
-        builder.Services.AddSingleton<IAccountStore>(_ => new JsonAccountStore(paths.AccountsFile));
+        builder.Services.AddSingleton(_ => new Database(paths.DatabaseFile));
+        builder.Services.AddSingleton<IMailCache, SqliteMailCache>();
+        builder.Services.AddSingleton<IAccountStore>(sp =>
+            new SqliteAccountStore(sp.GetRequiredService<Database>(), legacyJsonPath: paths.AccountsFile));
         builder.Services.AddSingleton<ICredentialStore>(_ => new SystemCredentialStore(paths.DataDirectory));
         builder.Services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(15) });
 
         builder.Services.AddSingleton<IConnectionTester, ConnectionTester>();
         builder.Services.AddSingleton<IServerSettingsResolver, ServerSettingsResolver>();
         builder.Services.AddSingleton<ImapConnectionPool>();
+        builder.Services.AddSingleton<ImapSyncEngine>();
         if (useFakeData)
+        {
             builder.Services.AddSingleton<IMailboxService, FakeMailboxService>();
+        }
         else
-            builder.Services.AddSingleton<IMailboxService, ImapMailboxService>();
+        {
+            // Lê do cache e sincroniza em segundo plano enquanto o host estiver rodando.
+            builder.Services.AddSingleton<SyncingMailboxService>();
+            builder.Services.AddSingleton<IMailboxService>(sp => sp.GetRequiredService<SyncingMailboxService>());
+            builder.Services.AddHostedService(sp => sp.GetRequiredService<SyncingMailboxService>());
+        }
 
         builder.Services.AddSingleton(LocalizationService.Instance);
         builder.Services.AddSingleton<ThemeService>();

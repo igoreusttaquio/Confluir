@@ -48,6 +48,20 @@ public class DateGroupingTests
     }
 
     [Fact]
+    public void Datas_nos_extremos_nao_quebram_a_lista()
+    {
+        // Regressão: DateTimeOffset.MinValue convertido para BRT (−3h) lançava ArgumentOutOfRangeException.
+        var culture = CultureInfo.GetCultureInfo("pt-BR");
+        Assert.Equal(DateGroup.Older, DateGrouping.GetGroup(DateTimeOffset.MinValue, Now, culture));
+        Assert.Equal(DateGroup.Today, DateGrouping.GetGroup(DateTimeOffset.MaxValue, Now, culture));
+        Assert.NotEmpty(RelativeDateFormatter.Format(DateTimeOffset.MinValue, Now, culture, "Ontem"));
+        Assert.NotEmpty(RelativeDateFormatter.Format(DateTimeOffset.MaxValue, Now, culture, "Ontem"));
+
+        var plus14 = new DateTimeOffset(2026, 10, 29, 15, 0, 0, TimeSpan.FromHours(14));
+        Assert.Equal(DateGroup.Older, DateGrouping.GetGroup(DateTimeOffset.MinValue, plus14, culture));
+    }
+
+    [Fact]
     public void Formata_data_relativa_em_pt_BR()
     {
         var culture = CultureInfo.GetCultureInfo("pt-BR");
