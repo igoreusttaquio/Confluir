@@ -1,4 +1,5 @@
 using Confluir.Core.Models;
+using Confluir.Core.Providers;
 using Confluir.Core.Services;
 
 namespace Confluir.App.DesignData;
@@ -116,10 +117,13 @@ public sealed class FakeMailboxService : IMailboxService
         return new MessageBody(m.Id, [new MailAddress(account.DisplayName, account.Email)], cc, body, attachments);
     }
 
+    public Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default) => Task.CompletedTask;
+
     private void AddAccount(string name, string email, MailProvider provider, AccountColor color,
         DateTimeOffset now, Random random, string? extraFolder)
     {
-        var account = new MailAccount(Guid.NewGuid(), name, email, provider, color.Hex);
+        var servers = KnownProviders.Detect(email)?.Servers ?? KnownProviders.Gmail;
+        var account = new MailAccount(Guid.NewGuid(), name, email, provider, color.Hex, email, servers);
         _accounts.Add(account);
 
         var specs = new List<(string Name, SpecialFolderKind Kind, int Count, double UnreadRate)>

@@ -13,4 +13,5 @@ public sealed class AppPaths
     public string LogsDirectory => Path.Combine(DataDirectory, "logs");
     public string FontsDirectory => Path.Combine(DataDirectory, "fonts");
     public string SettingsFile => Path.Combine(DataDirectory, "settings.json");
+    public string AccountsFile => Path.Combine(DataDirectory, "accounts.json");
 }

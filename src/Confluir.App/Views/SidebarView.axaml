@@ -44,6 +44,9 @@
       <!-- Rodapé: aparência e configurações -->
       <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="10,6">
         <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Account_Add}" Command="{Binding AddAccountCommand}">
+            <LucideIcon Kind="UserPlus" />
+          </Button>
           <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Appearance}">
             <LucideIcon Kind="Palette" />
             <Button.Flyout>
@@ -77,20 +80,59 @@
           </DataTemplate>
 
           <DataTemplate DataType="vm:AccountNode">
-            <Button Classes="accountHeader" Command="{Binding ToggleCommand}"
-                    ToolTip.Tip="{x:Static res:Strings.Action_Collapse}">
-              <Grid ColumnDefinitions="Auto,Auto,*">
-                <LucideIcon Classes="chevron" Classes.collapsed="{Binding !IsExpanded}"
-                            Kind="ChevronDown" Size="14" Foreground="{DynamicResource TextSecondary}" />
-                <Ellipse Grid.Column="1" Width="9" Height="9" Margin="8,0"
-                         Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
-                <StackPanel Grid.Column="2">
-                  <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="13"
-                             Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-                  <TextBlock Text="{Binding Account.Email}" Classes="caption" TextTrimming="CharacterEllipsis" />
+            <StackPanel>
+              <Button Classes="accountHeader" Command="{Binding ToggleCommand}"
+                      ToolTip.Tip="{x:Static res:Strings.Action_Collapse}">
+                <Button.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="{x:Static res:Strings.Account_Remove}" Command="{Binding AskRemoveCommand}">
+                      <MenuItem.Icon>
+                        <LucideIcon Kind="Trash" Size="16" />
+                      </MenuItem.Icon>
+                    </MenuItem>
+                  </ContextMenu>
+                </Button.ContextMenu>
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                  <LucideIcon Classes="chevron" Classes.collapsed="{Binding !IsExpanded}"
+                              Kind="ChevronDown" Size="14" Foreground="{DynamicResource TextSecondary}" />
+                  <Ellipse Grid.Column="1" Width="9" Height="9" Margin="8,0"
+                           Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="13"
+                               Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Account.Email}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                  <LucideIcon Grid.Column="3" Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"
+                              Foreground="{DynamicResource TextSecondary}"
+                              ToolTip.Tip="{x:Static res:Strings.Account_LoadingFolders}" />
+                </Grid>
+              </Button>
+              <!-- Confirmação de remoção (inline, sem diálogo) -->
+              <Border Margin="10,0,10,8" Padding="10" CornerRadius="8" Background="{DynamicResource Surface}"
+                      BorderBrush="{DynamicResource Danger}" BorderThickness="1"
+                      IsVisible="{Binding IsConfirmingRemoval}">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="{x:Static res:Strings.Account_Remove_Confirm}" TextWrapping="Wrap" FontSize="12"
+                             Foreground="{DynamicResource TextPrimary}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                    <Button Content="{x:Static res:Strings.AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}"
+                            Padding="10,4" FontSize="12" />
+                    <Button Classes="danger" Content="{x:Static res:Strings.Account_Remove}"
+                            Command="{Binding ConfirmRemoveCommand}" Padding="10,4" FontSize="12" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+              <!-- Falha ao carregar pastas -->
+              <Grid ColumnDefinitions="Auto,*" Margin="32,0,10,6" IsVisible="{Binding HasError}">
+                <LucideIcon Kind="CircleAlert" Size="14" Foreground="{DynamicResource Danger}" VerticalAlignment="Top"
+                            Margin="0,2,0,0" />
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                  <TextBlock Text="{Binding Error}" Classes="caption" TextWrapping="Wrap" />
+                  <HyperlinkButton Content="{x:Static res:Strings.Action_Retry}" Command="{Binding RetryCommand}"
+                                   Padding="0" FontSize="12" />
                 </StackPanel>
               </Grid>
-            </Button>
+            </StackPanel>
           </DataTemplate>
 
           <DataTemplate DataType="vm:FolderNode">

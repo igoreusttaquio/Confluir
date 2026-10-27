@@ -141,6 +141,9 @@
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="12,7" />
   </Style>
+  <Style Selector="Button.accent /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
+  </Style>
   <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource Accent}" />
     <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
@@ -152,6 +155,20 @@
   <Style Selector="Button.accent:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource Accent}" />
     <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
+  </Style>
+
+  <!-- Botão de ação destrutiva -->
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="{DynamicResource Danger}" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="Button.danger /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource Background}" />
+  </Style>
+  <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Danger}" />
+    <Setter Property="Foreground" Value="{DynamicResource Background}" />
+    <Setter Property="Opacity" Value="0.9" />
   </Style>
 
   <!-- Amostra de cor selecionável: anel em TextPrimary quando selecionada -->
@@ -175,6 +192,16 @@
   </Style>
   <Style Selector="ListBox.swatches ListBoxItem:selected /template/ Border#ring">
     <Setter Property="BorderBrush" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <!-- Indicador de carregamento girando -->
+  <Style Selector="LucideIcon.spin">
+    <Style.Animations>
+      <Animation Duration="0:0:1" IterationCount="Infinite">
+        <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0.0" /></KeyFrame>
+        <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360.0" /></KeyFrame>
+      </Animation>
+    </Style.Animations>
   </Style>
 
   <!-- Transição suave de cores ao trocar de tema -->

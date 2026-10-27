@@ -1,5 +1,8 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Confluir.App.Resources;
+using Confluir.App.Services;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
 using Lucide.Avalonia;
@@ -12,8 +15,13 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
 {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("pt-BR");
 
-    public MessageDetailViewModel(MessageRow row)
+    private readonly IMailboxService _mailbox;
+    private readonly ILogger _logger;
+
+    public MessageDetailViewModel(MessageRow row, IMailboxService mailbox, ILogger logger)
     {
+        _mailbox = mailbox;
+        _logger = logger;
         Row = row;
         var summary = row.Summary;
         FromName = row.From;
@@ -54,11 +62,22 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool IsLoading { get; private set; } = true;
 
-    public async Task LoadAsync(IMailboxService mailbox, ILogger logger, CancellationToken ct)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    public partial string? Error { get; private set; }
+
+    public bool HasError => Error is not null;
+
+    [RelayCommand]
+    private Task RetryAsync() => LoadAsync(CancellationToken.None);
+
+    public async Task LoadAsync(CancellationToken ct)
     {
+        IsLoading = true;
+        Error = null;
         try
         {
-            var body = await mailbox.GetMessageBodyAsync(Row.Summary.Id, ct);
+            var body = await _mailbox.GetMessageBodyAsync(Row.Summary.Id, ct);
             To = string.Join(", ", body.To);
             Cc = string.Join(", ", body.Cc);
             Body = body.TextBody;
@@ -69,7 +88,8 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Falha ao carregar o corpo da mensagem {MessageId}", Row.Summary.Id);
+            _logger.LogError(ex, "Falha ao carregar o corpo da mensagem {MessageId}", Row.Summary.Id);
+            Error = $"{Strings.Reading_Error} {ErrorMessages.For(ex, Row.Account.Provider)}";
         }
         finally
         {

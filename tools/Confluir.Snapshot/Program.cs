@@ -22,7 +22,7 @@ CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 // Pasta de dados temporária: não toca nas configurações reais do usuário.
 var dataDir = Path.Combine(Path.GetTempPath(), "confluir-snapshot", Guid.NewGuid().ToString("N"));
-using var host = AppHost.Build(dataDir);
+using var host = AppHost.Build(dataDir, useFakeData: true);
 var services = host.Services;
 
 AppBuilder.Configure(() => new App(services))
@@ -74,7 +74,50 @@ foreach (var mode in new[] { ThemeMode.Light, ThemeMode.Dark })
     panel.Close();
 }
 
+// Confirmação inline de remoção de conta.
+theme.SetTheme(ThemeMode.Light);
+var accountNode = vm.SidebarNodes.OfType<AccountNode>().Skip(1).First();
+accountNode.AskRemoveCommand.Execute(null);
+Save(window, "remove-account-confirm.png");
+accountNode.CancelRemoveCommand.Execute(null);
+
+// Tela "Adicionar conta" (navegação dentro da janela): Gmail detectado.
+vm.AddAccountCommand.Execute(null);
+var gmail = (AddAccountViewModel)vm.Navigation.CurrentPage!;
+gmail.Email = "voce@gmail.com";
+Pump(() => gmail.DetectionMessage is not null && !gmail.IsDetecting);
+Save(window, "add-account-gmail.png");
+vm.GoBackCommand.Execute(null);
+
+// Domínio desconhecido, tema escuro, com resultado de teste.
+theme.SetTheme(ThemeMode.Dark);
+vm.AddAccountCommand.Execute(null);
+var custom = (AddAccountViewModel)vm.Navigation.CurrentPage!;
+custom.Email = "joana@exemplo-inexistente.dev";
+custom.Password = "senha";
+Pump(() => custom.ShowAdvanced && !custom.IsDetecting, 12000);
+custom.ImapStatus.Set(TestState.Ok, "Conectado");
+custom.SmtpStatus.Set(TestState.Failed, Confluir.App.Resources.Strings.Error_ServerUnreachable);
+Save(window, "add-account-custom-dark.png");
+vm.GoBackCommand.Execute(null);
+
 window.Close();
+
+// Primeiro uso, sem contas (serviço IMAP real, pasta de dados vazia).
+theme.SetTheme(ThemeMode.Light);
+var emptyDir = Path.Combine(dataDir, "vazio");
+using (var emptyHost = AppHost.Build(emptyDir))
+{
+    var emptyVm = emptyHost.Services.GetRequiredService<MainWindowViewModel>();
+    var emptyWindow = emptyHost.Services.GetRequiredService<MainWindow>();
+    emptyWindow.Width = 1320;
+    emptyWindow.Height = 820;
+    emptyWindow.Show();
+    Pump(() => !emptyVm.HasAccounts);
+    Save(emptyWindow, "no-accounts.png");
+    emptyWindow.Close();
+}
+
 Directory.Delete(dataDir, recursive: true);
 
 static void Pump(Func<bool> until, int timeoutMs = 5000)

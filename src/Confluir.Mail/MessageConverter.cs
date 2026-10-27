@@ -1,0 +1,117 @@
+using System.Net;
+using System.Text.RegularExpressions;
+using Confluir.Core.Models;
+using MailKit;
+using MimeKit;
+using MailAddress = Confluir.Core.Models.MailAddress;
+using MessageSummary = Confluir.Core.Models.MessageSummary;
+
+namespace Confluir.Mail;
+
+/// <summary>Converte estruturas do MailKit/MimeKit para os modelos do Core.</summary>
+public static partial class MessageConverter
+{
+    private const int PreviewLength = 200;
+
+    public static MessageSummary ToSummary(IMessageSummary m, Guid id, Guid accountId, Guid folderId)
+    {
+        var from = m.Envelope?.From.Mailboxes.FirstOrDefault();
+        return new MessageSummary(
+            id,
+            accountId,
+            folderId,
+            FromName: from?.Name ?? "",
+            FromAddress: from?.Address ?? "",
+            Subject: m.Envelope?.Subject ?? m.NormalizedSubject ?? "",
+            Preview: Collapse(m.PreviewText ?? "", PreviewLength),
+            Date: m.Envelope?.Date ?? m.InternalDate ?? DateTimeOffset.MinValue,
+            IsRead: m.Flags?.HasFlag(MessageFlags.Seen) ?? false,
+            IsFlagged: m.Flags?.HasFlag(MessageFlags.Flagged) ?? false,
+            HasAttachments: m.Body is not null && m.Attachments.Any());
+    }
+
+    public static MessageBody ToBody(MimeMessage message, Guid id)
+    {
+        var text = message.TextBody;
+        if (string.IsNullOrWhiteSpace(text) && message.HtmlBody is { } html)
+            text = HtmlToText(html);
+
+        var attachments = message.Attachments
+            .OfType<MimePart>()
+            .Select(p => new AttachmentInfo(
+                p.FileName ?? p.ContentType.Name ?? "anexo",
+                p.ContentType.MimeType.ToLowerInvariant(),
+                EstimateSize(p)))
+            .ToList();
+
+        return new MessageBody(
+            id,
+            ToAddresses(message.To),
+            ToAddresses(message.Cc),
+            text?.Trim() ?? "",
+            attachments);
+    }
+
+    /// <summary>
+    /// Texto legível a partir de HTML, para o modo texto puro até o visualizador HTML (fase 4).
+    /// Remove estilos/scripts, converte quebras de bloco e decodifica entidades.
+    /// </summary>
+    public static string HtmlToText(string html)
+    {
+        var s = InvisibleBlocks().Replace(html, "");
+        s = LineBreaks().Replace(s, "\n");
+        s = BlockEnds().Replace(s, "\n");
+        s = Tags().Replace(s, "");
+        s = WebUtility.HtmlDecode(s);
+        s = HorizontalSpace().Replace(s, " ");
+        s = SpaceAroundNewlines().Replace(s, "\n");
+        s = ExtraBlankLines().Replace(s, "\n\n");
+        return s.Trim();
+    }
+
+    private static List<MailAddress> ToAddresses(InternetAddressList list) =>
+        list.Mailboxes.Select(m => new MailAddress(m.Name ?? "", m.Address)).ToList();
+
+    private static long EstimateSize(MimePart part)
+    {
+        if (part.ContentDisposition?.Size is { } declared)
+            return declared;
+        if (part.Content is { Stream.CanSeek: true } content)
+        {
+            // O stream guarda o conteúdo na codificação de Content.Encoding; base64 ocupa ~4/3 do tamanho real.
+            var length = content.Stream.Length;
+            return content.Encoding == ContentEncoding.Base64 ? length * 3 / 4 : length;
+        }
+        return 0;
+    }
+
+    private static string Collapse(string text, int max)
+    {
+        var s = AnyWhitespace().Replace(text, " ").Trim();
+        return s.Length <= max ? s : s[..max];
+    }
+
+    [GeneratedRegex(@"<(script|style|head|title)\b[^>]*>.*?</\1\s*>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex InvisibleBlocks();
+
+    [GeneratedRegex(@"<br\s*/?>", RegexOptions.IgnoreCase)]
+    private static partial Regex LineBreaks();
+
+    [GeneratedRegex(@"</(p|div|tr|li|h[1-6]|blockquote|table)\s*>", RegexOptions.IgnoreCase)]
+    private static partial Regex BlockEnds();
+
+    [GeneratedRegex(@"<[^>]+>")]
+    private static partial Regex Tags();
+
+    [GeneratedRegex(@"[ \t ]+")]
+    private static partial Regex HorizontalSpace();
+
+    [GeneratedRegex(@" *\n *")]
+    private static partial Regex SpaceAroundNewlines();
+
+    [GeneratedRegex(@"\n{3,}")]
+    private static partial Regex ExtraBlankLines();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex AnyWhitespace();
+}

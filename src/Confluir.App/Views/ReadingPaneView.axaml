@@ -91,6 +91,16 @@
 
                   <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" />
 
+                  <Border Background="{DynamicResource SurfaceAlt}" CornerRadius="8" Padding="12,10"
+                          IsVisible="{Binding HasError}">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <LucideIcon Kind="CircleAlert" Size="18" Foreground="{DynamicResource Danger}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Error}" TextWrapping="Wrap" Margin="10,0"
+                                 Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                      <Button Grid.Column="2" Content="{x:Static res:Strings.Action_Retry}" Command="{Binding RetryCommand}" />
+                    </Grid>
+                  </Border>
+
                   <SelectableTextBlock Text="{Binding Body}" TextWrapping="Wrap" FontSize="15" LineHeight="24"
                                        Foreground="{DynamicResource TextPrimary}" />
 

@@ -16,4 +16,6 @@ public interface IMailboxService
     Task<IReadOnlyList<MessageSummary>> GetUnifiedInboxAsync(CancellationToken ct = default);
 
     Task<MessageBody> GetMessageBodyAsync(Guid messageId, CancellationToken ct = default);
+
+    Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default);
 }

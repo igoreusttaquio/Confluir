@@ -29,7 +29,7 @@ public sealed partial class AppearanceViewModel : ViewModelBase
         [
             new AccentOption(null, Strings.Accent_Default),
             // As cores de conta servem também como predefinições de destaque.
-            .. AccountColors.All.Select(c => new AccentOption(c.Hex, ColorName(c.Key))),
+            .. AccountColors.All.Select(c => new AccentOption(c.Hex, ColorNames.For(c.Key))),
         ];
 
         _syncing = true;
@@ -113,16 +113,4 @@ public sealed partial class AppearanceViewModel : ViewModelBase
         finally { _syncing = false; }
     }
 
-    private static string ColorName(string key) => key switch
-    {
-        "Blue" => Strings.Color_Blue,
-        "Coral" => Strings.Color_Coral,
-        "Teal" => Strings.Color_Teal,
-        "Amber" => Strings.Color_Amber,
-        "Violet" => Strings.Color_Violet,
-        "Pink" => Strings.Color_Pink,
-        "Green" => Strings.Color_Green,
-        "Cyan" => Strings.Color_Cyan,
-        _ => key,
-    };
 }

@@ -53,11 +53,44 @@
       </Grid>
 
       <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource Border}" />
+      <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsListLoading}"
+                   MinHeight="2" Height="2" Margin="0,-2,0,0" />
 
       <Grid>
         <TextBlock Text="{x:Static res:Strings.MessageList_Empty}" Classes="secondary"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    IsVisible="{Binding IsListEmpty}" />
+
+        <!-- Sem contas -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24"
+                    IsVisible="{Binding ShowNoAccounts}" MaxWidth="300">
+          <LucideIcon Kind="MailPlus" Size="40" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />
+          <TextBlock Text="{x:Static res:Strings.NoAccounts_Title}" FontSize="16" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" />
+          <TextBlock Text="{x:Static res:Strings.NoAccounts_Hint}" Classes="secondary" TextWrapping="Wrap"
+                     TextAlignment="Center" />
+          <Button Classes="accent" HorizontalAlignment="Center" Margin="0,6,0,0" Command="{Binding AddAccountCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="UserPlus" Size="16" Foreground="{DynamicResource OnAccent}" />
+              <TextBlock Text="{x:Static res:Strings.Account_Add}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <!-- Erro ao carregar -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Margin="24"
+                    IsVisible="{Binding HasListError}" MaxWidth="320">
+          <LucideIcon Kind="CircleAlert" Size="32" StrokeWidth="1.5" Foreground="{DynamicResource Danger}" />
+          <TextBlock Text="{x:Static res:Strings.List_Error}" FontWeight="SemiBold" HorizontalAlignment="Center"
+                     Foreground="{DynamicResource TextPrimary}" />
+          <TextBlock Text="{Binding ListError}" Classes="secondary" TextWrapping="Wrap" TextAlignment="Center" />
+          <Button HorizontalAlignment="Center" Command="{Binding RetryListCommand}" Margin="0,4,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="RefreshCw" Size="14" />
+              <TextBlock Text="{x:Static res:Strings.Action_Retry}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
 
         <!-- ListBox usa VirtualizingStackPanel: só os itens visíveis têm containers. -->
         <ListBox ItemsSource="{Binding Rows}"

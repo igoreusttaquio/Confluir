@@ -53,6 +53,65 @@
   <data name="Accent_Custom"><value>Personalizada</value></data>
   <data name="CompactMode"><value>Modo compacto</value></data>
 
+  <data name="Account_Add"><value>Adicionar conta</value></data>
+  <data name="Account_Remove"><value>Remover conta</value></data>
+  <data name="Account_Remove_Confirm"><value>Remover esta conta do Confluir? A senha é apagada do cofre do sistema; nenhum email é apagado do servidor.</value></data>
+  <data name="Account_LoadingFolders"><value>Carregando pastas…</value></data>
+  <data name="NoAccounts_Title"><value>Nenhuma conta ainda</value></data>
+  <data name="NoAccounts_Hint"><value>Adicione uma conta de email (Gmail, Yahoo ou qualquer servidor IMAP) para começar.</value></data>
+
+  <data name="AddAccount_Title"><value>Adicionar conta</value></data>
+  <data name="AddAccount_Email"><value>Endereço de email</value></data>
+  <data name="AddAccount_DisplayName"><value>Nome da conta</value></data>
+  <data name="AddAccount_DisplayName_Placeholder"><value>Ex.: Pessoal, Trabalho</value></data>
+  <data name="AddAccount_Password"><value>Senha</value></data>
+  <data name="AddAccount_AppPassword"><value>Senha de app</value></data>
+  <data name="AddAccount_Color"><value>Cor da conta</value></data>
+  <data name="AddAccount_Advanced"><value>Configuração avançada</value></data>
+  <data name="AddAccount_UserName"><value>Usuário</value></data>
+  <data name="AddAccount_IncomingServer"><value>Servidor de entrada (IMAP)</value></data>
+  <data name="AddAccount_OutgoingServer"><value>Servidor de saída (SMTP)</value></data>
+  <data name="AddAccount_Host"><value>Servidor</value></data>
+  <data name="AddAccount_Port"><value>Porta</value></data>
+  <data name="AddAccount_Security"><value>Segurança</value></data>
+  <data name="AddAccount_Test"><value>Testar conexão</value></data>
+  <data name="AddAccount_Save"><value>Salvar</value></data>
+  <data name="AddAccount_Cancel"><value>Cancelar</value></data>
+  <data name="AddAccount_Detecting"><value>Procurando configuração…</value></data>
+  <data name="AddAccount_Detected_Known"><value>{0} detectado. Servidores preenchidos.</value></data>
+  <data name="AddAccount_Detected_Autoconfig"><value>Configuração encontrada para {0}.</value></data>
+  <data name="AddAccount_Detected_Guess"><value>Não encontramos a configuração de {0}. Sugerimos servidores padrão; confira em Configuração avançada.</value></data>
+  <data name="AddAccount_OAuthRequired"><value>O Outlook/Hotmail exige login pela Microsoft (OAuth2), que chega numa próxima versão. Por enquanto não é possível adicionar esta conta.</value></data>
+  <data name="AddAccount_AppPasswordHint_Gmail"><value>O Gmail exige uma senha de app (com verificação em duas etapas ativa). Sua senha normal não funciona aqui.</value></data>
+  <data name="AddAccount_AppPasswordHint_Yahoo"><value>O Yahoo exige uma senha de app. Sua senha normal não funciona aqui.</value></data>
+  <data name="AddAccount_AppPasswordLink"><value>Como gerar uma senha de app</value></data>
+  <data name="AddAccount_Invalid_Email"><value>Digite um endereço de email válido.</value></data>
+  <data name="AddAccount_Invalid_Password"><value>Digite a senha.</value></data>
+  <data name="AddAccount_Invalid_Servers"><value>Confira servidores e portas em Configuração avançada.</value></data>
+  <data name="AddAccount_Saving"><value>Salvando…</value></data>
+  <data name="AddAccount_CredentialStoreError"><value>Não foi possível guardar a senha no cofre do sistema. A conta não foi salva.</value></data>
+
+  <data name="Security_Ssl"><value>SSL/TLS</value></data>
+  <data name="Security_StartTls"><value>STARTTLS</value></data>
+  <data name="Security_None"><value>Nenhuma (inseguro)</value></data>
+
+  <data name="Test_Testing"><value>Testando…</value></data>
+  <data name="Test_Ok"><value>Conectado</value></data>
+  <data name="Test_OkAlternativePort"><value>Conectado pela porta {0} ({1}); a configuração foi ajustada. A porta original não respondeu na sua rede.</value></data>
+  <data name="Error_AuthenticationFailed"><value>Usuário ou senha incorretos.</value></data>
+  <data name="Error_AppPasswordRequired"><value>Senha recusada. Este provedor exige uma senha de app em vez da senha normal.</value></data>
+  <data name="Error_ServerUnreachable"><value>Não foi possível alcançar o servidor. Confira o endereço, a porta e sua conexão.</value></data>
+  <data name="Error_SecureConnectionFailed"><value>Falha na conexão segura (TLS). Confira a porta e o tipo de segurança.</value></data>
+  <data name="Error_Timeout"><value>O servidor demorou demais para responder.</value></data>
+  <data name="Error_Canceled"><value>Cancelado.</value></data>
+  <data name="Error_Unknown"><value>Erro inesperado: {0}</value></data>
+
+  <data name="List_Error"><value>Não foi possível carregar as mensagens.</value></data>
+  <data name="Reading_Error"><value>Não foi possível carregar esta mensagem.</value></data>
+  <data name="Folders_Error"><value>Falha ao carregar as pastas.</value></data>
+  <data name="Action_Retry"><value>Tentar de novo</value></data>
+  <data name="Action_Back"><value>Voltar</value></data>
+
   <data name="Color_Blue"><value>Azul</value></data>
   <data name="Color_Coral"><value>Coral</value></data>
   <data name="Color_Teal"><value>Turquesa</value></data>

@@ -23,22 +23,54 @@ public sealed partial class UnifiedInboxNode : SidebarNode
     public string Title => Strings.UnifiedInbox;
 }
 
-public sealed partial class AccountNode(MailAccount account, IReadOnlyList<FolderNode> folders, Action<AccountNode> toggled)
-    : SidebarNode
+public interface IAccountNodeHost
+{
+    void OnToggled(AccountNode node);
+    Task ReloadFoldersAsync(AccountNode node);
+    Task RemoveAccountAsync(AccountNode node);
+}
+
+public sealed partial class AccountNode(MailAccount account, IAccountNodeHost host) : SidebarNode
 {
     public MailAccount Account { get; } = account;
-    public IReadOnlyList<FolderNode> Folders { get; } = folders;
     public override bool IsSelectable => false;
+
+    public IReadOnlyList<FolderNode> Folders { get; set; } = [];
 
     [ObservableProperty]
     public partial bool IsExpanded { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool IsLoading { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    public partial string? Error { get; set; }
+
+    public bool HasError => Error is not null;
+
+    /// <summary>Faixa de confirmação "Remover conta?" sob o cabeçalho (sem diálogo modal).</summary>
+    [ObservableProperty]
+    public partial bool IsConfirmingRemoval { get; set; }
 
     [RelayCommand]
     private void Toggle()
     {
         IsExpanded = !IsExpanded;
-        toggled(this);
+        host.OnToggled(this);
     }
+
+    [RelayCommand]
+    private Task Retry() => host.ReloadFoldersAsync(this);
+
+    [RelayCommand]
+    private void AskRemove() => IsConfirmingRemoval = true;
+
+    [RelayCommand]
+    private void CancelRemove() => IsConfirmingRemoval = false;
+
+    [RelayCommand]
+    private Task ConfirmRemove() => host.RemoveAccountAsync(this);
 }
 
 public sealed partial class FolderNode(MailFolder folder, MailAccount account) : SidebarNode

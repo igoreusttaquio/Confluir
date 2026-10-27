@@ -9,19 +9,39 @@
         Icon="/Assets/confluir.ico"
         Width="1320" Height="820" MinWidth="960" MinHeight="560"
         WindowStartupLocation="CenterScreen">
-  <Grid x:Name="Columns">
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="260" MinWidth="200" MaxWidth="420" />
-      <ColumnDefinition Width="Auto" />
-      <ColumnDefinition Width="400" MinWidth="300" MaxWidth="720" />
-      <ColumnDefinition Width="Auto" />
-      <ColumnDefinition Width="*" MinWidth="360" />
-    </Grid.ColumnDefinitions>
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding GoBackCommand}" />
+  </Window.KeyBindings>
 
-    <views:SidebarView Grid.Column="0" />
-    <GridSplitter Grid.Column="1" Theme="{StaticResource ColumnSplitterTheme}" />
-    <views:MessageListView Grid.Column="2" />
-    <GridSplitter Grid.Column="3" Theme="{StaticResource ColumnSplitterTheme}" />
-    <views:ReadingPaneView Grid.Column="4" />
-  </Grid>
+  <Panel>
+    <!-- Raiz: caixa de email em 3 colunas. Fica só oculta durante a navegação, preservando o estado. -->
+    <Grid x:Name="Columns" IsVisible="{Binding Navigation.IsAtRoot}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="260" MinWidth="200" MaxWidth="420" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="400" MinWidth="300" MaxWidth="720" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" MinWidth="360" />
+      </Grid.ColumnDefinitions>
+
+      <views:SidebarView Grid.Column="0" />
+      <GridSplitter Grid.Column="1" Theme="{StaticResource ColumnSplitterTheme}" />
+      <views:MessageListView Grid.Column="2" />
+      <GridSplitter Grid.Column="3" Theme="{StaticResource ColumnSplitterTheme}" />
+      <views:ReadingPaneView Grid.Column="4" />
+    </Grid>
+
+    <!-- Telas navegadas (adicionar conta, configurações…) -->
+    <TransitioningContentControl Content="{Binding Navigation.CurrentPage}"
+                                 IsVisible="{Binding !Navigation.IsAtRoot}">
+      <TransitioningContentControl.PageTransition>
+        <CrossFade Duration="0:0:0.15" />
+      </TransitioningContentControl.PageTransition>
+      <TransitioningContentControl.DataTemplates>
+        <DataTemplate DataType="vm:AddAccountViewModel">
+          <views:AddAccountView />
+        </DataTemplate>
+      </TransitioningContentControl.DataTemplates>
+    </TransitioningContentControl>
+  </Panel>
 </Window>

@@ -16,7 +16,9 @@ internal static class Program
         CultureInfo.DefaultThreadCurrentCulture = culture;
         CultureInfo.DefaultThreadCurrentUICulture = culture;
 
-        using var host = AppHost.Build();
+        // --dados-falsos: interface com contas e mensagens de exemplo, sem tocar em servidores.
+        var useFakeData = args.Contains("--dados-falsos");
+        using var host = AppHost.Build(useFakeData: useFakeData);
         var logger = host.Services.GetRequiredService<ILogger<App>>();
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             logger.LogCritical(e.ExceptionObject as Exception, "Exceção não tratada");
@@ -44,5 +46,5 @@ internal static class Program
             .LogToTrace();
 
     // Usado pelo previewer do XAML.
-    public static AppBuilder BuildAvaloniaApp() => BuildAvaloniaApp(AppHost.Build().Services);
+    public static AppBuilder BuildAvaloniaApp() => BuildAvaloniaApp(AppHost.Build(useFakeData: true).Services);
 }
