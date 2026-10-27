@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
              xmlns:vm="using:Confluir.App.ViewModels"
              xmlns:views="using:Confluir.App.Views"
              xmlns:conv="using:Confluir.App.Converters"
-             xmlns:res="using:Confluir.App.Resources"
              x:Class="Confluir.App.Views.SidebarView"
              x:DataType="vm:MainWindowViewModel">
   <UserControl.Styles>
@@ -37,17 +37,17 @@
       <!-- Marca -->
       <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="18,16,18,12">
         <Image Source="{StaticResource LogoImage}" Width="28" Height="28" />
-        <TextBlock Text="{x:Static res:Strings.AppTitle}" FontSize="17" FontWeight="SemiBold"
+        <TextBlock Text="{l:Tr AppTitle}" FontSize="17" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
       </StackPanel>
 
       <!-- Rodapé: aparência e configurações -->
       <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="10,6">
         <StackPanel Orientation="Horizontal" Spacing="2">
-          <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Account_Add}" Command="{Binding AddAccountCommand}">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Account_Add}" Command="{Binding AddAccountCommand}">
             <LucideIcon Kind="UserPlus" />
           </Button>
-          <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Appearance}">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Appearance}">
             <LucideIcon Kind="Palette" />
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
@@ -55,7 +55,7 @@
               </Flyout>
             </Button.Flyout>
           </Button>
-          <Button Classes="icon" ToolTip.Tip="{x:Static res:Strings.Settings}" IsEnabled="False">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" IsEnabled="False">
             <LucideIcon Kind="Settings" />
           </Button>
         </StackPanel>
@@ -82,15 +82,15 @@
           <DataTemplate DataType="vm:AccountNode">
             <StackPanel>
               <Button Classes="accountHeader" Command="{Binding ToggleCommand}"
-                      ToolTip.Tip="{x:Static res:Strings.Action_Collapse}">
+                      ToolTip.Tip="{l:Tr Action_Collapse}">
                 <Button.ContextMenu>
                   <ContextMenu>
-                    <MenuItem Header="{x:Static res:Strings.Account_Edit}" Command="{Binding EditCommand}">
+                    <MenuItem Header="{l:Tr Account_Edit}" Command="{Binding EditCommand}">
                       <MenuItem.Icon>
                         <LucideIcon Kind="Settings" Size="16" />
                       </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="{x:Static res:Strings.Account_Remove}" Command="{Binding AskRemoveCommand}">
+                    <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">
                       <MenuItem.Icon>
                         <LucideIcon Kind="Trash" Size="16" />
                       </MenuItem.Icon>
@@ -109,7 +109,7 @@
                   </StackPanel>
                   <LucideIcon Grid.Column="3" Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"
                               Foreground="{DynamicResource TextSecondary}"
-                              ToolTip.Tip="{x:Static res:Strings.Account_LoadingFolders}" />
+                              ToolTip.Tip="{l:Tr Account_LoadingFolders}" />
                 </Grid>
               </Button>
               <!-- Confirmação de remoção (inline, sem diálogo) -->
@@ -117,12 +117,12 @@
                       BorderBrush="{DynamicResource Danger}" BorderThickness="1"
                       IsVisible="{Binding IsConfirmingRemoval}">
                 <StackPanel Spacing="8">
-                  <TextBlock Text="{x:Static res:Strings.Account_Remove_Confirm}" TextWrapping="Wrap" FontSize="12"
+                  <TextBlock Text="{l:Tr Account_Remove_Confirm}" TextWrapping="Wrap" FontSize="12"
                              Foreground="{DynamicResource TextPrimary}" />
                   <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
-                    <Button Content="{x:Static res:Strings.AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}"
+                    <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}"
                             Padding="10,4" FontSize="12" />
-                    <Button Classes="danger" Content="{x:Static res:Strings.Account_Remove}"
+                    <Button Classes="danger" Content="{l:Tr Account_Remove}"
                             Command="{Binding ConfirmRemoveCommand}" Padding="10,4" FontSize="12" />
                   </StackPanel>
                 </StackPanel>
@@ -133,7 +133,7 @@
                             Margin="0,2,0,0" />
                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                   <TextBlock Text="{Binding Error}" Classes="caption" TextWrapping="Wrap" />
-                  <HyperlinkButton Content="{x:Static res:Strings.Action_Retry}" Command="{Binding RetryCommand}"
+                  <HyperlinkButton Content="{l:Tr Action_Retry}" Command="{Binding RetryCommand}"
                                    Padding="0" FontSize="12" />
                 </StackPanel>
               </Grid>

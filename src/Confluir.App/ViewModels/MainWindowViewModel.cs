@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using Avalonia.Threading;
+using Confluir.App.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Resources;
@@ -13,8 +13,7 @@ namespace Confluir.App.ViewModels;
 
 public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost
 {
-    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("pt-BR");
-
+    private readonly LocalizationService _loc;
     private readonly IMailboxService _mailbox;
     private readonly IAccountStore _accountStore;
     private readonly AccountService _accountService;
@@ -32,6 +31,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     private CancellationTokenSource? _listCts;
     private CancellationTokenSource? _detailCts;
 
+    // Mensagens da lista atual, para reconstruir as linhas (ex.: troca de idioma) sem ir ao servidor.
+    private IReadOnlyList<MessageSummary> _listMessages = [];
+    private bool _suppressSelection;
+
     public MainWindowViewModel(
         IMailboxService mailbox,
         IAccountStore accountStore,
@@ -39,9 +42,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         NavigationService navigation,
         Func<AccountEditorViewModel> accountEditor,
         AppearanceViewModel appearance,
+        LocalizationService localization,
         TimeProvider time,
         ILogger<MainWindowViewModel> logger)
     {
+        _loc = localization;
+        _loc.LanguageChanged += (_, _) => OnLanguageChanged();
         _mailbox = mailbox;
         _accountStore = accountStore;
         _accountService = accountService;
@@ -217,6 +223,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     partial void OnSelectedRowChanged(MessageListRow? value)
     {
+        if (_suppressSelection)
+            return;
         _detailCts?.Cancel();
         if (value is not MessageRow row)
         {
@@ -250,14 +258,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         try
         {
             IReadOnlyList<MessageSummary> messages;
+            UpdateListTitle(node);
             switch (node)
             {
-                case UnifiedInboxNode u:
-                    ListTitle = u.Title;
+                case UnifiedInboxNode:
                     messages = await _mailbox.GetUnifiedInboxAsync(cts.Token);
                     break;
                 case FolderNode f:
-                    ListTitle = $"{f.Title} · {f.Account.DisplayName}";
                     provider = f.Account.Provider;
                     messages = await _mailbox.GetMessagesAsync(f.Folder.Id, cts.Token);
                     break;
@@ -265,12 +272,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
                     return;
             }
 
-            var now = _time.GetLocalNow();
-            var rows = await Task.Run(
-                () => MessageListBuilder.Build(messages, _accounts, _locallyRead, now, Culture), cts.Token);
+            var rows = await Task.Run(() => BuildRows(messages), cts.Token);
             if (cts.IsCancellationRequested)
                 return;
 
+            _listMessages = messages;
             SelectedRow = null;
             Rows = rows;
             UpdateSubtitle(node);
@@ -345,9 +351,54 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
             FolderNode f => f.UnreadCount,
             _ => 0,
         };
+        var count = _loc.Plural("MessageList_Count", total);
         ListSubtitle = unread > 0
-            ? $"{string.Format(Culture, Strings.MessageList_Count, total)} · {string.Format(Culture, Strings.MessageList_UnreadCount, unread)}"
-            : string.Format(Culture, Strings.MessageList_Count, total);
+            ? $"{count} · {_loc.Plural("MessageList_UnreadCount", unread)}"
+            : count;
+    }
+
+    private void UpdateListTitle(SidebarNode node) => ListTitle = node switch
+    {
+        UnifiedInboxNode u => u.Title,
+        FolderNode f => $"{f.Title} · {f.Account.DisplayName}",
+        _ => ListTitle,
+    };
+
+    private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages) =>
+        MessageListBuilder.Build(messages, _accounts, _locallyRead, _time.GetLocalNow(), _loc.FormatCulture);
+
+    /// <summary>Recalcula os textos derivados no novo idioma, sem buscar nada no servidor.</summary>
+    public override void OnLanguageChanged()
+    {
+        foreach (var node in SidebarNodes)
+            node.OnLanguageChanged();
+
+        // Reconstrói as linhas mantendo a mensagem aberta, sem disparar nova leitura.
+        // A supressão cobre também a troca de Rows: o ListBox limpa a seleção ao receber novos itens.
+        var selectedId = (SelectedRow as MessageRow)?.Summary.Id;
+        _suppressSelection = true;
+        try
+        {
+            Rows = BuildRows(_listMessages);
+            SelectedRow = selectedId is { } id
+                ? Rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == id)
+                : null;
+        }
+        finally
+        {
+            _suppressSelection = false;
+        }
+        if (SelectedRow is null)
+            Detail = null;
+        if (SelectedNode is { } selected)
+        {
+            UpdateListTitle(selected);
+            UpdateSubtitle(selected);
+        }
+        Detail?.OnLanguageChanged();
+        Navigation.CurrentPage?.OnLanguageChanged();
+        Appearance.OnLanguageChanged();
+        base.OnLanguageChanged();
     }
 
     private void RecountUnified() =>

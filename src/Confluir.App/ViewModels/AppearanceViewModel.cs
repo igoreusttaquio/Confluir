@@ -1,5 +1,6 @@
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Confluir.App.Localization;
 using Confluir.App.Resources;
 using Confluir.App.Services;
 using Confluir.Core.Models;
@@ -7,29 +8,45 @@ using Confluir.Core.Settings;
 
 namespace Confluir.App.ViewModels;
 
-public sealed record AccentOption(string? Hex, string Name)
+public sealed record AccentOption(string? Hex, string NameKey)
 {
     /// <summary>Cor exibida na amostra; a opção padrão mostra o Accent do tema claro.</summary>
     public string SwatchHex => Hex ?? ThemeService.DefaultAccent;
 }
 
-/// <summary>Tema, cor de destaque e densidade. As mudanças se aplicam e são salvas na hora.</summary>
+/// <param name="Code">"pt-BR", "en", "es" ou nulo para seguir o sistema.</param>
+public sealed record LanguageOption(string? Code, string LabelKey);
+
+/// <summary>Tema, cor de destaque, densidade e idioma. As mudanças se aplicam e são salvas na hora.</summary>
 public sealed partial class AppearanceViewModel : ViewModelBase
 {
     private readonly ThemeService _theme;
     private readonly ISettingsStore _settings;
+    private readonly LocalizationService _loc;
     private bool _syncing;
 
-    public AppearanceViewModel(ThemeService theme, ISettingsStore settings)
+    public AppearanceViewModel(ThemeService theme, ISettingsStore settings, LocalizationService localization)
     {
         _theme = theme;
         _settings = settings;
+        _loc = localization;
+
+        LanguageOptions =
+        [
+            new LanguageOption(null, nameof(Strings.Language_System)),
+            new LanguageOption("pt-BR", nameof(Strings.Language_PtBR)),
+            new LanguageOption("en", nameof(Strings.Language_En)),
+            new LanguageOption("es", nameof(Strings.Language_Es)),
+        ];
+        _syncing = true;
+        SelectedLanguage = LanguageOptions.FirstOrDefault(o => o.Code == localization.Setting) ?? LanguageOptions[0];
+        _syncing = false;
 
         AccentOptions =
         [
-            new AccentOption(null, Strings.Accent_Default),
+            new AccentOption(null, nameof(Strings.Accent_Default)),
             // As cores de conta servem também como predefinições de destaque.
-            .. AccountColors.All.Select(c => new AccentOption(c.Hex, ColorNames.For(c.Key))),
+            .. AccountColors.All.Select(c => new AccentOption(c.Hex, ColorNames.KeyFor(c.Key))),
         ];
 
         _syncing = true;
@@ -41,6 +58,20 @@ public sealed partial class AppearanceViewModel : ViewModelBase
     }
 
     public IReadOnlyList<AccentOption> AccentOptions { get; }
+
+    public IReadOnlyList<LanguageOption> LanguageOptions { get; }
+
+    [ObservableProperty]
+    public partial LanguageOption SelectedLanguage { get; set; }
+
+    partial void OnSelectedLanguageChanged(LanguageOption value)
+    {
+        if (_syncing || value is null)
+            return;
+        _settings.Current.Appearance.Language = value.Code;
+        _settings.Save();
+        _loc.Apply(value.Code);
+    }
 
     public bool IsLight
     {

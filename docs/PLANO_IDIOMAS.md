@@ -2,6 +2,8 @@
 
 Idiomas: **Português (Brasil)**, **English** e **Español**.
 
+> **Status: implementado** (antes da fase 3). Diferença em relação ao plano: o `{l:Tr}` faz binding em `LocalizationService.Version` com conversor, em vez do indexador `Item[]`, porque a renotificação do indexador não atualizava as Views. O seletor de idioma está em Aparência.
+
 ## Situação atual
 
 - Todas as strings da interface estão em `src/Confluir.App/Resources/Strings.resx` (pt-BR), com classe gerada no build.

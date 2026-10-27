@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
              xmlns:vm="using:Confluir.App.ViewModels"
              xmlns:conv="using:Confluir.App.Converters"
-             xmlns:res="using:Confluir.App.Resources"
              x:Class="Confluir.App.Views.ReadingPaneView"
              x:DataType="vm:MainWindowViewModel">
   <Border Classes="panel" Background="{DynamicResource Surface}">
@@ -14,9 +14,9 @@
                 HorizontalAlignment="Center">
           <LucideIcon Kind="Mail" Size="44" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />
         </Border>
-        <TextBlock Text="{x:Static res:Strings.Reading_Empty_Title}" FontSize="16" FontWeight="SemiBold"
+        <TextBlock Text="{l:Tr Reading_Empty_Title}" FontSize="16" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,8,0,0" />
-        <TextBlock Text="{x:Static res:Strings.Reading_Empty_Hint}" Classes="secondary" HorizontalAlignment="Center" />
+        <TextBlock Text="{l:Tr Reading_Empty_Hint}" Classes="secondary" HorizontalAlignment="Center" />
       </StackPanel>
 
       <TransitioningContentControl Content="{Binding Detail}" IsVisible="{Binding HasSelection}">
@@ -30,23 +30,23 @@
               <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
                       Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
                 <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
-                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Reply}">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Reply}">
                     <LucideIcon Kind="Reply" />
                   </Button>
-                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_ReplyAll}">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_ReplyAll}">
                     <LucideIcon Kind="ReplyAll" />
                   </Button>
-                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Forward}">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Forward}">
                     <LucideIcon Kind="Forward" />
                   </Button>
                   <Border Width="1" Margin="6,6" Background="{DynamicResource Border}" />
-                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Archive}">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Archive}">
                     <LucideIcon Kind="Archive" />
                   </Button>
-                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Delete}">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Delete}">
                     <LucideIcon Kind="Trash" />
                   </Button>
-                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{x:Static res:Strings.Action_Flag}">
+                  <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Flag}">
                     <LucideIcon Kind="Flag" />
                   </Button>
                 </StackPanel>
@@ -81,10 +81,10 @@
                              Foreground="{DynamicResource TextSecondary}" FontSize="13" />
                       </SelectableTextBlock>
                       <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap">
-                        <Run Text="{x:Static res:Strings.Reading_To}" /><Run Text=": " /><Run Text="{Binding To}" />
+                        <Run Text="{l:Tr Reading_To}" /><Run Text=": " /><Run Text="{Binding To}" />
                       </SelectableTextBlock>
                       <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" IsVisible="{Binding HasCc}">
-                        <Run Text="{x:Static res:Strings.Reading_Cc}" /><Run Text=": " /><Run Text="{Binding Cc}" />
+                        <Run Text="{l:Tr Reading_Cc}" /><Run Text=": " /><Run Text="{Binding Cc}" />
                       </SelectableTextBlock>
                     </StackPanel>
                     <TextBlock Grid.Column="2" Text="{Binding DateText}" Classes="caption" />
@@ -100,7 +100,7 @@
                       <LucideIcon Kind="CircleAlert" Size="18" Foreground="{DynamicResource Danger}" />
                       <TextBlock Grid.Column="1" Text="{Binding Error}" TextWrapping="Wrap" Margin="10,0"
                                  Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                      <Button Grid.Column="2" Content="{x:Static res:Strings.Action_Retry}" Command="{Binding RetryCommand}" />
+                      <Button Grid.Column="2" Content="{l:Tr Action_Retry}" Command="{Binding RetryCommand}" />
                     </Grid>
                   </Border>
 
@@ -109,7 +109,7 @@
 
                   <!-- Anexos -->
                   <StackPanel Spacing="8" IsVisible="{Binding HasAttachments}">
-                    <TextBlock Text="{x:Static res:Strings.Reading_Attachments}" FontWeight="SemiBold"
+                    <TextBlock Text="{l:Tr Reading_Attachments}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}" />
                     <ItemsControl ItemsSource="{Binding Attachments}">
                       <ItemsControl.ItemsPanel>
@@ -131,11 +131,11 @@
                               </StackPanel>
                               <StackPanel Grid.Column="2" Orientation="Horizontal">
                                 <Button Classes="icon" Padding="6" IsEnabled="False"
-                                        ToolTip.Tip="{x:Static res:Strings.Attachment_Save}">
+                                        ToolTip.Tip="{l:Tr Attachment_Save}">
                                   <LucideIcon Kind="Download" />
                                 </Button>
                                 <Button Classes="icon" Padding="6" IsEnabled="False"
-                                        ToolTip.Tip="{x:Static res:Strings.Attachment_Open}">
+                                        ToolTip.Tip="{l:Tr Attachment_Open}">
                                   <LucideIcon Kind="ExternalLink" />
                                 </Button>
                               </StackPanel>

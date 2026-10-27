@@ -1,6 +1,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Confluir.App.Localization;
 using Confluir.App.Resources;
 using Confluir.App.Services;
 using Confluir.Core.Models;
@@ -13,8 +14,6 @@ namespace Confluir.App.ViewModels;
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
 public sealed partial class MessageDetailViewModel : ViewModelBase
 {
-    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("pt-BR");
-
     private readonly IMailboxService _mailbox;
     private readonly ILogger _logger;
 
@@ -27,9 +26,12 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         FromName = row.From;
         FromAddress = summary.FromAddress;
         Initials = GetInitials(row.From);
-        AvatarColor = AccountColors.All[(int)((uint)summary.FromAddress.GetHashCode() % AccountColors.All.Count)].Hex;
-        DateText = summary.Date.ToLocalTime().ToString("dddd, d 'de' MMMM 'de' yyyy, HH:mm", Culture);
+        // Hash estável (string.GetHashCode muda a cada execução): o mesmo remetente mantém a mesma cor.
+        var hash = summary.FromAddress.ToLowerInvariant().Aggregate(17u, (h, c) => unchecked(h * 31 + c));
+        AvatarColor = AccountColors.All[(int)(hash % (uint)AccountColors.All.Count)].Hex;
     }
+
+    private static CultureInfo Culture => LocalizationService.Instance.FormatCulture;
 
     public MessageRow Row { get; }
     public string Subject => Row.Subject;
@@ -39,7 +41,15 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     public string FromAddress { get; }
     public string Initials { get; }
     public string AvatarColor { get; }
-    public string DateText { get; }
+    /// <summary>Data completa no formato do idioma, ex.: "terça-feira, 27 de outubro de 2026, 14:45".</summary>
+    public string DateText
+    {
+        get
+        {
+            var local = Row.Summary.Date.ToLocalTime();
+            return $"{local.ToString("D", Culture)}, {local.ToString("t", Culture)}";
+        }
+    }
 
     [ObservableProperty]
     public partial string To { get; private set; } = "";
@@ -134,6 +144,6 @@ public sealed class AttachmentViewModel(AttachmentInfo info)
             size /= 1024;
             unit++;
         }
-        return unit == 0 ? $"{bytes} B" : $"{size.ToString("0.#", CultureInfo.GetCultureInfo("pt-BR"))} {units[unit]}";
+        return unit == 0 ? $"{bytes} B" : $"{size.ToString("0.#", LocalizationService.Instance.FormatCulture)} {units[unit]}";
     }
 }

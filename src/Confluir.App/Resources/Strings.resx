@@ -20,8 +20,10 @@
   <data name="Group_ThisWeek"><value>Esta semana</value></data>
   <data name="Group_Older"><value>Mais antigos</value></data>
 
-  <data name="MessageList_Count"><value>{0:N0} mensagens</value></data>
-  <data name="MessageList_UnreadCount"><value>{0:N0} não lidas</value></data>
+  <data name="MessageList_Count_One"><value>{0:N0} mensagem</value></data>
+  <data name="MessageList_Count_Other"><value>{0:N0} mensagens</value></data>
+  <data name="MessageList_UnreadCount_One"><value>{0:N0} não lida</value></data>
+  <data name="MessageList_UnreadCount_Other"><value>{0:N0} não lidas</value></data>
   <data name="MessageList_Empty"><value>Nenhuma mensagem nesta pasta</value></data>
   <data name="NoSubject"><value>(sem assunto)</value></data>
 
@@ -52,6 +54,11 @@
   <data name="Accent_Default"><value>Padrão</value></data>
   <data name="Accent_Custom"><value>Personalizada</value></data>
   <data name="CompactMode"><value>Modo compacto</value></data>
+  <data name="Language"><value>Idioma</value></data>
+  <data name="Language_System"><value>Seguir o sistema</value></data>
+  <data name="Language_PtBR"><value>Português (Brasil)</value></data>
+  <data name="Language_En"><value>English</value></data>
+  <data name="Language_Es"><value>Español</value></data>
 
   <data name="Account_Add"><value>Adicionar conta</value></data>
   <data name="Account_Remove"><value>Remover conta</value></data>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="AppTitle"><value>Confluir</value></data>
+  <data name="UnifiedInbox"><value>Bandeja de entrada unificada</value></data>
+
+  <data name="Folder_Inbox"><value>Bandeja de entrada</value></data>
+  <data name="Folder_Sent"><value>Enviados</value></data>
+  <data name="Folder_Drafts"><value>Borradores</value></data>
+  <data name="Folder_Trash"><value>Papelera</value></data>
+  <data name="Folder_Junk"><value>Spam</value></data>
+  <data name="Folder_Archive"><value>Archivo</value></data>
+
+  <data name="Group_Today"><value>Hoy</value></data>
+  <data name="Group_Yesterday"><value>Ayer</value></data>
+  <data name="Group_ThisWeek"><value>Esta semana</value></data>
+  <data name="Group_Older"><value>Más antiguos</value></data>
+
+  <data name="MessageList_Count_One"><value>{0:N0} mensaje</value></data>
+  <data name="MessageList_Count_Other"><value>{0:N0} mensajes</value></data>
+  <data name="MessageList_UnreadCount_One"><value>{0:N0} sin leer</value></data>
+  <data name="MessageList_UnreadCount_Other"><value>{0:N0} sin leer</value></data>
+  <data name="MessageList_Empty"><value>No hay mensajes en esta carpeta</value></data>
+  <data name="NoSubject"><value>(sin asunto)</value></data>
+
+  <data name="Reading_Empty_Title"><value>Ningún mensaje seleccionado</value></data>
+  <data name="Reading_Empty_Hint"><value>Elige un mensaje de la lista para leerlo aquí.</value></data>
+  <data name="Reading_To"><value>Para</value></data>
+  <data name="Reading_Cc"><value>CC</value></data>
+  <data name="Reading_Attachments"><value>Adjuntos</value></data>
+  <data name="Attachment_Save"><value>Guardar</value></data>
+  <data name="Attachment_Open"><value>Abrir</value></data>
+
+  <data name="Action_NewMessage"><value>Nuevo mensaje</value></data>
+  <data name="Action_Reply"><value>Responder</value></data>
+  <data name="Action_ReplyAll"><value>Responder a todos</value></data>
+  <data name="Action_Forward"><value>Reenviar</value></data>
+  <data name="Action_Archive"><value>Archivar</value></data>
+  <data name="Action_Delete"><value>Eliminar</value></data>
+  <data name="Action_Flag"><value>Marcar</value></data>
+  <data name="Action_Collapse"><value>Contraer o expandir</value></data>
+
+  <data name="Settings"><value>Configuración</value></data>
+  <data name="Appearance"><value>Apariencia</value></data>
+  <data name="Theme"><value>Tema</value></data>
+  <data name="Theme_Light"><value>Claro</value></data>
+  <data name="Theme_Dark"><value>Oscuro</value></data>
+  <data name="Theme_System"><value>Usar el del sistema</value></data>
+  <data name="AccentColor"><value>Color de énfasis</value></data>
+  <data name="Accent_Default"><value>Predeterminado</value></data>
+  <data name="Accent_Custom"><value>Personalizado</value></data>
+  <data name="CompactMode"><value>Modo compacto</value></data>
+  <data name="Language"><value>Idioma</value></data>
+  <data name="Language_System"><value>Usar el idioma del sistema</value></data>
+  <data name="Language_PtBR"><value>Português (Brasil)</value></data>
+  <data name="Language_En"><value>English</value></data>
+  <data name="Language_Es"><value>Español</value></data>
+
+  <data name="Account_Add"><value>Añadir cuenta</value></data>
+  <data name="Account_Remove"><value>Quitar cuenta</value></data>
+  <data name="Account_Edit"><value>Editar cuenta</value></data>
+  <data name="Account_Remove_ConfirmButton"><value>Sí, quitar</value></data>
+  <data name="EditAccount_Title"><value>Editar cuenta</value></data>
+  <data name="EditAccount_Subtitle"><value>Cambia el nombre, el color, la contraseña o los servidores. Los cambios de conexión se prueban antes de guardar.</value></data>
+  <data name="EditAccount_PasswordKeep"><value>Déjalo en blanco para mantener la contraseña actual</value></data>
+  <data name="Account_Remove_Confirm"><value>¿Quitar esta cuenta de Confluir? La contraseña se borra del almacén del sistema; no se borra ningún correo del servidor.</value></data>
+  <data name="Account_LoadingFolders"><value>Cargando carpetas…</value></data>
+  <data name="NoAccounts_Title"><value>Aún no hay cuentas</value></data>
+  <data name="NoAccounts_Hint"><value>Añade una cuenta de correo (Gmail, Yahoo o cualquier servidor IMAP) para empezar.</value></data>
+
+  <data name="AddAccount_Title"><value>Añadir cuenta</value></data>
+  <data name="AddAccount_Subtitle"><value>Conecta Gmail, Yahoo o cualquier servidor IMAP. Probamos la recepción y el envío antes de guardar.</value></data>
+  <data name="Breadcrumb_Accounts"><value>Cuentas</value></data>
+  <data name="AddAccount_Section_Account"><value>Cuenta</value></data>
+  <data name="AddAccount_Section_Auth"><value>Autenticación</value></data>
+  <data name="AddAccount_Section_Servers"><value>Servidores</value></data>
+  <data name="AddAccount_Section_Servers_Hint"><value>Se completan automáticamente. Cámbialos solo si tu proveedor indica otros valores.</value></data>
+  <data name="AddAccount_EditServers"><value>Editar servidores</value></data>
+  <data name="AddAccount_TestResult"><value>Resultado de la prueba</value></data>
+  <data name="AddAccount_SaveAccount"><value>Guardar cuenta</value></data>
+  <data name="AddAccount_Help_Title"><value>Cómo funciona</value></data>
+  <data name="AddAccount_Help_1"><value>Escribe tu correo. Reconocemos Gmail, Yahoo y miles de proveedores y completamos los servidores.</value></data>
+  <data name="AddAccount_Help_2"><value>Prueba la conexión. Verificamos la recepción (IMAP) y el envío (SMTP) antes de guardar.</value></data>
+  <data name="AddAccount_Help_3"><value>Tu contraseña se guarda en el almacén seguro del sistema operativo, nunca como texto en el disco.</value></data>
+  <data name="AddAccount_Privacy"><value>Para encontrar los servidores, solo se consulta el dominio de tu correo en la base pública de Thunderbird.</value></data>
+  <data name="AddAccount_Email"><value>Dirección de correo</value></data>
+  <data name="AddAccount_DisplayName"><value>Nombre de la cuenta</value></data>
+  <data name="AddAccount_DisplayName_Placeholder"><value>P. ej.: Personal, Trabajo</value></data>
+  <data name="AddAccount_Password"><value>Contraseña</value></data>
+  <data name="AddAccount_AppPassword"><value>Contraseña de aplicación</value></data>
+  <data name="AddAccount_Color"><value>Color de la cuenta</value></data>
+  <data name="AddAccount_Advanced"><value>Configuración avanzada</value></data>
+  <data name="AddAccount_UserName"><value>Usuario</value></data>
+  <data name="AddAccount_IncomingServer"><value>Servidor de entrada (IMAP)</value></data>
+  <data name="AddAccount_OutgoingServer"><value>Servidor de salida (SMTP)</value></data>
+  <data name="AddAccount_Host"><value>Servidor</value></data>
+  <data name="AddAccount_Port"><value>Puerto</value></data>
+  <data name="AddAccount_Security"><value>Seguridad</value></data>
+  <data name="AddAccount_Test"><value>Probar conexión</value></data>
+  <data name="AddAccount_Save"><value>Guardar</value></data>
+  <data name="AddAccount_Cancel"><value>Cancelar</value></data>
+  <data name="AddAccount_Detecting"><value>Buscando configuración…</value></data>
+  <data name="AddAccount_Detected_Known"><value>{0} detectado. Servidores completados.</value></data>
+  <data name="AddAccount_Detected_Autoconfig"><value>Configuración encontrada para {0}.</value></data>
+  <data name="AddAccount_Detected_Guess"><value>No encontramos la configuración de {0}. Sugerimos servidores estándar; revísalos en Configuración avanzada.</value></data>
+  <data name="AddAccount_OAuthRequired"><value>Outlook/Hotmail requiere iniciar sesión con Microsoft (OAuth2), que llegará en una próxima versión. Por ahora no se puede añadir esta cuenta.</value></data>
+  <data name="AddAccount_AppPasswordHint_Gmail"><value>Gmail requiere una contraseña de aplicación (con la verificación en dos pasos activada). Tu contraseña normal no funciona aquí.</value></data>
+  <data name="AddAccount_AppPasswordHint_Yahoo"><value>Yahoo requiere una contraseña de aplicación. Tu contraseña normal no funciona aquí.</value></data>
+  <data name="AddAccount_AppPasswordLink"><value>Cómo crear una contraseña de aplicación</value></data>
+  <data name="AddAccount_Invalid_Email"><value>Escribe una dirección de correo válida.</value></data>
+  <data name="AddAccount_Invalid_Password"><value>Escribe la contraseña.</value></data>
+  <data name="AddAccount_Invalid_Servers"><value>Revisa los servidores y puertos en Configuración avanzada.</value></data>
+  <data name="AddAccount_Saving"><value>Guardando…</value></data>
+  <data name="AddAccount_CredentialStoreError"><value>No se pudo guardar la contraseña en el almacén del sistema. La cuenta no se guardó.</value></data>
+
+  <data name="Security_Ssl"><value>SSL/TLS</value></data>
+  <data name="Security_StartTls"><value>STARTTLS</value></data>
+  <data name="Security_None"><value>Ninguna (insegura)</value></data>
+
+  <data name="Test_Testing"><value>Probando…</value></data>
+  <data name="Test_Ok"><value>Conectado</value></data>
+  <data name="Test_OkAlternativePort"><value>Conectado por el puerto {0} ({1}); se ajustó la configuración. El puerto original no respondió en tu red.</value></data>
+  <data name="Error_AuthenticationFailed"><value>Usuario o contraseña incorrectos.</value></data>
+  <data name="Error_AppPasswordRequired"><value>Contraseña rechazada. Este proveedor requiere una contraseña de aplicación en lugar de la normal.</value></data>
+  <data name="Error_ServerUnreachable"><value>No se pudo acceder al servidor. Revisa la dirección, el puerto y tu conexión.</value></data>
+  <data name="Error_SecureConnectionFailed"><value>Falló la conexión segura (TLS). Revisa el puerto y el tipo de seguridad.</value></data>
+  <data name="Error_Timeout"><value>El servidor tardó demasiado en responder.</value></data>
+  <data name="Error_Canceled"><value>Cancelado.</value></data>
+  <data name="Error_Unknown"><value>Error inesperado: {0}</value></data>
+
+  <data name="List_Error"><value>No se pudieron cargar los mensajes.</value></data>
+  <data name="Reading_Error"><value>No se pudo cargar este mensaje.</value></data>
+  <data name="Folders_Error"><value>Error al cargar las carpetas.</value></data>
+  <data name="Action_Retry"><value>Reintentar</value></data>
+  <data name="Action_Back"><value>Volver</value></data>
+
+  <data name="Color_Blue"><value>Azul</value></data>
+  <data name="Color_Coral"><value>Coral</value></data>
+  <data name="Color_Teal"><value>Turquesa</value></data>
+  <data name="Color_Amber"><value>Ámbar</value></data>
+  <data name="Color_Violet"><value>Violeta</value></data>
+  <data name="Color_Pink"><value>Rosa</value></data>
+  <data name="Color_Green"><value>Verde</value></data>
+  <data name="Color_Cyan"><value>Cian</value></data>
+</root>

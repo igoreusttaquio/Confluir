@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
              xmlns:vm="using:Confluir.App.ViewModels"
              xmlns:conv="using:Confluir.App.Converters"
-             xmlns:res="using:Confluir.App.Resources"
              x:Class="Confluir.App.Views.AccountEditorView"
              x:DataType="vm:AccountEditorViewModel">
   <UserControl.Styles>
@@ -68,12 +68,12 @@
       <!-- Cabeçalho: caminho, título e subtítulo -->
       <StackPanel Grid.ColumnSpan="2" Spacing="6" Margin="0,0,0,24">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <Button Classes="crumb" Content="{x:Static res:Strings.Breadcrumb_Accounts}" Command="{Binding CancelCommand}" />
+          <Button Classes="crumb" Content="{l:Tr Breadcrumb_Accounts}" Command="{Binding CancelCommand}" />
           <LucideIcon Kind="ChevronRight" Size="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
           <TextBlock Text="{Binding Title}" Classes="caption" FontSize="13" VerticalAlignment="Center" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="10" Margin="-8,0,0,0">
-          <Button Classes="icon" Command="{Binding CancelCommand}" ToolTip.Tip="{x:Static res:Strings.Action_Back}"
+          <Button Classes="icon" Command="{Binding CancelCommand}" ToolTip.Tip="{l:Tr Action_Back}"
                   VerticalAlignment="Center">
             <LucideIcon Kind="ArrowLeft" Size="20" />
           </Button>
@@ -89,9 +89,9 @@
         <!-- Conta -->
         <Border Classes="section">
           <StackPanel Spacing="14">
-            <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.AddAccount_Section_Account}" />
+            <TextBlock Classes="sectionTitle" Text="{l:Tr AddAccount_Section_Account}" />
             <StackPanel>
-              <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_Email}" />
+              <TextBlock Classes="label" Text="{l:Tr AddAccount_Email}" />
               <TextBox x:Name="EmailBox" Text="{Binding Email}" PlaceholderText="voce@exemplo.com" />
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0" IsVisible="{Binding HasDetectionMessage}">
                 <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsDetecting}"
@@ -106,17 +106,17 @@
               <Grid ColumnDefinitions="Auto,*">
                 <LucideIcon Kind="TriangleAlert" Size="18" Foreground="{DynamicResource Warning}" VerticalAlignment="Top" />
                 <TextBlock Grid.Column="1" Margin="10,0,0,0" TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}"
-                           Text="{x:Static res:Strings.AddAccount_OAuthRequired}" />
+                           Text="{l:Tr AddAccount_OAuthRequired}" />
               </Grid>
             </Border>
 
             <Grid ColumnDefinitions="*,24,Auto" IsVisible="{Binding !RequiresOAuth}">
               <StackPanel>
-                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_DisplayName}" />
-                <TextBox Text="{Binding DisplayName}" PlaceholderText="{x:Static res:Strings.AddAccount_DisplayName_Placeholder}" />
+                <TextBlock Classes="label" Text="{l:Tr AddAccount_DisplayName}" />
+                <TextBox Text="{Binding DisplayName}" PlaceholderText="{l:Tr AddAccount_DisplayName_Placeholder}" />
               </StackPanel>
               <StackPanel Grid.Column="2">
-                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_Color}" />
+                <TextBlock Classes="label" Text="{l:Tr AddAccount_Color}" />
                 <ListBox Classes="swatches" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding SelectedColor}"
                          Background="Transparent">
                   <ListBox.ItemsPanel>
@@ -126,8 +126,15 @@
                   </ListBox.ItemsPanel>
                   <ListBox.ItemTemplate>
                     <DataTemplate DataType="vm:AccountColorOption">
-                      <Ellipse Width="22" Height="22" ToolTip.Tip="{Binding Name}"
-                               Fill="{Binding Hex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                      <Ellipse Width="22" Height="22"
+                               Fill="{Binding Hex, Converter={x:Static conv:HexToBrushConverter.Instance}}">
+                        <ToolTip.Tip>
+                          <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                            <Binding Path="NameKey" />
+                            <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                          </MultiBinding>
+                        </ToolTip.Tip>
+                      </Ellipse>
                     </DataTemplate>
                   </ListBox.ItemTemplate>
                 </ListBox>
@@ -139,7 +146,7 @@
         <!-- Autenticação -->
         <Border Classes="section" IsVisible="{Binding !RequiresOAuth}">
           <StackPanel Spacing="14">
-            <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.AddAccount_Section_Auth}" />
+            <TextBlock Classes="sectionTitle" Text="{l:Tr AddAccount_Section_Auth}" />
             <StackPanel>
               <TextBlock Classes="label" Text="{Binding PasswordLabel}" />
               <TextBox Text="{Binding Password}" PasswordChar="•" Classes="revealPasswordButton"
@@ -151,7 +158,7 @@
                 <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2">
                   <TextBlock Text="{Binding AppPasswordHint}" TextWrapping="Wrap" FontSize="13"
                              Foreground="{DynamicResource TextPrimary}" />
-                  <HyperlinkButton Content="{x:Static res:Strings.AddAccount_AppPasswordLink}" Padding="0"
+                  <HyperlinkButton Content="{l:Tr AddAccount_AppPasswordLink}" Padding="0"
                                    Command="{Binding OpenAppPasswordHelpCommand}" />
                 </StackPanel>
               </Grid>
@@ -164,11 +171,11 @@
           <StackPanel Spacing="14">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="2">
-                <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.AddAccount_Section_Servers}" />
-                <TextBlock Classes="caption" Text="{x:Static res:Strings.AddAccount_Section_Servers_Hint}" TextWrapping="Wrap" />
+                <TextBlock Classes="sectionTitle" Text="{l:Tr AddAccount_Section_Servers}" />
+                <TextBlock Classes="caption" Text="{l:Tr AddAccount_Section_Servers_Hint}" TextWrapping="Wrap" />
               </StackPanel>
               <ToggleButton Grid.Column="1" IsChecked="{Binding ShowAdvanced}" VerticalAlignment="Top" Margin="12,0,0,0"
-                            Content="{x:Static res:Strings.AddAccount_EditServers}" />
+                            Content="{l:Tr AddAccount_EditServers}" />
             </Grid>
 
             <TextBlock Text="{Binding ServerSummary}" FontSize="13" Foreground="{DynamicResource TextPrimary}"
@@ -176,38 +183,52 @@
 
             <StackPanel Spacing="14" IsVisible="{Binding ShowAdvanced}">
               <StackPanel>
-                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_UserName}" />
+                <TextBlock Classes="label" Text="{l:Tr AddAccount_UserName}" />
                 <TextBox Text="{Binding UserName}" />
               </StackPanel>
               <StackPanel>
-                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_IncomingServer}" />
+                <TextBlock Classes="label" Text="{l:Tr AddAccount_IncomingServer}" />
                 <Grid ColumnDefinitions="*,8,96,8,150">
-                  <TextBox Text="{Binding ImapHost}" PlaceholderText="{x:Static res:Strings.AddAccount_Host}" />
+                  <TextBox Text="{Binding ImapHost}" PlaceholderText="{l:Tr AddAccount_Host}" />
                   <NumericUpDown Grid.Column="2" Value="{Binding ImapPort}" Minimum="1" Maximum="65535"
                                  Increment="1" FormatString="0" ShowButtonSpinner="False"
-                                 ToolTip.Tip="{x:Static res:Strings.AddAccount_Port}" />
+                                 ToolTip.Tip="{l:Tr AddAccount_Port}" />
                   <ComboBox Grid.Column="4" ItemsSource="{Binding SecurityOptions}" SelectedItem="{Binding ImapSecurity}"
-                            HorizontalAlignment="Stretch" ToolTip.Tip="{x:Static res:Strings.AddAccount_Security}">
+                            HorizontalAlignment="Stretch" ToolTip.Tip="{l:Tr AddAccount_Security}">
                     <ComboBox.ItemTemplate>
                       <DataTemplate DataType="vm:SecurityOption">
-                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock>
+                          <TextBlock.Text>
+                            <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                              <Binding Path="LabelKey" />
+                              <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                            </MultiBinding>
+                          </TextBlock.Text>
+                        </TextBlock>
                       </DataTemplate>
                     </ComboBox.ItemTemplate>
                   </ComboBox>
                 </Grid>
               </StackPanel>
               <StackPanel>
-                <TextBlock Classes="label" Text="{x:Static res:Strings.AddAccount_OutgoingServer}" />
+                <TextBlock Classes="label" Text="{l:Tr AddAccount_OutgoingServer}" />
                 <Grid ColumnDefinitions="*,8,96,8,150">
-                  <TextBox Text="{Binding SmtpHost}" PlaceholderText="{x:Static res:Strings.AddAccount_Host}" />
+                  <TextBox Text="{Binding SmtpHost}" PlaceholderText="{l:Tr AddAccount_Host}" />
                   <NumericUpDown Grid.Column="2" Value="{Binding SmtpPort}" Minimum="1" Maximum="65535"
                                  Increment="1" FormatString="0" ShowButtonSpinner="False"
-                                 ToolTip.Tip="{x:Static res:Strings.AddAccount_Port}" />
+                                 ToolTip.Tip="{l:Tr AddAccount_Port}" />
                   <ComboBox Grid.Column="4" ItemsSource="{Binding SecurityOptions}" SelectedItem="{Binding SmtpSecurity}"
-                            HorizontalAlignment="Stretch" ToolTip.Tip="{x:Static res:Strings.AddAccount_Security}">
+                            HorizontalAlignment="Stretch" ToolTip.Tip="{l:Tr AddAccount_Security}">
                     <ComboBox.ItemTemplate>
                       <DataTemplate DataType="vm:SecurityOption">
-                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock>
+                          <TextBlock.Text>
+                            <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                              <Binding Path="LabelKey" />
+                              <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                            </MultiBinding>
+                          </TextBlock.Text>
+                        </TextBlock>
                       </DataTemplate>
                     </ComboBox.ItemTemplate>
                   </ComboBox>
@@ -247,10 +268,10 @@
           <Button Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSubmit}" IsDefault="True">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <LucideIcon Kind="Check" Size="16" Foreground="{DynamicResource OnAccent}" />
-              <TextBlock Text="{x:Static res:Strings.AddAccount_SaveAccount}" />
+              <TextBlock Text="{l:Tr AddAccount_SaveAccount}" />
             </StackPanel>
           </Button>
-          <Button Content="{x:Static res:Strings.AddAccount_Test}" Command="{Binding TestCommand}"
+          <Button Content="{l:Tr AddAccount_Test}" Command="{Binding TestCommand}"
                   IsEnabled="{Binding CanSubmit}" />
           <LucideIcon Kind="LoaderCircle" Size="18" Classes="spin" IsVisible="{Binding IsBusy}"
                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
@@ -259,14 +280,14 @@
         <!-- Remover conta (só na edição), com confirmação inline -->
         <Border Classes="section" Margin="0,24,0,0" IsVisible="{Binding IsEditing}">
           <StackPanel Spacing="10">
-            <TextBlock Classes="sectionTitle" Text="{x:Static res:Strings.Account_Remove}" />
-            <TextBlock Classes="caption" Text="{x:Static res:Strings.Account_Remove_Confirm}" TextWrapping="Wrap" />
+            <TextBlock Classes="sectionTitle" Text="{l:Tr Account_Remove}" />
+            <TextBlock Classes="caption" Text="{l:Tr Account_Remove_Confirm}" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Classes="danger" Content="{x:Static res:Strings.Account_Remove}" Command="{Binding AskRemoveCommand}"
+              <Button Classes="danger" Content="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}"
                       IsVisible="{Binding !IsConfirmingRemoval}" />
-              <Button Classes="danger" Content="{x:Static res:Strings.Account_Remove_ConfirmButton}"
+              <Button Classes="danger" Content="{l:Tr Account_Remove_ConfirmButton}"
                       Command="{Binding ConfirmRemoveCommand}" IsVisible="{Binding IsConfirmingRemoval}" />
-              <Button Content="{x:Static res:Strings.AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}"
+              <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}"
                       IsVisible="{Binding IsConfirmingRemoval}" />
             </StackPanel>
           </StackPanel>
@@ -275,24 +296,24 @@
 
       <!-- Ajuda lateral (abaixo do formulário em larguras menores) -->
       <StackPanel x:Name="Aside" Grid.Row="1" Grid.Column="1" Width="280" Margin="40,4,0,0" Spacing="16">
-        <TextBlock Text="{x:Static res:Strings.AddAccount_Help_Title}" FontSize="15" FontWeight="SemiBold"
+        <TextBlock Text="{l:Tr AddAccount_Help_Title}" FontSize="15" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimary}" />
         <Grid Classes="helpStep" ColumnDefinitions="Auto,*">
           <Border><TextBlock Text="1" /></Border>
-          <TextBlock Grid.Column="1" Text="{x:Static res:Strings.AddAccount_Help_1}" />
+          <TextBlock Grid.Column="1" Text="{l:Tr AddAccount_Help_1}" />
         </Grid>
         <Grid Classes="helpStep" ColumnDefinitions="Auto,*">
           <Border><TextBlock Text="2" /></Border>
-          <TextBlock Grid.Column="1" Text="{x:Static res:Strings.AddAccount_Help_2}" />
+          <TextBlock Grid.Column="1" Text="{l:Tr AddAccount_Help_2}" />
         </Grid>
         <Grid Classes="helpStep" ColumnDefinitions="Auto,*">
           <Border><TextBlock Text="3" /></Border>
-          <TextBlock Grid.Column="1" Text="{x:Static res:Strings.AddAccount_Help_3}" />
+          <TextBlock Grid.Column="1" Text="{l:Tr AddAccount_Help_3}" />
         </Grid>
         <Border Height="1" Background="{DynamicResource Border}" />
         <Grid ColumnDefinitions="Auto,*">
           <LucideIcon Kind="ShieldAlert" Size="16" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Top" />
-          <TextBlock Grid.Column="1" Margin="10,0,0,0" Text="{x:Static res:Strings.AddAccount_Privacy}"
+          <TextBlock Grid.Column="1" Margin="10,0,0,0" Text="{l:Tr AddAccount_Privacy}"
                      Classes="caption" TextWrapping="Wrap" />
         </Grid>
       </StackPanel>

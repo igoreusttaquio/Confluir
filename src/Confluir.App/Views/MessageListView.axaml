@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
              xmlns:vm="using:Confluir.App.ViewModels"
              xmlns:conv="using:Confluir.App.Converters"
-             xmlns:res="using:Confluir.App.Resources"
              x:Class="Confluir.App.Views.MessageListView"
              x:DataType="vm:MainWindowViewModel">
   <UserControl.Styles>
@@ -46,7 +46,7 @@
             <TextBlock Text="{Binding ListSubtitle}" Classes="caption" Margin="0,2,0,0" />
           </StackPanel>
           <Button Grid.Column="1" Classes="accent iconOnly" VerticalAlignment="Center" Margin="8,0,0,0" IsEnabled="False"
-                  ToolTip.Tip="{x:Static res:Strings.Action_NewMessage}">
+                  ToolTip.Tip="{l:Tr Action_NewMessage}">
             <LucideIcon Kind="SquarePen" Size="18" Foreground="{DynamicResource OnAccent}" />
           </Button>
         </Grid>
@@ -55,7 +55,7 @@
                    MinHeight="2" Height="2" Margin="0,-2,0,0" />
 
       <Grid>
-        <TextBlock Text="{x:Static res:Strings.MessageList_Empty}" Classes="secondary"
+        <TextBlock Text="{l:Tr MessageList_Empty}" Classes="secondary"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    IsVisible="{Binding IsListEmpty}" />
 
@@ -63,14 +63,14 @@
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24"
                     IsVisible="{Binding ShowNoAccounts}" MaxWidth="300">
           <LucideIcon Kind="MailPlus" Size="40" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />
-          <TextBlock Text="{x:Static res:Strings.NoAccounts_Title}" FontSize="16" FontWeight="SemiBold"
+          <TextBlock Text="{l:Tr NoAccounts_Title}" FontSize="16" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" />
-          <TextBlock Text="{x:Static res:Strings.NoAccounts_Hint}" Classes="secondary" TextWrapping="Wrap"
+          <TextBlock Text="{l:Tr NoAccounts_Hint}" Classes="secondary" TextWrapping="Wrap"
                      TextAlignment="Center" />
           <Button Classes="accent" HorizontalAlignment="Center" Margin="0,6,0,0" Command="{Binding AddAccountCommand}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <LucideIcon Kind="UserPlus" Size="16" Foreground="{DynamicResource OnAccent}" />
-              <TextBlock Text="{x:Static res:Strings.Account_Add}" />
+              <TextBlock Text="{l:Tr Account_Add}" />
             </StackPanel>
           </Button>
         </StackPanel>
@@ -79,13 +79,13 @@
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Margin="24"
                     IsVisible="{Binding HasListError}" MaxWidth="320">
           <LucideIcon Kind="CircleAlert" Size="32" StrokeWidth="1.5" Foreground="{DynamicResource Danger}" />
-          <TextBlock Text="{x:Static res:Strings.List_Error}" FontWeight="SemiBold" HorizontalAlignment="Center"
+          <TextBlock Text="{l:Tr List_Error}" FontWeight="SemiBold" HorizontalAlignment="Center"
                      Foreground="{DynamicResource TextPrimary}" />
           <TextBlock Text="{Binding ListError}" Classes="secondary" TextWrapping="Wrap" TextAlignment="Center" />
           <Button HorizontalAlignment="Center" Command="{Binding RetryListCommand}" Margin="0,4,0,0">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <LucideIcon Kind="RefreshCw" Size="14" />
-              <TextBlock Text="{x:Static res:Strings.Action_Retry}" />
+              <TextBlock Text="{l:Tr Action_Retry}" />
             </StackPanel>
           </Button>
         </StackPanel>

@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluir.IconGen", "tools\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluir.Snapshot", "tools\Confluir.Snapshot\Confluir.Snapshot.csproj", "{F448D29E-F1AA-4EA4-A0A8-0B56B27336AC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluir.App.Tests", "tests\Confluir.App.Tests\Confluir.App.Tests.csproj", "{C4FA212C-457C-4865-A50A-C37BDAC7474E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -159,6 +161,18 @@ Global
 		{F448D29E-F1AA-4EA4-A0A8-0B56B27336AC}.Release|x64.Build.0 = Release|Any CPU
 		{F448D29E-F1AA-4EA4-A0A8-0B56B27336AC}.Release|x86.ActiveCfg = Release|Any CPU
 		{F448D29E-F1AA-4EA4-A0A8-0B56B27336AC}.Release|x86.Build.0 = Release|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Debug|x64.Build.0 = Debug|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Debug|x86.Build.0 = Debug|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Release|x64.ActiveCfg = Release|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Release|x64.Build.0 = Release|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Release|x86.ActiveCfg = Release|Any CPU
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -174,5 +188,6 @@ Global
 		{453D8D76-03BE-4C91-94DA-045A6DEBFACE} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{3153A530-4C29-40CB-BF84-6CDD01903E68} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 		{F448D29E-F1AA-4EA4-A0A8-0B56B27336AC} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
+		{C4FA212C-457C-4865-A50A-C37BDAC7474E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

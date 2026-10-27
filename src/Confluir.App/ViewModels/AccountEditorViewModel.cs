@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Confluir.App.Localization;
 using Confluir.App.Resources;
 using Confluir.App.Services;
 using Confluir.Core.Models;
@@ -9,9 +10,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Confluir.App.ViewModels;
 
-public sealed record SecurityOption(SecurityMode Mode, string Label);
+public sealed record SecurityOption(SecurityMode Mode, string LabelKey)
+{
+    public string Label => LocalizationService.Instance[LabelKey];
+}
 
-public sealed record AccountColorOption(string Hex, string Name);
+public sealed record AccountColorOption(string Hex, string NameKey);
 
 public enum TestState
 {
@@ -89,16 +93,16 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         _navigation = navigation;
         _logger = logger;
 
-        ColorOptions = AccountColors.All.Select(c => new AccountColorOption(c.Hex, ColorNames.For(c.Key))).ToList();
+        ColorOptions = AccountColors.All.Select(c => new AccountColorOption(c.Hex, ColorNames.KeyFor(c.Key))).ToList();
         // Sugere a primeira cor ainda não usada por outra conta.
         var used = accounts.Accounts.Select(a => a.ColorHex).ToHashSet(StringComparer.OrdinalIgnoreCase);
         SelectedColor = ColorOptions.FirstOrDefault(c => !used.Contains(c.Hex)) ?? ColorOptions[0];
 
         SecurityOptions =
         [
-            new SecurityOption(SecurityMode.SslOnConnect, Strings.Security_Ssl),
-            new SecurityOption(SecurityMode.StartTls, Strings.Security_StartTls),
-            new SecurityOption(SecurityMode.None, Strings.Security_None),
+            new SecurityOption(SecurityMode.SslOnConnect, nameof(Strings.Security_Ssl)),
+            new SecurityOption(SecurityMode.StartTls, nameof(Strings.Security_StartTls)),
+            new SecurityOption(SecurityMode.None, nameof(Strings.Security_None)),
         ];
         ImapSecurity = SecurityOptions[0];
         SmtpSecurity = SecurityOptions[0];

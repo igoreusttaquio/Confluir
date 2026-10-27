@@ -1,7 +1,9 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Confluir.App.Localization;
 using Confluir.App.Services;
+using Confluir.Core.Settings;
 using Confluir.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +19,9 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Idioma antes de criar qualquer View, para que tudo já nasça traduzido.
+        var settings = Services.GetRequiredService<ISettingsStore>();
+        Services.GetRequiredService<LocalizationService>().Apply(settings.Current.Appearance.Language);
         Services.GetRequiredService<ThemeService>().ApplyAll();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

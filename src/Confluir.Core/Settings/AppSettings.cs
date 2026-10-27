@@ -21,6 +21,9 @@ public sealed class AppearanceSettings
     public string? AccentColor { get; set; }
 
     public bool CompactMode { get; set; }
+
+    /// <summary>Idioma da interface ("pt-BR", "en", "es"); nulo segue o sistema.</summary>
+    public string? Language { get; set; }
 }
 
 public sealed class LayoutSettings

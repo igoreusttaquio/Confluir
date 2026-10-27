@@ -1,4 +1,3 @@
-using System.Globalization;
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,11 +10,7 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // A interface é em pt-BR; datas e números seguem a mesma cultura.
-        var culture = CultureInfo.GetCultureInfo("pt-BR");
-        CultureInfo.DefaultThreadCurrentCulture = culture;
-        CultureInfo.DefaultThreadCurrentUICulture = culture;
-
+        // O idioma (e a cultura de datas e números) é aplicado pelo LocalizationService ao iniciar o App.
         // --dados-falsos: interface com contas e mensagens de exemplo, sem tocar em servidores.
         var useFakeData = args.Contains("--dados-falsos");
         using var host = AppHost.Build(useFakeData: useFakeData);

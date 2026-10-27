@@ -1,4 +1,3 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -16,14 +15,13 @@ using Microsoft.Extensions.DependencyInjection;
 var outDir = Path.GetFullPath(args.Length > 0 ? args[0] : "snapshots");
 Directory.CreateDirectory(outDir);
 
-var culture = CultureInfo.GetCultureInfo("pt-BR");
-CultureInfo.DefaultThreadCurrentCulture = culture;
-CultureInfo.DefaultThreadCurrentUICulture = culture;
-
 // Pasta de dados temporária: não toca nas configurações reais do usuário.
 var dataDir = Path.Combine(Path.GetTempPath(), "confluir-snapshot", Guid.NewGuid().ToString("N"));
 using var host = AppHost.Build(dataDir, useFakeData: true);
 var services = host.Services;
+
+// Capturas em pt-BR por padrão, independente do idioma da máquina.
+services.GetRequiredService<ISettingsStore>().Current.Appearance.Language = "pt-BR";
 
 AppBuilder.Configure(() => new App(services))
     .UseSkia()
@@ -73,6 +71,14 @@ foreach (var mode in new[] { ThemeMode.Light, ThemeMode.Dark })
     Save(panel, $"appearance-{mode.ToString().ToLowerInvariant()}.png");
     panel.Close();
 }
+
+// Troca de idioma ao vivo (pelo seletor de Aparência), com a mensagem aberta.
+foreach (var (code, name) in new[] { ("en", "en"), ("es", "es") })
+{
+    vm.Appearance.SelectedLanguage = vm.Appearance.LanguageOptions.First(o => o.Code == code);
+    Save(window, $"main-{name}.png");
+}
+vm.Appearance.SelectedLanguage = vm.Appearance.LanguageOptions.First(o => o.Code == "pt-BR");
 
 // Confirmação inline de remoção de conta.
 theme.SetTheme(ThemeMode.Light);

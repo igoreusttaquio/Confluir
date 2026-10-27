@@ -1,4 +1,5 @@
 using Confluir.App.DesignData;
+using Confluir.App.Localization;
 using Confluir.App.Services;
 using Confluir.App.ViewModels;
 using Confluir.App.Views;
@@ -48,6 +49,7 @@ public static class AppHost
         else
             builder.Services.AddSingleton<IMailboxService, ImapMailboxService>();
 
+        builder.Services.AddSingleton(LocalizationService.Instance);
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IUrlLauncher, UrlLauncher>();

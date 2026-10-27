@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="AppTitle"><value>Confluir</value></data>
+  <data name="UnifiedInbox"><value>Unified inbox</value></data>
+
+  <data name="Folder_Inbox"><value>Inbox</value></data>
+  <data name="Folder_Sent"><value>Sent</value></data>
+  <data name="Folder_Drafts"><value>Drafts</value></data>
+  <data name="Folder_Trash"><value>Trash</value></data>
+  <data name="Folder_Junk"><value>Spam</value></data>
+  <data name="Folder_Archive"><value>Archive</value></data>
+
+  <data name="Group_Today"><value>Today</value></data>
+  <data name="Group_Yesterday"><value>Yesterday</value></data>
+  <data name="Group_ThisWeek"><value>This week</value></data>
+  <data name="Group_Older"><value>Older</value></data>
+
+  <data name="MessageList_Count_One"><value>{0:N0} message</value></data>
+  <data name="MessageList_Count_Other"><value>{0:N0} messages</value></data>
+  <data name="MessageList_UnreadCount_One"><value>{0:N0} unread</value></data>
+  <data name="MessageList_UnreadCount_Other"><value>{0:N0} unread</value></data>
+  <data name="MessageList_Empty"><value>No messages in this folder</value></data>
+  <data name="NoSubject"><value>(no subject)</value></data>
+
+  <data name="Reading_Empty_Title"><value>No message selected</value></data>
+  <data name="Reading_Empty_Hint"><value>Pick a message from the list to read it here.</value></data>
+  <data name="Reading_To"><value>To</value></data>
+  <data name="Reading_Cc"><value>Cc</value></data>
+  <data name="Reading_Attachments"><value>Attachments</value></data>
+  <data name="Attachment_Save"><value>Save</value></data>
+  <data name="Attachment_Open"><value>Open</value></data>
+
+  <data name="Action_NewMessage"><value>New message</value></data>
+  <data name="Action_Reply"><value>Reply</value></data>
+  <data name="Action_ReplyAll"><value>Reply all</value></data>
+  <data name="Action_Forward"><value>Forward</value></data>
+  <data name="Action_Archive"><value>Archive</value></data>
+  <data name="Action_Delete"><value>Delete</value></data>
+  <data name="Action_Flag"><value>Flag</value></data>
+  <data name="Action_Collapse"><value>Collapse or expand</value></data>
+
+  <data name="Settings"><value>Settings</value></data>
+  <data name="Appearance"><value>Appearance</value></data>
+  <data name="Theme"><value>Theme</value></data>
+  <data name="Theme_Light"><value>Light</value></data>
+  <data name="Theme_Dark"><value>Dark</value></data>
+  <data name="Theme_System"><value>Use system setting</value></data>
+  <data name="AccentColor"><value>Accent color</value></data>
+  <data name="Accent_Default"><value>Default</value></data>
+  <data name="Accent_Custom"><value>Custom</value></data>
+  <data name="CompactMode"><value>Compact mode</value></data>
+  <data name="Language"><value>Language</value></data>
+  <data name="Language_System"><value>Use system language</value></data>
+  <data name="Language_PtBR"><value>Português (Brasil)</value></data>
+  <data name="Language_En"><value>English</value></data>
+  <data name="Language_Es"><value>Español</value></data>
+
+  <data name="Account_Add"><value>Add account</value></data>
+  <data name="Account_Remove"><value>Remove account</value></data>
+  <data name="Account_Edit"><value>Edit account</value></data>
+  <data name="Account_Remove_ConfirmButton"><value>Yes, remove</value></data>
+  <data name="EditAccount_Title"><value>Edit account</value></data>
+  <data name="EditAccount_Subtitle"><value>Change the name, color, password or servers. Connection changes are tested before saving.</value></data>
+  <data name="EditAccount_PasswordKeep"><value>Leave blank to keep the current password</value></data>
+  <data name="Account_Remove_Confirm"><value>Remove this account from Confluir? The password is deleted from the system keychain; no email is deleted from the server.</value></data>
+  <data name="Account_LoadingFolders"><value>Loading folders…</value></data>
+  <data name="NoAccounts_Title"><value>No accounts yet</value></data>
+  <data name="NoAccounts_Hint"><value>Add an email account (Gmail, Yahoo or any IMAP server) to get started.</value></data>
+
+  <data name="AddAccount_Title"><value>Add account</value></data>
+  <data name="AddAccount_Subtitle"><value>Connect Gmail, Yahoo or any IMAP server. We test receiving and sending before saving.</value></data>
+  <data name="Breadcrumb_Accounts"><value>Accounts</value></data>
+  <data name="AddAccount_Section_Account"><value>Account</value></data>
+  <data name="AddAccount_Section_Auth"><value>Sign-in</value></data>
+  <data name="AddAccount_Section_Servers"><value>Servers</value></data>
+  <data name="AddAccount_Section_Servers_Hint"><value>Filled in automatically. Change them only if your provider tells you to.</value></data>
+  <data name="AddAccount_EditServers"><value>Edit servers</value></data>
+  <data name="AddAccount_TestResult"><value>Test result</value></data>
+  <data name="AddAccount_SaveAccount"><value>Save account</value></data>
+  <data name="AddAccount_Help_Title"><value>How it works</value></data>
+  <data name="AddAccount_Help_1"><value>Type your email. We recognize Gmail, Yahoo and thousands of providers and fill in the servers.</value></data>
+  <data name="AddAccount_Help_2"><value>Test the connection. We check receiving (IMAP) and sending (SMTP) before saving.</value></data>
+  <data name="AddAccount_Help_3"><value>Your password is kept in the operating system's keychain, never as plain text on disk.</value></data>
+  <data name="AddAccount_Privacy"><value>To find the servers, only your email's domain is looked up in Thunderbird's public database.</value></data>
+  <data name="AddAccount_Email"><value>Email address</value></data>
+  <data name="AddAccount_DisplayName"><value>Account name</value></data>
+  <data name="AddAccount_DisplayName_Placeholder"><value>E.g. Personal, Work</value></data>
+  <data name="AddAccount_Password"><value>Password</value></data>
+  <data name="AddAccount_AppPassword"><value>App password</value></data>
+  <data name="AddAccount_Color"><value>Account color</value></data>
+  <data name="AddAccount_Advanced"><value>Advanced settings</value></data>
+  <data name="AddAccount_UserName"><value>Username</value></data>
+  <data name="AddAccount_IncomingServer"><value>Incoming server (IMAP)</value></data>
+  <data name="AddAccount_OutgoingServer"><value>Outgoing server (SMTP)</value></data>
+  <data name="AddAccount_Host"><value>Server</value></data>
+  <data name="AddAccount_Port"><value>Port</value></data>
+  <data name="AddAccount_Security"><value>Security</value></data>
+  <data name="AddAccount_Test"><value>Test connection</value></data>
+  <data name="AddAccount_Save"><value>Save</value></data>
+  <data name="AddAccount_Cancel"><value>Cancel</value></data>
+  <data name="AddAccount_Detecting"><value>Looking up settings…</value></data>
+  <data name="AddAccount_Detected_Known"><value>{0} detected. Servers filled in.</value></data>
+  <data name="AddAccount_Detected_Autoconfig"><value>Settings found for {0}.</value></data>
+  <data name="AddAccount_Detected_Guess"><value>We couldn't find settings for {0}. We suggested standard servers; please check them under Advanced settings.</value></data>
+  <data name="AddAccount_OAuthRequired"><value>Outlook/Hotmail requires signing in with Microsoft (OAuth2), which is coming in a future version. This account can't be added yet.</value></data>
+  <data name="AddAccount_AppPasswordHint_Gmail"><value>Gmail requires an app password (with 2-Step Verification turned on). Your regular password won't work here.</value></data>
+  <data name="AddAccount_AppPasswordHint_Yahoo"><value>Yahoo requires an app password. Your regular password won't work here.</value></data>
+  <data name="AddAccount_AppPasswordLink"><value>How to create an app password</value></data>
+  <data name="AddAccount_Invalid_Email"><value>Enter a valid email address.</value></data>
+  <data name="AddAccount_Invalid_Password"><value>Enter the password.</value></data>
+  <data name="AddAccount_Invalid_Servers"><value>Check the servers and ports under Advanced settings.</value></data>
+  <data name="AddAccount_Saving"><value>Saving…</value></data>
+  <data name="AddAccount_CredentialStoreError"><value>The password couldn't be stored in the system keychain. The account was not saved.</value></data>
+
+  <data name="Security_Ssl"><value>SSL/TLS</value></data>
+  <data name="Security_StartTls"><value>STARTTLS</value></data>
+  <data name="Security_None"><value>None (insecure)</value></data>
+
+  <data name="Test_Testing"><value>Testing…</value></data>
+  <data name="Test_Ok"><value>Connected</value></data>
+  <data name="Test_OkAlternativePort"><value>Connected on port {0} ({1}); the settings were updated. The original port didn't respond on your network.</value></data>
+  <data name="Error_AuthenticationFailed"><value>Wrong username or password.</value></data>
+  <data name="Error_AppPasswordRequired"><value>Password rejected. This provider requires an app password instead of your regular password.</value></data>
+  <data name="Error_ServerUnreachable"><value>The server couldn't be reached. Check the address, the port and your connection.</value></data>
+  <data name="Error_SecureConnectionFailed"><value>The secure connection (TLS) failed. Check the port and the security type.</value></data>
+  <data name="Error_Timeout"><value>The server took too long to respond.</value></data>
+  <data name="Error_Canceled"><value>Canceled.</value></data>
+  <data name="Error_Unknown"><value>Unexpected error: {0}</value></data>
+
+  <data name="List_Error"><value>The messages couldn't be loaded.</value></data>
+  <data name="Reading_Error"><value>This message couldn't be loaded.</value></data>
+  <data name="Folders_Error"><value>Failed to load folders.</value></data>
+  <data name="Action_Retry"><value>Try again</value></data>
+  <data name="Action_Back"><value>Back</value></data>
+
+  <data name="Color_Blue"><value>Blue</value></data>
+  <data name="Color_Coral"><value>Coral</value></data>
+  <data name="Color_Teal"><value>Teal</value></data>
+  <data name="Color_Amber"><value>Amber</value></data>
+  <data name="Color_Violet"><value>Violet</value></data>
+  <data name="Color_Pink"><value>Pink</value></data>
+  <data name="Color_Green"><value>Green</value></data>
+  <data name="Color_Cyan"><value>Cyan</value></data>
+</root>
