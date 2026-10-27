@@ -73,6 +73,11 @@ public sealed class Database
         """
         UPDATE messages SET date_utc_ms = 0, date_offset_min = 0 WHERE date_utc_ms < 0;
         """,
+
+        // v3: corpos guardados antes da fase 4 não têm o HTML; são baixados de novo ao abrir.
+        """
+        DELETE FROM bodies;
+        """,
     ];
 
     private readonly string _connectionString;

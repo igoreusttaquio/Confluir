@@ -7,22 +7,34 @@ using Confluir.App.Services;
 using Confluir.Core.Formatting;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
+using Confluir.Core.Settings;
 using Confluir.Mail;
 using Lucide.Avalonia;
 using Microsoft.Extensions.Logging;
 
 namespace Confluir.App.ViewModels;
 
+/// <summary>Serviços usados pelo painel de leitura.</summary>
+public sealed record ReadingServices(
+    IMailboxService Mailbox,
+    ThemeService Theme,
+    ISettingsStore Settings,
+    AttachmentService Attachments,
+    ILogger<MessageDetailViewModel> Logger);
+
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
 public sealed partial class MessageDetailViewModel : ViewModelBase
 {
-    private readonly IMailboxService _mailbox;
-    private readonly ILogger _logger;
+    // Fonte de leitura até a fase 7 (fontes configuráveis).
+    private const string ReadingFont = "\"Segoe UI\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif";
 
-    public MessageDetailViewModel(MessageRow row, IMailboxService mailbox, ILogger logger)
+    private readonly ReadingServices _services;
+    private MessageBody? _body;
+    private bool _allowRemoteImages;
+
+    public MessageDetailViewModel(MessageRow row, ReadingServices services)
     {
-        _mailbox = mailbox;
-        _logger = logger;
+        _services = services;
         Row = row;
         var summary = row.Summary;
         FromName = row.From;
@@ -31,9 +43,12 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         // Hash estável (string.GetHashCode muda a cada execução): o mesmo remetente mantém a mesma cor.
         var hash = summary.FromAddress.ToLowerInvariant().Aggregate(17u, (h, c) => unchecked(h * 31 + c));
         AvatarColor = AccountColors.All[(int)(hash % (uint)AccountColors.All.Count)].Hex;
+        _allowRemoteImages = TrustedSenders.Contains(SenderKey);
     }
 
     private static CultureInfo Culture => LocalizationService.Instance.FormatCulture;
+    private List<string> TrustedSenders => _services.Settings.Current.Reading.TrustedImageSenders;
+    private string SenderKey => FromAddress.Trim().ToLowerInvariant();
 
     public MessageRow Row { get; }
     public string Subject => Row.Subject;
@@ -43,6 +58,7 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     public string FromAddress { get; }
     public string Initials { get; }
     public string AvatarColor { get; }
+
     /// <summary>Data completa no formato do idioma, ex.: "terça-feira, 27 de outubro de 2026, 14:45".</summary>
     public string DateText
     {
@@ -62,8 +78,21 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
 
     public bool HasCc => Cc.Length > 0;
 
+    /// <summary>Texto puro (usado quando não há WebView disponível).</summary>
     [ObservableProperty]
     public partial string Body { get; private set; } = "";
+
+    /// <summary>Documento HTML seguro para o WebView.</summary>
+    [ObservableProperty]
+    public partial string? Document { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBlockedImages), nameof(BlockedImagesText))]
+    public partial int BlockedImages { get; private set; }
+
+    public bool HasBlockedImages => BlockedImages > 0;
+
+    public string BlockedImagesText => LocalizationService.Instance.Plural("Reading_ImagesBlocked", BlockedImages);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAttachments))]
@@ -83,24 +112,44 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     [RelayCommand]
     private Task RetryAsync() => LoadAsync(CancellationToken.None);
 
+    [RelayCommand]
+    private void ShowImages()
+    {
+        _allowRemoteImages = true;
+        RebuildDocument();
+    }
+
+    [RelayCommand]
+    private void AlwaysShowImages()
+    {
+        if (!TrustedSenders.Contains(SenderKey))
+        {
+            TrustedSenders.Add(SenderKey);
+            _services.Settings.Save();
+        }
+        ShowImages();
+    }
+
     public async Task LoadAsync(CancellationToken ct)
     {
         IsLoading = true;
         Error = null;
         try
         {
-            var body = await _mailbox.GetMessageBodyAsync(Row.Summary.Id, ct);
+            var body = await _services.Mailbox.GetMessageBodyAsync(Row.Summary.Id, ct);
+            _body = body;
             To = string.Join(", ", body.To);
             Cc = string.Join(", ", body.Cc);
             Body = body.TextBody;
-            Attachments = body.Attachments.Select(a => new AttachmentViewModel(a)).ToList();
+            Attachments = body.Attachments.Select(a => new AttachmentViewModel(a, this)).ToList();
+            RebuildDocument();
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Falha ao carregar o corpo da mensagem {MessageId}", Row.Summary.Id);
+            _services.Logger.LogError(ex, "Falha ao carregar o corpo da mensagem {MessageId}", Row.Summary.Id);
             var result = MailErrorClassifier.Classify(ex, Row.Account.Provider);
             Error = result.Error is ConnectionError.ServerUnreachable or ConnectionError.Timeout
                 ? Strings.Reading_NotAvailableOffline
@@ -110,6 +159,61 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>Remonta o HTML (ex.: tema mudou ou o usuário liberou as imagens).</summary>
+    public void RebuildDocument()
+    {
+        if (_body is null)
+            return;
+        var document = EmailDocumentBuilder.Build(_body, _allowRemoteImages, _services.Theme.CurrentPalette(), ReadingFont);
+        BlockedImages = document.BlockedRemoteImages;
+        Document = document.Html;
+    }
+
+    internal async Task SaveAttachmentAsync(AttachmentViewModel attachment)
+    {
+        attachment.IsBusy = true;
+        attachment.Error = null;
+        try
+        {
+            await _services.Attachments.SaveAsync(Row.Summary.Id, attachment.Info);
+        }
+        catch (Exception ex)
+        {
+            _services.Logger.LogWarning(ex, "Falha ao salvar anexo da mensagem {MessageId}", Row.Summary.Id);
+            attachment.Error = Strings.Attachment_Error;
+        }
+        finally
+        {
+            attachment.IsBusy = false;
+        }
+    }
+
+    internal async Task OpenAttachmentAsync(AttachmentViewModel attachment)
+    {
+        attachment.IsBusy = true;
+        attachment.Error = null;
+        try
+        {
+            await _services.Attachments.OpenAsync(Row.Summary.Id, attachment.Info);
+        }
+        catch (Exception ex)
+        {
+            _services.Logger.LogWarning(ex, "Falha ao abrir anexo da mensagem {MessageId}", Row.Summary.Id);
+            attachment.Error = Strings.Attachment_Error;
+        }
+        finally
+        {
+            attachment.IsBusy = false;
+        }
+    }
+
+    public override void OnLanguageChanged()
+    {
+        foreach (var attachment in Attachments)
+            attachment.OnLanguageChanged();
+        base.OnLanguageChanged();
     }
 
     private static string GetInitials(string name)
@@ -124,13 +228,29 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     }
 }
 
-public sealed class AttachmentViewModel(AttachmentInfo info)
+public sealed partial class AttachmentViewModel(AttachmentInfo info, MessageDetailViewModel owner) : ViewModelBase
 {
-    public string FileName => info.FileName;
+    public AttachmentInfo Info { get; } = info;
 
-    public string SizeText => FormatSize(info.Size);
+    public string FileName => Info.FileName;
 
-    public LucideIconKind Icon => info.MimeType switch
+    public string SizeText => FormatSize(Info.Size);
+
+    /// <summary>Executáveis (.exe, .bat, .js…) só podem ser salvos.</summary>
+    public bool CanOpen => AttachmentService.CanOpen(Info.FileName);
+
+    public string OpenTooltip => CanOpen ? Strings.Attachment_Open : Strings.Attachment_OpenBlocked;
+
+    [ObservableProperty]
+    public partial bool IsBusy { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    public partial string? Error { get; set; }
+
+    public bool HasError => Error is not null;
+
+    public LucideIconKind Icon => Info.MimeType switch
     {
         var t when t.StartsWith("image/", StringComparison.Ordinal) => LucideIconKind.FileImage,
         var t when t.Contains("spreadsheet", StringComparison.Ordinal) || t == "text/csv" => LucideIconKind.FileSpreadsheet,
@@ -138,6 +258,12 @@ public sealed class AttachmentViewModel(AttachmentInfo info)
         "application/zip" or "application/x-7z-compressed" or "application/x-rar-compressed" => LucideIconKind.FileArchive,
         _ => LucideIconKind.File,
     };
+
+    [RelayCommand]
+    private Task Save() => owner.SaveAttachmentAsync(this);
+
+    [RelayCommand]
+    private Task Open() => CanOpen ? owner.OpenAttachmentAsync(this) : Task.CompletedTask;
 
     private static string FormatSize(long bytes)
     {

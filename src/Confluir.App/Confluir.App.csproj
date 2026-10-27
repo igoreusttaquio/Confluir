@@ -24,6 +24,7 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" />
+    <PackageReference Include="Avalonia.Controls.WebView" />
     <PackageReference Include="FluentAvaloniaUI" />
     <PackageReference Include="Lucide.Avalonia" />
     <PackageReference Include="CommunityToolkit.Mvvm" />

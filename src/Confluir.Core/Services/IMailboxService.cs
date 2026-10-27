@@ -30,6 +30,9 @@ public interface IMailboxService
     /// <summary>Corpo da mensagem: do cache, ou baixado do servidor e guardado.</summary>
     Task<MessageBody> GetMessageBodyAsync(Guid messageId, CancellationToken ct = default);
 
+    /// <summary>Conteúdo de um anexo (decodificado), baixado do servidor sob demanda.</summary>
+    Task<byte[]> GetAttachmentAsync(Guid messageId, int attachmentIndex, CancellationToken ct = default);
+
     /// <summary>Aplica no cache na hora e envia ao servidor em fila (reenviada quando houver conexão).</summary>
     Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default);
 

@@ -11,6 +11,13 @@ public sealed class AppSettings
 {
     public AppearanceSettings Appearance { get; set; } = new();
     public LayoutSettings Layout { get; set; } = new();
+    public ReadingSettings Reading { get; set; } = new();
+}
+
+public sealed class ReadingSettings
+{
+    /// <summary>Remetentes (endereços em minúsculas) cujas imagens remotas são sempre exibidas.</summary>
+    public List<string> TrustedImageSenders { get; set; } = [];
 }
 
 public sealed class AppearanceSettings

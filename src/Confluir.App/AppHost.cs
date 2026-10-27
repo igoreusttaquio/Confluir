@@ -66,6 +66,8 @@ public static class AppHost
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IUrlLauncher, UrlLauncher>();
         builder.Services.AddSingleton<AccountService>();
+        builder.Services.AddSingleton<AttachmentService>();
+        builder.Services.AddSingleton<ReadingServices>();
 
         builder.Services.AddSingleton<AppearanceViewModel>();
         builder.Services.AddSingleton<MainWindowViewModel>();

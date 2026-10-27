@@ -44,10 +44,10 @@
       <!-- Rodapé: aparência e configurações -->
       <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="10,6">
         <StackPanel Orientation="Horizontal" Spacing="2">
-          <Button Classes="icon" ToolTip.Tip="{l:Tr Account_Add}" Command="{Binding AddAccountCommand}">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Account_Add}" AutomationProperties.Name="{l:Tr Account_Add}" Command="{Binding AddAccountCommand}">
             <LucideIcon Kind="UserPlus" />
           </Button>
-          <Button Classes="icon" ToolTip.Tip="{l:Tr Appearance}">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Appearance}" AutomationProperties.Name="{l:Tr Appearance}">
             <LucideIcon Kind="Palette" />
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
@@ -55,7 +55,7 @@
               </Flyout>
             </Button.Flyout>
           </Button>
-          <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" IsEnabled="False">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" IsEnabled="False">
             <LucideIcon Kind="Settings" />
           </Button>
         </StackPanel>

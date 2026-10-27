@@ -14,6 +14,7 @@ namespace Confluir.App.ViewModels;
 public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost
 {
     private readonly LocalizationService _loc;
+    private readonly ReadingServices _reading;
     private readonly IMailboxService _mailbox;
     private readonly IAccountStore _accountStore;
     private readonly AccountService _accountService;
@@ -43,9 +44,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Func<AccountEditorViewModel> accountEditor,
         AppearanceViewModel appearance,
         LocalizationService localization,
+        ReadingServices reading,
         TimeProvider time,
         ILogger<MainWindowViewModel> logger)
     {
+        _reading = reading;
+        // O HTML do email usa as cores do tema: remonta ao trocar de tema ou de cor de destaque.
+        reading.Theme.PaletteChanged += (_, _) => Dispatcher.UIThread.Post(() => Detail?.RebuildDocument());
         _loc = localization;
         _loc.LanguageChanged += (_, _) => OnLanguageChanged();
         _mailbox = mailbox;
@@ -318,7 +323,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         }
 
         MarkRead(row);
-        var detail = new MessageDetailViewModel(row, _mailbox, _logger);
+        var detail = new MessageDetailViewModel(row, _reading);
         Detail = detail;
         _detailCts = new CancellationTokenSource();
         _ = detail.LoadAsync(_detailCts.Token);

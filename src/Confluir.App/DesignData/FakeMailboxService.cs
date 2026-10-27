@@ -114,10 +114,28 @@ public sealed class FakeMailboxService : IMailboxService
             ? AttachmentPool.OrderBy(_ => random.Next()).Take(random.Next(1, 4)).ToArray()
             : [];
 
-        return new MessageBody(m.Id, [new MailAddress(account.DisplayName, account.Email)], cc, body, attachments);
+        // Algumas mensagens em HTML (newsletter com fundo próprio, imagem remota e link) para exercitar o leitor.
+        string? html = m.Subject.StartsWith("Newsletter", StringComparison.Ordinal) || m.Subject.Contains("fatura") ||
+                       m.Subject.Contains("pedido")
+            ? $"""
+              <html><head><style>.cta {"{"} background:#3d6bff; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none; {"}"}</style></head>
+              <body><table width="100%" bgcolor="#f4f6fb" cellpadding="24"><tr><td>
+                <img src="https://images.example.com/logo.png" alt="logo" width="120">
+                <h2 style="color:#141a33">{System.Net.WebUtility.HtmlEncode(m.Subject)}</h2>
+                <p>{System.Net.WebUtility.HtmlEncode(m.Preview)}</p>
+                <p><a class="cta" href="https://exemplo.com/detalhes">Ver detalhes</a></p>
+                <img src="https://rastreio.example.com/pixel.gif" width="1" height="1">
+              </td></tr></table></body></html>
+              """
+            : null;
+
+        return new MessageBody(m.Id, [new MailAddress(account.DisplayName, account.Email)], cc, body, attachments, html);
     }
 
     public Task MarkAsReadAsync(Guid messageId, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task<byte[]> GetAttachmentAsync(Guid messageId, int attachmentIndex, CancellationToken ct = default) =>
+        Task.FromResult(System.Text.Encoding.UTF8.GetBytes("Anexo de exemplo do Confluir.\n"));
 
     // Dados falsos não sincronizam: os eventos nunca disparam.
     public event EventHandler<MailboxChangedEventArgs>? MailboxChanged { add { } remove { } }

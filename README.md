@@ -13,6 +13,8 @@ O plano completo está em [PLANO_CONFLUIR.md](PLANO_CONFLUIR.md).
 
 - **Fase 3 — Cache e sincronização**: banco SQLite local (`confluir.db`) com contas, pastas, cabeçalhos, corpos e fila de operações; a interface lê sempre do cache (abre na hora e funciona offline). Sincronização incremental por UID (novas mensagens, preenchimento das antigas em lotes do mais novo para o mais antigo, remoções e reset quando o `UIDVALIDITY` muda), flags por CONDSTORE quando disponível, IMAP IDLE na Caixa de entrada com reconexão exponencial, sincronização completa a cada 10 minutos e ao voltar a rede, e "marcar como lida" otimista com fila persistente (reenviada quando a conexão voltar; desfeita se o servidor recusar).
 
+- **Fase 4 — HTML seguro**: corpo em HTML num WebView nativo, sanitizado e com CSP; imagens remotas bloqueadas por padrão ("Mostrar imagens" / "Sempre mostrar deste remetente"), imagens embutidas (`cid:`) exibidas; emails sem estilo próprio seguem o tema (claro/escuro) e os com fundo próprio aparecem em "papel" branco; texto puro com links clicáveis; links sempre no navegador padrão; anexos com Salvar (seletor do sistema) e Abrir (arquivo temporário + programa padrão; executáveis só podem ser salvos).
+
 Limitações conhecidas: remoções são detectadas com `UID SEARCH ALL` (QRESYNC/VANISHED ainda não é usado); sem busca (fase 8). Outlook/Hotmail aguarda o OAuth2 (fase 5).
 
 Para ver a interface com dados de exemplo, sem tocar em servidores: `dotnet run --project src/Confluir.App -- --dados-falsos`.
@@ -65,7 +67,8 @@ tools/              Snapshot e IconGen
 | Banco local | SQLite (`Microsoft.Data.Sqlite` + Dapper), modo WAL, migrações por `PRAGMA user_version` | Leituras da interface não bloqueiam a sincronização que escreve em segundo plano. Contas ficam na tabela `accounts` (sem segredos); o `accounts.json` da fase 2 é importado e renomeado para `.migrado`. |
 | Sincronização | `SyncingMailboxService` (um laço e um IDLE por conta) + `ImapSyncEngine` + `SyncPlanner` | O planejador compara UIDs do servidor com os do cache e é testado isoladamente; cada lote usa a conexão só pelo tempo necessário, para não atrasar a abertura de mensagens. |
 | Autoconfiguração | ISPDB do Thunderbird (`autoconfig.thunderbird.net`) | Cobre milhares de provedores. Só o **domínio** é enviado, nunca o endereço. |
-| WebView para HTML | *A decidir na fase 4* | |
+| WebView para HTML | **`Avalonia.Controls.WebView` 12.1** (`NativeWebView`, MIT) | Componente oficial da AvaloniaUI, compatível com Avalonia 12 e gratuito; usa o motor do sistema (WebView2 no Windows, WebKit no macOS, WebKitGTK no Linux), sem embutir o Chromium. Descartados: CefGlue (~150 MB de Chromium por plataforma) e pacotes da comunidade sem suporte ao Avalonia 12. Sem motor disponível (ex.: Linux sem WebKitGTK), o leitor usa texto puro. Sessão sem persistência (InPrivate/efêmera). |
+| Segurança do HTML | `HtmlSanitizer` 9.2 (MIT) + CSP no documento | O sanitizador remove scripts, iframes, formulários, `<base>`, handlers e `javascript:`; imagens remotas são trocadas por um GIF transparente até o usuário liberar. A CSP (`default-src 'none'`, sem `script-src`, `img-src data: cid:`) é a segunda barreira: mesmo que algo passe, não executa nem acessa a rede. Toda navegação no WebView é cancelada e o link abre no navegador padrão. |
 
 ## Configurar contas
 

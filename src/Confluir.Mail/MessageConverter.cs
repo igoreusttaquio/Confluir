@@ -48,16 +48,17 @@ public static partial class MessageConverter
 
     public static MessageBody ToBody(MimeMessage message, Guid id)
     {
+        var html = message.HtmlBody;
         var text = message.TextBody;
-        if (string.IsNullOrWhiteSpace(text) && message.HtmlBody is { } html)
+        if (string.IsNullOrWhiteSpace(text) && html is not null)
             text = HtmlToText(html);
 
-        var attachments = message.Attachments
-            .OfType<MimePart>()
-            .Select(p => new AttachmentInfo(
+        var attachments = AttachmentParts(message)
+            .Select((p, i) => new AttachmentInfo(
                 p.FileName ?? p.ContentType.Name ?? "anexo",
                 p.ContentType.MimeType.ToLowerInvariant(),
-                EstimateSize(p)))
+                EstimateSize(p),
+                i))
             .ToList();
 
         return new MessageBody(
@@ -65,8 +66,57 @@ public static partial class MessageConverter
             ToAddresses(message.To),
             ToAddresses(message.Cc),
             text?.Trim() ?? "",
-            attachments);
+            attachments,
+            html is null ? null : InlineCidImages(html, message));
     }
+
+    /// <summary>Anexos na mesma ordem usada por <see cref="AttachmentInfo.Index"/>.</summary>
+    public static IEnumerable<MimePart> AttachmentParts(MimeMessage message) => message.Attachments.OfType<MimePart>();
+
+    /// <summary>Conteúdo decodificado do anexo de índice <paramref name="index"/>.</summary>
+    public static byte[] ReadAttachment(MimeMessage message, int index, CancellationToken ct = default)
+    {
+        var part = AttachmentParts(message).ElementAtOrDefault(index);
+        if (part?.Content is null)
+            throw new InvalidOperationException($"Anexo {index} não encontrado na mensagem.");
+        using var output = new MemoryStream();
+        part.Content.DecodeTo(output, ct);
+        return output.ToArray();
+    }
+
+    // Imagens embutidas acima deste tamanho não são convertidas (o HTML ficaria enorme no cache).
+    private const long MaxInlineImageBytes = 4 * 1024 * 1024;
+
+    /// <summary>
+    /// Troca <c>src="cid:…"</c> pelas imagens embutidas na própria mensagem, como <c>data:</c>.
+    /// Assim o HTML pode ser exibido sem acesso à rede.
+    /// </summary>
+    public static string InlineCidImages(string html, MimeMessage message)
+    {
+        if (!html.Contains("cid:", StringComparison.OrdinalIgnoreCase))
+            return html;
+
+        var parts = message.BodyParts
+            .OfType<MimePart>()
+            .Where(p => !string.IsNullOrEmpty(p.ContentId))
+            .GroupBy(p => p.ContentId!.Trim('<', '>'), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        return CidReference().Replace(html, m =>
+        {
+            var cid = Uri.UnescapeDataString(m.Groups[2].Value);
+            if (!parts.TryGetValue(cid, out var part) || part.Content is null)
+                return m.Value;
+            using var data = new MemoryStream();
+            part.Content.DecodeTo(data);
+            if (data.Length > MaxInlineImageBytes)
+                return m.Value;
+            return $"{m.Groups[1].Value}data:{part.ContentType.MimeType};base64,{Convert.ToBase64String(data.ToArray())}";
+        });
+    }
+
+    [GeneratedRegex(@"(\bsrc\s*=\s*[""']?)cid:([^""'\s>]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex CidReference();
 
     /// <summary>
     /// Texto legível a partir de HTML, para o modo texto puro até o visualizador HTML (fase 4).

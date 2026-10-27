@@ -72,6 +72,13 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         return body;
     }
 
+    public async Task<byte[]> GetAttachmentAsync(Guid messageId, int attachmentIndex, CancellationToken ct = default)
+    {
+        var location = await _cache.GetLocationAsync(messageId, ct)
+            ?? throw new InvalidOperationException("A mensagem não está mais no cache.");
+        return await _engine.FetchAttachmentAsync(location, attachmentIndex, ct);
+    }
+
     public SyncStatus GetStatus(Guid accountId) =>
         _runners.TryGetValue(accountId, out var r) ? r.Status : SyncStatus.Unknown;
 

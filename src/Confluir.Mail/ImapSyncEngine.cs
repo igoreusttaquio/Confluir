@@ -177,6 +177,14 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
             return MessageConverter.ToBody(mime, location.MessageId);
         }, ct);
 
+    public Task<byte[]> FetchAttachmentAsync(MessageLocation location, int index, CancellationToken ct) =>
+        pool.RunAsync(location.AccountId, async (client, token) =>
+        {
+            var f = await OpenAsync(client, location.FolderFullName, FolderAccess.ReadOnly, token);
+            var mime = await f.GetMessageAsync(new UniqueId(f.UidValidity, location.Uid), token);
+            return MessageConverter.ReadAttachment(mime, index, token);
+        }, ct);
+
     public Task ApplyAsync(OperationKind kind, MessageLocation location, CancellationToken ct) =>
         pool.RunAsync(location.AccountId, async (client, token) =>
         {

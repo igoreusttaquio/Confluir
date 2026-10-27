@@ -139,6 +139,12 @@
   <data name="Account_Offline"><value>Sin conexión. Mostrando los mensajes guardados en este equipo.</value></data>
   <data name="Action_Sync"><value>Sincronizar ahora</value></data>
   <data name="Reading_NotAvailableOffline"><value>Este mensaje aún no se ha descargado y no hay conexión con el servidor.</value></data>
+  <data name="Reading_ImagesBlocked_One"><value>Se bloqueó {0} imagen remota para proteger tu privacidad.</value></data>
+  <data name="Reading_ImagesBlocked_Other"><value>Se bloquearon {0} imágenes remotas para proteger tu privacidad.</value></data>
+  <data name="Reading_ShowImages"><value>Mostrar imágenes</value></data>
+  <data name="Reading_AlwaysShowImages"><value>Mostrar siempre de este remitente</value></data>
+  <data name="Attachment_OpenBlocked"><value>Por seguridad, los archivos ejecutables solo se pueden guardar.</value></data>
+  <data name="Attachment_Error"><value>No se pudo descargar el adjunto.</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

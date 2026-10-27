@@ -7,9 +7,33 @@ using FluentAvalonia.Styling;
 
 namespace Confluir.App.Services;
 
+/// <summary>Cores do tema atual em hexadecimal, para conteúdo fora do Avalonia (ex.: HTML dos emails).</summary>
+public sealed record ThemePalette(
+    string Background, string Surface, string SurfaceAlt, string Border,
+    string TextPrimary, string TextSecondary, string Accent, bool IsDark);
+
 /// <summary>Aplica tema (claro/escuro/sistema) e cor de destaque em tempo de execução, sem reiniciar.</summary>
 public sealed class ThemeService(ISettingsStore settings)
 {
+    private bool _watching;
+
+    /// <summary>O tema efetivo (inclusive pelo sistema) ou a cor de destaque mudou.</summary>
+    public event EventHandler? PaletteChanged;
+
+    public ThemePalette CurrentPalette()
+    {
+        var app = Application.Current;
+        var variant = app?.ActualThemeVariant ?? ThemeVariant.Light;
+        string Hex(string key, string fallback) =>
+            app is not null && app.TryGetResource(key, variant, out var value) && value is ISolidColorBrush brush
+                ? $"#{brush.Color.R:X2}{brush.Color.G:X2}{brush.Color.B:X2}"
+                : fallback;
+
+        return new ThemePalette(
+            Hex("Background", "#F6F7FB"), Hex("Surface", "#FFFFFF"), Hex("SurfaceAlt", "#EEF1FA"), Hex("Border", "#DDE2F0"),
+            Hex("TextPrimary", "#141A33"), Hex("TextSecondary", "#5B6385"), Hex("Accent", "#2F5BEA"),
+            variant == ThemeVariant.Dark);
+    }
     /// <summary>Accent padrão do tema claro; o FluentAvalonia deriva dele a rampa usada pelos controles.</summary>
     public const string DefaultAccent = "#2F5BEA";
 
@@ -28,6 +52,12 @@ public sealed class ThemeService(ISettingsStore settings)
     {
         ApplyTheme();
         ApplyAccent();
+        if (!_watching && Application.Current is { } app)
+        {
+            // Inclui a troca pelo sistema operacional quando o tema é "seguir o sistema".
+            app.ActualThemeVariantChanged += (_, _) => PaletteChanged?.Invoke(this, EventArgs.Empty);
+            _watching = true;
+        }
     }
 
     public void SetTheme(ThemeMode mode)
@@ -43,6 +73,7 @@ public sealed class ThemeService(ISettingsStore settings)
         Appearance.AccentColor = ColorContrast.IsValidHex(hex) ? hex : null;
         ApplyAccent();
         settings.Save();
+        PaletteChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void ApplyTheme()

@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Confluir.App.Views.MessageBodyView">
+  <!-- O NativeWebView é criado no code-behind, só se o motor estiver disponível. -->
+  <Panel x:Name="Host">
+    <!-- Texto puro enquanto o WebView não estiver pronto (ou se não existir na plataforma). -->
+    <ScrollViewer x:Name="FallbackScroll" HorizontalScrollBarVisibility="Disabled">
+      <SelectableTextBlock x:Name="FallbackText" TextWrapping="Wrap" FontSize="15" LineHeight="24"
+                           Foreground="{DynamicResource TextPrimary}" />
+    </ScrollViewer>
+  </Panel>
+</UserControl>

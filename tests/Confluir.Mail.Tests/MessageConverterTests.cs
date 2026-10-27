@@ -62,6 +62,27 @@ public class MessageConverterTests
     }
 
     [Fact]
+    public void Imagem_embutida_vira_data_uri_e_nao_aparece_como_anexo()
+    {
+        var builder = new BodyBuilder();
+        var logo = builder.LinkedResources.Add("logo.png", new byte[] { 0x89, 0x50, 0x4E, 0x47 }, new ContentType("image", "png"));
+        logo.ContentId = "logo@confluir";
+        builder.HtmlBody = "<p>Oi</p><img src=\"cid:logo@confluir\"><img src='cid:inexistente'>";
+        builder.Attachments.Add("nota.txt", "conteúdo do anexo"u8.ToArray(), new ContentType("text", "plain"));
+        var message = new MimeMessage { Body = builder.ToMessageBody() };
+
+        var body = MessageConverter.ToBody(message, Guid.NewGuid());
+
+        Assert.Contains("src=\"data:image/png;base64,iVBORw==\"", body.HtmlBody);
+        Assert.Contains("cid:inexistente", body.HtmlBody); // sem a parte, fica como está (e é bloqueado ao exibir)
+        var attachment = Assert.Single(body.Attachments);
+        Assert.Equal("nota.txt", attachment.FileName);
+        Assert.Equal(0, attachment.Index);
+        Assert.Equal("conteúdo do anexo"u8.ToArray(),
+            MessageConverter.ReadAttachment(message, 0, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public void Sem_texto_puro_usa_o_HTML_convertido()
     {
         var message = new MimeMessage

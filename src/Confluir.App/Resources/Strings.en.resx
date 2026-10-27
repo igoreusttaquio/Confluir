@@ -139,6 +139,12 @@
   <data name="Account_Offline"><value>Offline. Showing the messages saved on this computer.</value></data>
   <data name="Action_Sync"><value>Sync now</value></data>
   <data name="Reading_NotAvailableOffline"><value>This message hasn&apos;t been downloaded yet and the server can&apos;t be reached.</value></data>
+  <data name="Reading_ImagesBlocked_One"><value>{0} remote image was blocked to protect your privacy.</value></data>
+  <data name="Reading_ImagesBlocked_Other"><value>{0} remote images were blocked to protect your privacy.</value></data>
+  <data name="Reading_ShowImages"><value>Show images</value></data>
+  <data name="Reading_AlwaysShowImages"><value>Always show from this sender</value></data>
+  <data name="Attachment_OpenBlocked"><value>For your safety, executable files can only be saved.</value></data>
+  <data name="Attachment_Error"><value>The attachment couldn&apos;t be downloaded.</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>
