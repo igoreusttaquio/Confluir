@@ -182,6 +182,24 @@
   <data name="Compose_SendFailed"><value>The message couldn&apos;t be sent.</value></data>
   <data name="Compose_QuoteHeader"><value>On {0}, {1} wrote:</value></data>
   <data name="Compose_ForwardHeader"><value>---------- Forwarded message ----------</value></data>
+  <data name="Compose_Bold"><value>Bold (Ctrl+B)</value></data>
+  <data name="Compose_Italic"><value>Italic (Ctrl+I)</value></data>
+  <data name="Compose_Underline"><value>Underline (Ctrl+U)</value></data>
+  <data name="Compose_Strike"><value>Strikethrough</value></data>
+  <data name="Compose_BulletList"><value>Bulleted list</value></data>
+  <data name="Compose_NumberedList"><value>Numbered list</value></data>
+  <data name="Compose_Quote"><value>Quote</value></data>
+  <data name="Compose_Link"><value>Insert link</value></data>
+  <data name="Compose_LinkPlaceholder"><value>Link address (e.g. confluir.app)</value></data>
+  <data name="Compose_InsertLink"><value>Insert</value></data>
+  <data name="Compose_ClearFormatting"><value>Clear formatting</value></data>
+  <data name="Compose_PlainText"><value>Plain text</value></data>
+  <data name="Compose_PlainTextHint"><value>Write without formatting (bold, lists, links)</value></data>
+  <data name="Compose_BodyPlaceholder"><value>Write your message</value></data>
+  <data name="Compose_FileTooLarge"><value>{0} is too large to drop here. Use the attach button.</value></data>
+  <data name="Compose_DraftSaved"><value>Draft saved</value></data>
+  <data name="Compose_DraftDiscarded"><value>Draft discarded</value></data>
+  <data name="Compose_EditDraft"><value>Continue editing</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>

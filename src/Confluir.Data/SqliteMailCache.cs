@@ -319,6 +319,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         {
             var a = accountId.ToString();
             await c.ExecuteAsync(new CommandDefinition("DELETE FROM pending_ops WHERE account_id = @a", new { a }, tx, cancellationToken: ct));
+            await c.ExecuteAsync(new CommandDefinition("DELETE FROM drafts WHERE account_id = @a", new { a }, tx, cancellationToken: ct));
             await c.ExecuteAsync(new CommandDefinition("DELETE FROM folders WHERE account_id = @a", new { a }, tx, cancellationToken: ct));
         }, ct);
 

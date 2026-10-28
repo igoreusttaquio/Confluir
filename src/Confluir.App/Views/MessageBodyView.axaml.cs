@@ -73,7 +73,9 @@ public partial class MessageBodyView : UserControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == DocumentProperty || change.Property == FallbackProperty || change.Property == IsWebAllowedProperty)
+        if (change.Property == IsWebAllowedProperty && IsWebAllowed)
+            WebViewSupport.AfterTransition(this, Update);
+        else if (change.Property == DocumentProperty || change.Property == FallbackProperty || change.Property == IsWebAllowedProperty)
             Update();
     }
 

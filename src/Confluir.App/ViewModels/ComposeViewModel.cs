@@ -1,13 +1,17 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Localization;
 using Confluir.App.Resources;
 using Confluir.App.Services;
+using Confluir.Core;
 using Confluir.Core.Compose;
 using Confluir.Core.Formatting;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
+using Confluir.Core.Settings;
 using Confluir.Mail;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +26,11 @@ public sealed record FromOption(MailAccount Account)
 public sealed record ComposeServices(
     IMailboxService Mailbox,
     IMailSender Sender,
+    DraftService Drafts,
     NavigationService Navigation,
+    ThemeService Theme,
+    ISettingsStore Settings,
+    AppPaths Paths,
     ILogger<ComposeViewModel> Logger);
 
 public sealed partial class ComposeAttachmentViewModel(OutgoingAttachment attachment, ComposeViewModel owner) : ViewModelBase
@@ -35,23 +43,53 @@ public sealed partial class ComposeAttachmentViewModel(OutgoingAttachment attach
     private void Remove() => owner.Attachments.Remove(this);
 }
 
-/// <summary>Nova mensagem, resposta ou encaminhamento, em tela própria.</summary>
+/// <summary>
+/// Nova mensagem, resposta ou encaminhamento, em tela própria. O texto é salvo como rascunho enquanto se escreve
+/// (no aparelho a cada pausa, no servidor de tempos em tempos e ao sair da tela).
+/// </summary>
 public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
 {
+    private static readonly TimeSpan LocalSaveDelay = TimeSpan.FromSeconds(1.5);
+    private static readonly TimeSpan ServerSaveInterval = TimeSpan.FromSeconds(60);
+
     private readonly ComposeServices _services;
     private readonly Action<string> _notify;
+    private readonly Guid _draftId;
+    private readonly SemaphoreSlim _uploadGate = new(1, 1);
+    private readonly DispatcherTimer _saveTimer;
     private string? _inReplyTo;
     private IReadOnlyList<string>? _references;
-    // Estado ao abrir a tela: descartar só pede confirmação se algo mudou desde então.
-    private (string To, string Cc, string Bcc, string Subject, string Body, int Attachments) _initial = ("", "", "", "", "", 0);
+    private ServerDraft? _server;
+    private bool _hasLocalDraft;
+    private bool _finished; // enviada ou descartada
+    private bool _loading;
+    private DateTimeOffset _lastUpload = DateTimeOffset.Now;
+    // Conteúdo ao abrir e no último salvamento: só salva (e só pede confirmação ao descartar) se algo mudou.
+    private string _initialState = "";
+    private string _savedState = "";
 
     public ComposeViewModel(ComposeServices services, IReadOnlyList<MailAccount> accounts, Guid? accountId,
-        Action<string> notify)
+        Action<string> notify, Guid? draftId = null)
     {
         _services = services;
         _notify = notify;
+        _draftId = draftId ?? Guid.NewGuid();
+        _saveTimer = new DispatcherTimer { Interval = LocalSaveDelay };
+        _saveTimer.Tick += (_, _) =>
+        {
+            _saveTimer.Stop();
+            _ = SaveLocalAsync();
+        };
+
+        _loading = true;
         FromOptions = accounts.Select(a => new FromOption(a)).ToList();
         SelectedFrom = FromOptions.FirstOrDefault(o => o.Account.Id == accountId) ?? FromOptions.FirstOrDefault();
+        IsRichTextAvailable = WebViewSupport.IsAvailable;
+        IsPlainText = !IsRichTextAvailable || services.Settings.Current.Compose.PlainText;
+        _loading = false;
+
+        Attachments.CollectionChanged += (_, _) => ScheduleSave();
+        _initialState = _savedState = State();
     }
 
     public ComposeMode Mode { get; private set; } = ComposeMode.New;
@@ -84,8 +122,27 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     [ObservableProperty]
     public partial string Subject { get; set; } = "";
 
+    /// <summary>Corpo em texto simples (modo texto; no modo formatado acompanha o HTML).</summary>
     [ObservableProperty]
     public partial string Body { get; set; } = "";
+
+    /// <summary>Corpo formatado (conteúdo do editor).</summary>
+    public string Html { get; private set; } = "";
+
+    /// <summary>O HTML mudou por fora do editor (abrir rascunho, voltar do modo texto): o editor precisa recarregar.</summary>
+    public event EventHandler? HtmlReplaced;
+
+    /// <summary>Pede ao editor o conteúdo mais recente (o editor avisa alterações com um pequeno atraso).</summary>
+    public Func<Task>? FlushEditor { get; set; }
+
+    /// <summary>Sem WebView (motor ausente) só há o modo texto.</summary>
+    public bool IsRichTextAvailable { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRichText))]
+    public partial bool IsPlainText { get; set; }
+
+    public bool IsRichText => !IsPlainText;
 
     public ObservableCollection<ComposeAttachmentViewModel> Attachments { get; } = [];
 
@@ -104,18 +161,19 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     [ObservableProperty]
     public partial bool IsConfirmingDiscard { get; private set; }
 
-    /// <summary>Página na frente (INavigationPage).</summary>
+    /// <summary>Página na frente (INavigationPage). Ao sair da tela, por qualquer caminho, o rascunho é salvo.</summary>
     [ObservableProperty]
     public partial bool IsActive { get; set; }
 
     /// <summary>O foco inicial vai para o corpo em respostas e para "Para" em mensagens novas.</summary>
     public bool FocusBody => Mode is ComposeMode.Reply or ComposeMode.ReplyAll;
 
-    private bool IsDirty => (To, Cc, Bcc, Subject, Body, Attachments.Count) != _initial;
+    private bool IsDirty => State() != _initialState;
 
     /// <summary>Prepara resposta ou encaminhamento a partir de uma mensagem aberta.</summary>
     public void InitFrom(ComposeMode mode, MessageSummary original, MessageBody body, MailAccount originalAccount)
     {
+        _loading = true;
         Mode = mode;
         SelectedFrom = FromOptions.FirstOrDefault(o => o.Account.Id == originalAccount.Id) ?? SelectedFrom;
         Subject = ReplyBuilder.Subject(original.Subject, mode);
@@ -132,21 +190,86 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
             ShowCcBcc = cc.Count > 0;
             _inReplyTo = body.MessageIdHeader;
             _references = ReplyBuilder.References(body.References, body.MessageIdHeader);
-            Body = $"\n\n{string.Format(Strings.Compose_QuoteHeader, dateText, from)}\n{ReplyBuilder.Quote(body.TextBody)}";
+            var header = string.Format(Strings.Compose_QuoteHeader, dateText, from);
+            Body = $"\n\n{header}\n{ReplyBuilder.Quote(body.TextBody)}";
+            Html = ComposeHtml.Reply(header, body);
         }
         else
         {
+            (string, string)[] headers =
+            [
+                (Strings.Compose_From, from.ToString()),
+                (Strings.Compose_Date, dateText),
+                (Strings.Compose_Subject, original.Subject),
+                (Strings.Reading_To, AddressParser.Format(body.To)),
+            ];
             Body = $"\n\n{Strings.Compose_ForwardHeader}\n" +
-                   $"{Strings.Compose_From}: {from}\n{Strings.Compose_Date}: {dateText}\n" +
-                   $"{Strings.Compose_Subject}: {original.Subject}\n{Strings.Reading_To}: {AddressParser.Format(body.To)}\n\n" +
-                   body.TextBody;
+                   string.Concat(headers.Select(h => $"{h.Item1}: {h.Item2}\n")) + "\n" + body.TextBody;
+            Html = ComposeHtml.Forward(Strings.Compose_ForwardHeader, headers, body);
             foreach (var a in body.Attachments)
                 Attachments.Add(new ComposeAttachmentViewModel(
                     new OutgoingAttachment(a.FileName, a.Size, SourceMessageId: original.Id, SourceIndex: a.Index), this));
         }
-        _initial = (To, Cc, Bcc, Subject, Body, Attachments.Count);
+        FinishLoading();
+    }
+
+    /// <summary>Continua um rascunho salvo no aparelho.</summary>
+    public void InitFromDraft(Draft draft)
+    {
+        _loading = true;
+        Mode = draft.Mode;
+        SelectedFrom = FromOptions.FirstOrDefault(o => o.Account.Id == draft.AccountId) ?? SelectedFrom;
+        To = draft.To;
+        Cc = draft.Cc;
+        Bcc = draft.Bcc;
+        ShowCcBcc = draft.Cc.Length > 0 || draft.Bcc.Length > 0;
+        Subject = draft.Subject;
+        Html = draft.Html;
+        Body = draft.Text;
+        IsPlainText = draft.IsPlainText || !IsRichTextAvailable;
+        _inReplyTo = draft.InReplyTo;
+        _references = draft.References;
+        _server = draft.Server;
+        _hasLocalDraft = true;
+        foreach (var a in draft.Attachments)
+            Attachments.Add(new ComposeAttachmentViewModel(a, this));
+        FinishLoading();
+    }
+
+    /// <summary>Continua um rascunho do servidor sem cópia local (escrito em outro aparelho ou cliente).</summary>
+    public void InitFromServerDraft(MessageSummary message, MessageBody body, ServerDraft? location)
+    {
+        _loading = true;
+        To = AddressParser.Format(body.To);
+        Cc = AddressParser.Format(body.Cc);
+        ShowCcBcc = body.Cc.Count > 0;
+        Subject = message.Subject;
+        Html = ComposeHtml.Original(body);
+        Body = body.TextBody;
+        _server = location;
+        foreach (var a in body.Attachments)
+            Attachments.Add(new ComposeAttachmentViewModel(
+                new OutgoingAttachment(a.FileName, a.Size, SourceMessageId: message.Id, SourceIndex: a.Index), this));
+        FinishLoading();
+    }
+
+    private void FinishLoading()
+    {
+        _loading = false;
+        _initialState = _savedState = State();
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(FocusBody));
+        HtmlReplaced?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Conteúdo novo vindo do editor.</summary>
+    public void OnEditorContent(string html)
+    {
+        if (html == Html)
+            return;
+        Html = html;
+        Body = ComposeHtml.ToText(html);
+        ScheduleSave();
     }
 
     /// <summary>Anexa arquivos do disco (botão ou arrastar e soltar).</summary>
@@ -161,6 +284,22 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         }
     }
 
+    /// <summary>
+    /// Arquivo solto no editor: o WebView entrega o conteúdo, não o caminho. Fica numa pasta do rascunho
+    /// (apagada ao enviar ou descartar), para continuar disponível se o rascunho for reaberto.
+    /// </summary>
+    public async Task AddFileContentAsync(string fileName, byte[] data)
+    {
+        var dir = Path.Combine(_services.Paths.DataDirectory, "drafts", _draftId.ToString("N"));
+        Directory.CreateDirectory(dir);
+        var safeName = string.Concat(Path.GetFileName(fileName).Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+        var path = Path.Combine(dir, $"{Guid.NewGuid():N}-{safeName}");
+        await File.WriteAllBytesAsync(path, data);
+        Attachments.Add(new ComposeAttachmentViewModel(new OutgoingAttachment(safeName, data.Length, FilePath: path), this));
+    }
+
+    public void ShowTooLarge(string fileName) => Error = string.Format(Strings.Compose_FileTooLarge, fileName);
+
     /// <summary>Sugestões para o campo de destinatários (endereços já vistos).</summary>
     public async Task<IEnumerable<object>> SuggestAsync(string? text, CancellationToken ct)
     {
@@ -172,12 +311,15 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         return found.Select(a => (object)a.ToString());
     }
 
+    // Envio -----------------------------------------------------------------------------------------
+
     [RelayCommand]
     private async Task SendAsync()
     {
         Error = null;
-        if (SelectedFrom is null)
+        if (SelectedFrom is null || IsSending)
             return;
+        await FlushAsync();
         if (!AddressParser.TryParse(To, out var to, out var bad) ||
             !AddressParser.TryParse(Cc, out var cc, out bad) ||
             !AddressParser.TryParse(Bcc, out var bcc, out bad))
@@ -191,14 +333,16 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
             return;
         }
 
-        var message = new OutgoingMessage(SelectedFrom.Account.Id, to, cc, bcc, Subject.Trim(), Body, HtmlBody: null,
+        var message = new OutgoingMessage(SelectedFrom.Account.Id, to, cc, bcc, Subject.Trim(),
+            IsPlainText ? Body : ComposeHtml.ToText(Html),
+            IsPlainText ? null : ComposeHtml.Document(Html),
             Attachments.Select(a => a.Attachment).ToList(), _inReplyTo, _references);
 
         IsSending = true;
         try
         {
-            await _services.Sender.SendAsync(message,
-                (a, ct) => _services.Mailbox.GetAttachmentAsync(a.SourceMessageId!.Value, a.SourceIndex, ct));
+            await _services.Sender.SendAsync(message, _services.Drafts.LoadAttachmentAsync);
+            Finish();
             _services.Navigation.GoBack();
             _notify(Strings.Compose_Sent);
         }
@@ -213,23 +357,32 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         }
     }
 
-    /// <summary>Voltar/descartar: pede confirmação inline se algo foi escrito.</summary>
+    // Voltar, descartar -----------------------------------------------------------------------------
+
+    /// <summary>Voltar: o rascunho é salvo ao sair da tela (<see cref="OnIsActiveChanged"/>).</summary>
+    [RelayCommand]
+    private void Back() => _services.Navigation.GoBack();
+
+    /// <summary>Descartar: pede confirmação inline se algo foi escrito ou já existe rascunho.</summary>
     [RelayCommand]
     private void Discard()
     {
-        if (IsDirty && !IsConfirmingDiscard)
+        if ((IsDirty || _hasLocalDraft || _server is not null) && !IsConfirmingDiscard)
         {
             IsConfirmingDiscard = true;
             return;
         }
-        _services.Navigation.GoBack();
+        ConfirmDiscard();
     }
 
     [RelayCommand]
     private void ConfirmDiscard()
     {
         IsConfirmingDiscard = false;
+        Finish();
         _services.Navigation.GoBack();
+        if (_hasLocalDraft || _server is not null)
+            _notify(Strings.Compose_DraftDiscarded);
     }
 
     [RelayCommand]
@@ -238,5 +391,154 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     [RelayCommand]
     private void ToggleCcBcc() => ShowCcBcc = !ShowCcBcc;
 
+    /// <summary>Enviada ou descartada: o rascunho (local, servidor e arquivos soltos) deixa de existir.</summary>
+    private void Finish()
+    {
+        _finished = true;
+        _saveTimer.Stop();
+        var accountId = SelectedFrom?.Account.Id ?? Guid.Empty;
+        _ = Task.Run(async () =>
+        {
+            // Espera um envio ao servidor em andamento terminar, para não deixar cópia para trás.
+            await _uploadGate.WaitAsync();
+            try
+            {
+                await _services.Drafts.DeleteAsync(_draftId, accountId, _server);
+                var dir = Path.Combine(_services.Paths.DataDirectory, "drafts", _draftId.ToString("N"));
+                if (Directory.Exists(dir))
+                    Directory.Delete(dir, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                _services.Logger.LogWarning(ex, "Falha ao apagar o rascunho");
+            }
+            finally
+            {
+                _uploadGate.Release();
+            }
+        });
+    }
+
+    // Rascunho --------------------------------------------------------------------------------------
+
+    private string State() =>
+        string.Join('\u0001', SelectedFrom?.Account.Id, To, Cc, Bcc, Subject, IsPlainText ? Body : Html, IsPlainText,
+            string.Join('\u0002', Attachments.Select(a => a.Attachment)));
+
+    private Draft Snapshot() => new(
+        _draftId, SelectedFrom?.Account.Id ?? Guid.Empty, Mode, To, Cc, Bcc, Subject, Html, Body, IsPlainText,
+        Attachments.Select(a => a.Attachment).ToList(), _inReplyTo, _references, DateTimeOffset.Now, _server);
+
+    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.PropertyName is nameof(To) or nameof(Cc) or nameof(Bcc) or nameof(Subject) or nameof(Body) or nameof(SelectedFrom))
+            ScheduleSave();
+    }
+
+    private void ScheduleSave()
+    {
+        if (_loading || _finished)
+            return;
+        _saveTimer.Stop();
+        _saveTimer.Start();
+    }
+
+    private async Task FlushAsync()
+    {
+        if (!IsPlainText && FlushEditor is { } flush)
+        {
+            try
+            {
+                await flush();
+            }
+            catch (Exception ex)
+            {
+                _services.Logger.LogDebug(ex, "Editor não respondeu ao pedir o conteúdo");
+            }
+        }
+    }
+
+    /// <summary>Salva no aparelho se algo mudou; de tempos em tempos também no servidor.</summary>
+    private async Task SaveLocalAsync(bool upload = false)
+    {
+        if (_finished || SelectedFrom is null)
+            return;
+        var state = State();
+        var changed = state != _savedState;
+        if (changed && (state != _initialState || _hasLocalDraft))
+        {
+            try
+            {
+                await _services.Drafts.SaveLocalAsync(Snapshot());
+                _savedState = state;
+                _hasLocalDraft = true;
+            }
+            catch (Exception ex)
+            {
+                _services.Logger.LogWarning(ex, "Falha ao salvar o rascunho no aparelho");
+                return;
+            }
+        }
+        if (_hasLocalDraft && (upload || (changed && DateTimeOffset.Now - _lastUpload >= ServerSaveInterval)))
+            await UploadAsync();
+    }
+
+    private async Task UploadAsync()
+    {
+        await _uploadGate.WaitAsync();
+        try
+        {
+            if (_finished)
+                return;
+            _lastUpload = DateTimeOffset.Now;
+            var saved = await _services.Drafts.UploadAsync(Snapshot());
+            _server = saved.Server;
+        }
+        catch (Exception ex)
+        {
+            // Continua no aparelho (marcado para envio) e vai ao servidor na próxima vez.
+            _services.Logger.LogInformation(ex, "Rascunho salvo só no aparelho por enquanto");
+        }
+        finally
+        {
+            _uploadGate.Release();
+        }
+    }
+
+    partial void OnIsActiveChanged(bool value)
+    {
+        if (!value && !_finished)
+            _ = LeaveAsync();
+    }
+
+    private async Task LeaveAsync()
+    {
+        _saveTimer.Stop();
+        await FlushAsync();
+        var wasSaved = _hasLocalDraft;
+        var dirty = State() != _savedState;
+        if (!dirty && !wasSaved)
+            return;
+        if (dirty || wasSaved)
+            _notify(Strings.Compose_DraftSaved);
+        await SaveLocalAsync(upload: dirty || _server is null);
+    }
+
     partial void OnSelectedFromChanged(FromOption? value) => OnPropertyChanged(nameof(CanSend));
+
+    partial void OnIsPlainTextChanged(bool value)
+    {
+        if (_loading)
+            return;
+        // Texto → formatado: o texto vira HTML; formatado → texto: o texto já acompanha o editor.
+        if (!value)
+        {
+            Html = ComposeHtml.FromText(Body);
+            HtmlReplaced?.Invoke(this, EventArgs.Empty);
+        }
+        _services.Settings.Current.Compose.PlainText = value;
+        _services.Settings.Save();
+        ScheduleSave();
+    }
 }

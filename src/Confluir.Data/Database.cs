@@ -91,6 +91,16 @@ public sealed class Database
         DELETE FROM bodies;
         CREATE INDEX IF NOT EXISTS ix_messages_from ON messages (from_address);
         """,
+
+        // v6: rascunhos salvos automaticamente durante a composição.
+        """
+        CREATE TABLE IF NOT EXISTS drafts (
+            id          TEXT PRIMARY KEY,
+            account_id  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL,
+            data        TEXT NOT NULL
+        );
+        """,
     ];
 
     private readonly string _connectionString;

@@ -31,6 +31,7 @@ public interface IMessageActions
     Task ToggleFlagAsync(MessageDetailViewModel message);
     Task ToggleReadAsync(MessageDetailViewModel message);
     Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode);
+    Task EditDraftAsync(MessageDetailViewModel message);
 }
 
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
@@ -145,6 +146,14 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private Task Forward() => Actions?.ComposeAsync(this, ComposeMode.Forward) ?? Task.CompletedTask;
+
+    /// <summary>A mensagem está na pasta Rascunhos: no lugar de responder, continua a edição.</summary>
+    public bool IsDraft { get; init; }
+
+    public bool IsNotDraft => !IsDraft;
+
+    [RelayCommand]
+    private Task EditDraft() => Actions?.EditDraftAsync(this) ?? Task.CompletedTask;
 
     public string FlagTooltip => Row.IsFlagged ? Strings.Action_Unflag : Strings.Action_Flag;
     public string ReadTooltip => Row.IsRead ? Strings.Action_MarkUnread : Strings.Action_MarkRead;

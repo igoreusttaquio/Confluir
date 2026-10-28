@@ -59,4 +59,24 @@ public class AddressParserAndSenderTests
         Assert.Equal("application/pdf", mime.Attachments.OfType<MimeKit.MimePart>().First().ContentType.MimeType);
         File.Delete(file);
     }
+
+    [Fact]
+    public async Task Imagens_coladas_viram_partes_embutidas_por_cid()
+    {
+        var account = new MailAccount(Guid.NewGuid(), "Pessoal", "eu@exemplo.com", MailProvider.Imap, "#3D6BFF",
+            "eu@exemplo.com", KnownProviders.Gmail);
+        var png = Convert.ToBase64String([0x89, 0x50, 0x4E, 0x47, 1, 2, 3]);
+        var html = $"<div>Veja:<img src=\"data:image/png;base64,{png}\"> e <img src='https://ex.com/a.png'></div>";
+        var outgoing = new OutgoingMessage(account.Id, [new MailAddress("", "ana@exemplo.com")], [], [], "Foto", "Veja:", html, []);
+
+        var mime = await SmtpMailSender.BuildAsync(outgoing, account,
+            (_, _) => Task.FromResult(Array.Empty<byte>()), TestContext.Current.CancellationToken);
+
+        var image = Assert.Single(mime.BodyParts.OfType<MimeKit.MimePart>(), p => p.ContentType.MimeType == "image/png");
+        Assert.NotNull(image.ContentId);
+        Assert.Contains($"src=\"cid:{image.ContentId}\"", mime.HtmlBody);
+        Assert.DoesNotContain("data:image", mime.HtmlBody);
+        Assert.Contains("https://ex.com/a.png", mime.HtmlBody); // remotas ficam como estão
+        Assert.Empty(mime.Attachments); // embutida, não aparece como anexo
+    }
 }

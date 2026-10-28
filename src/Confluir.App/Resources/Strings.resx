@@ -182,6 +182,24 @@
   <data name="Compose_SendFailed"><value>Não foi possível enviar.</value></data>
   <data name="Compose_QuoteHeader"><value>Em {0}, {1} escreveu:</value></data>
   <data name="Compose_ForwardHeader"><value>---------- Mensagem encaminhada ----------</value></data>
+  <data name="Compose_Bold"><value>Negrito (Ctrl+B)</value></data>
+  <data name="Compose_Italic"><value>Itálico (Ctrl+I)</value></data>
+  <data name="Compose_Underline"><value>Sublinhado (Ctrl+U)</value></data>
+  <data name="Compose_Strike"><value>Tachado</value></data>
+  <data name="Compose_BulletList"><value>Lista com marcadores</value></data>
+  <data name="Compose_NumberedList"><value>Lista numerada</value></data>
+  <data name="Compose_Quote"><value>Citação</value></data>
+  <data name="Compose_Link"><value>Inserir link</value></data>
+  <data name="Compose_LinkPlaceholder"><value>Endereço do link (ex.: confluir.app)</value></data>
+  <data name="Compose_InsertLink"><value>Inserir</value></data>
+  <data name="Compose_ClearFormatting"><value>Limpar formatação</value></data>
+  <data name="Compose_PlainText"><value>Texto simples</value></data>
+  <data name="Compose_PlainTextHint"><value>Escrever sem formatação (negrito, listas, links)</value></data>
+  <data name="Compose_BodyPlaceholder"><value>Escreva sua mensagem</value></data>
+  <data name="Compose_FileTooLarge"><value>O arquivo {0} é grande demais para soltar aqui. Use o botão de anexar.</value></data>
+  <data name="Compose_DraftSaved"><value>Rascunho salvo</value></data>
+  <data name="Compose_DraftDiscarded"><value>Rascunho descartado</value></data>
+  <data name="Compose_EditDraft"><value>Continuar editando</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

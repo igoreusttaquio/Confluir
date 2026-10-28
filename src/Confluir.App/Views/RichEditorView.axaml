@@ -1,0 +1,6 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Confluir.App.Views.RichEditorView">
+  <!-- O NativeWebView com o editor é criado no code-behind (só existe com o motor instalado). -->
+  <Panel x:Name="Host" />
+</UserControl>

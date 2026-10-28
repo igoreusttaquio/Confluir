@@ -19,6 +19,20 @@ public static class WebViewSupport
         Engine.Value &&
         (!OperatingSystem.IsWindows() || Thread.CurrentThread.GetApartmentState() == ApartmentState.STA);
 
+    // Duração das animações de navegação (MainWindow.axaml), com folga.
+    private static readonly TimeSpan TransitionDuration = TimeSpan.FromMilliseconds(300);
+
+    /// <summary>
+    /// Executa <paramref name="show"/> depois da animação de navegação. O WebView é uma janela nativa: posicionado
+    /// no meio do deslizamento ele fica deslocado, porque não acompanha a transformação até o fim.
+    /// </summary>
+    public static void AfterTransition(Avalonia.Controls.Control owner, Action show) =>
+        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
+        {
+            if (Avalonia.Controls.TopLevel.GetTopLevel(owner) is not null)
+                show();
+        }, TransitionDuration);
+
     private static bool DetectEngine()
     {
         try

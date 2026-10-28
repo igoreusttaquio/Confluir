@@ -12,6 +12,13 @@ public sealed class AppSettings
     public AppearanceSettings Appearance { get; set; } = new();
     public LayoutSettings Layout { get; set; } = new();
     public ReadingSettings Reading { get; set; } = new();
+    public ComposeSettings Compose { get; set; } = new();
+}
+
+public sealed class ComposeSettings
+{
+    /// <summary>Escrever em texto simples em vez do editor com formatação (lembra a última escolha).</summary>
+    public bool PlainText { get; set; }
 }
 
 public sealed class ReadingSettings

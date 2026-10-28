@@ -88,8 +88,9 @@
       </TransitioningContentControl>
     </Border>
 
-    <!-- Aviso temporário (ex.: "Mensagem enviada") -->
-    <Border Grid.Column="2" Grid.ColumnSpan="3" ZIndex="3" IsVisible="{Binding HasStatus}"
+    <!-- Aviso temporário (ex.: "Mensagem enviada"). Fica sobre a lista: o painel de leitura é um WebView nativo,
+         que ficaria por cima do aviso. -->
+    <Border Grid.Column="2" ZIndex="3" IsVisible="{Binding HasStatus}"
             HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24"
             Background="{DynamicResource TextPrimary}" CornerRadius="10" Padding="16,10">
       <StackPanel Orientation="Horizontal" Spacing="8">

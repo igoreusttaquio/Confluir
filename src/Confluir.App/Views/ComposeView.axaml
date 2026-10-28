@@ -3,6 +3,7 @@
              xmlns:l="using:Confluir.App.Localization"
              xmlns:vm="using:Confluir.App.ViewModels"
              xmlns:conv="using:Confluir.App.Converters"
+             xmlns:views="using:Confluir.App.Views"
              x:Class="Confluir.App.Views.ComposeView"
              x:DataType="vm:ComposeViewModel">
   <UserControl.Styles>
@@ -25,6 +26,15 @@
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Background" Value="Transparent" />
     </Style>
+    <Style Selector="Button.fmt.on">
+      <Setter Property="Background" Value="{DynamicResource AccentSubtle}" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+    </Style>
+    <Style Selector="Border.toolbarDivider">
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Margin" Value="6,6" />
+      <Setter Property="Background" Value="{DynamicResource Border}" />
+    </Style>
     <Style Selector="Border.dropOverlay">
       <Setter Property="IsVisible" Value="False" />
     </Style>
@@ -40,7 +50,7 @@
               Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
         <Grid ColumnDefinitions="Auto,*,Auto">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <Button Classes="icon" Command="{Binding DiscardCommand}"
+            <Button Classes="icon" Command="{Binding BackCommand}"
                     ToolTip.Tip="{l:Tr Action_Back}" AutomationProperties.Name="{l:Tr Action_Back}">
               <LucideIcon Kind="ArrowLeft" />
             </Button>
@@ -167,11 +177,81 @@
         </ItemsControl>
       </StackPanel>
 
-      <!-- Corpo (o editor rico entra na próxima etapa) -->
-      <TextBox x:Name="BodyBox" Text="{Binding Body}" AcceptsReturn="True" TextWrapping="Wrap"
-               BorderThickness="0" Background="Transparent" Padding="24,16"
-               FontSize="15" VerticalContentAlignment="Top"
-               ScrollViewer.VerticalScrollBarVisibility="Auto" />
+      <!-- Barra de formatação -->
+      <Border DockPanel.Dock="Top" Padding="18,6" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+              Margin="0,10,0,0" IsVisible="{Binding IsRichTextAvailable}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsRichText}">
+            <Button x:Name="BoldButton" Classes="icon fmt" Tag="bold"
+                    ToolTip.Tip="{l:Tr Compose_Bold}" AutomationProperties.Name="{l:Tr Compose_Bold}">
+              <LucideIcon Kind="Bold" Size="16" />
+            </Button>
+            <Button x:Name="ItalicButton" Classes="icon fmt" Tag="italic"
+                    ToolTip.Tip="{l:Tr Compose_Italic}" AutomationProperties.Name="{l:Tr Compose_Italic}">
+              <LucideIcon Kind="Italic" Size="16" />
+            </Button>
+            <Button x:Name="UnderlineButton" Classes="icon fmt" Tag="underline"
+                    ToolTip.Tip="{l:Tr Compose_Underline}" AutomationProperties.Name="{l:Tr Compose_Underline}">
+              <LucideIcon Kind="Underline" Size="16" />
+            </Button>
+            <Button x:Name="StrikeButton" Classes="icon fmt" Tag="strikeThrough"
+                    ToolTip.Tip="{l:Tr Compose_Strike}" AutomationProperties.Name="{l:Tr Compose_Strike}">
+              <LucideIcon Kind="Strikethrough" Size="16" />
+            </Button>
+            <Border Classes="toolbarDivider" />
+            <Button x:Name="BulletButton" Classes="icon fmt" Tag="insertUnorderedList"
+                    ToolTip.Tip="{l:Tr Compose_BulletList}" AutomationProperties.Name="{l:Tr Compose_BulletList}">
+              <LucideIcon Kind="List" Size="16" />
+            </Button>
+            <Button x:Name="NumberedButton" Classes="icon fmt" Tag="insertOrderedList"
+                    ToolTip.Tip="{l:Tr Compose_NumberedList}" AutomationProperties.Name="{l:Tr Compose_NumberedList}">
+              <LucideIcon Kind="ListOrdered" Size="16" />
+            </Button>
+            <Button Classes="icon fmt" Tag="blockquote"
+                    ToolTip.Tip="{l:Tr Compose_Quote}" AutomationProperties.Name="{l:Tr Compose_Quote}">
+              <LucideIcon Kind="TextQuote" Size="16" />
+            </Button>
+            <Border Classes="toolbarDivider" />
+            <Button Classes="icon" Click="OnLinkClick"
+                    ToolTip.Tip="{l:Tr Compose_Link}" AutomationProperties.Name="{l:Tr Compose_Link}">
+              <LucideIcon Kind="Link" Size="16" />
+            </Button>
+            <Button Classes="icon fmt" Tag="removeFormat"
+                    ToolTip.Tip="{l:Tr Compose_ClearFormatting}" AutomationProperties.Name="{l:Tr Compose_ClearFormatting}">
+              <LucideIcon Kind="RemoveFormatting" Size="16" />
+            </Button>
+          </StackPanel>
+          <ToggleButton Grid.Column="1" IsChecked="{Binding IsPlainText}" Padding="10,4"
+                        ToolTip.Tip="{l:Tr Compose_PlainTextHint}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="Type" Size="14" />
+              <TextBlock Text="{l:Tr Compose_PlainText}" FontSize="13" VerticalAlignment="Center" />
+            </StackPanel>
+          </ToggleButton>
+        </Grid>
+      </Border>
+
+      <!-- Inserir link (inline, sem diálogo) -->
+      <Border x:Name="LinkRow" DockPanel.Dock="Top" Padding="24,8" Background="{DynamicResource SurfaceAlt}" IsVisible="False">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <LucideIcon Kind="Link" Size="15" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+          <TextBox x:Name="LinkBox" Grid.Column="1" Margin="10,0" PlaceholderText="{l:Tr Compose_LinkPlaceholder}" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+            <Button Content="{l:Tr AddAccount_Cancel}" Click="OnLinkCancel" />
+            <Button Classes="accent" Content="{l:Tr Compose_InsertLink}" Click="OnLinkInsert" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Corpo: editor formatado ou texto simples -->
+      <Panel>
+        <views:RichEditorView x:Name="Editor" IsVisible="{Binding IsRichText}" IsWebAllowed="{Binding IsActive}" />
+        <TextBox x:Name="BodyBox" Text="{Binding Body}" AcceptsReturn="True" TextWrapping="Wrap"
+                 IsVisible="{Binding IsPlainText}"
+                 BorderThickness="0" Background="Transparent" Padding="24,16"
+                 FontSize="15" VerticalContentAlignment="Top"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+      </Panel>
     </DockPanel>
 
     <!-- Arraste arquivos aqui -->

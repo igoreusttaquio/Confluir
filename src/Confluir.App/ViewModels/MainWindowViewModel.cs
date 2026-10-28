@@ -184,6 +184,41 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Navigation.NavigateTo(compose);
     }
 
+    /// <summary>
+    /// Continua um rascunho da pasta Rascunhos: a versão do aparelho se for um rascunho do Confluir
+    /// (pode estar mais nova que a do servidor), senão o conteúdo do servidor.
+    /// </summary>
+    public async Task EditDraftAsync(MessageDetailViewModel message)
+    {
+        var summary = message.Row.Summary;
+        var body = message.LoadedBody;
+        try
+        {
+            body ??= await _mailbox.GetMessageBodyAsync(summary.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Não foi possível carregar o rascunho");
+            ShowStatus(Strings.Reading_NotAvailableOffline);
+            return;
+        }
+        var draftId = DraftMessageId.Parse(body.MessageIdHeader);
+        var location = await _compose.Drafts.LocateAsync(summary.Id);
+        var local = draftId is { } id ? await _compose.Drafts.GetAsync(id) : null;
+
+        var compose = new ComposeViewModel(_compose, _accounts.Values.ToList(), summary.AccountId, ShowStatus, draftId);
+        if (local is not null)
+            compose.InitFromDraft(local with { Server = location ?? local.Server });
+        else
+            compose.InitFromServerDraft(summary, body, location);
+        if (Navigation.CurrentPage is MessagePageViewModel)
+            Navigation.GoBack();
+        Navigation.NavigateTo(compose);
+    }
+
+    private bool IsDraftFolder(Guid folderId) =>
+        _folderNodes.TryGetValue(folderId, out var folder) && folder.Folder.Kind == SpecialFolderKind.Drafts;
+
     // Aviso temporário (ex.: "Mensagem enviada") -------------------------------------------------------
 
     [ObservableProperty]
@@ -310,7 +345,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     public bool HasSelection => Detail is not null;
 
-    public Task InitializeAsync() => ReloadAsync();
+    public async Task InitializeAsync()
+    {
+        await ReloadAsync();
+        // Rascunhos que ficaram só no aparelho (ex.: app fechado sem conexão) vão para o servidor.
+        _ = _compose.Drafts.UploadPendingAsync(_accounts.Keys.ToList());
+    }
 
     /// <summary>Recarrega contas e pastas (ao iniciar e quando contas são adicionadas ou removidas).</summary>
     public async Task ReloadAsync()
@@ -461,7 +501,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     private MessageDetailViewModel CreateDetail(MessageRow row)
     {
-        var detail = new MessageDetailViewModel(row, _reading) { OpenInPageRequested = OpenInPage, Actions = this };
+        var detail = new MessageDetailViewModel(row, _reading)
+        {
+            OpenInPageRequested = OpenInPage,
+            Actions = this,
+            IsDraft = IsDraftFolder(row.Summary.FolderId),
+        };
         _detailCts = new CancellationTokenSource();
         _ = detail.LoadAsync(_detailCts.Token);
         return detail;
@@ -476,7 +521,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         MarkRead(row);
         // No layout de três colunas reaproveita o que já está carregado no painel de leitura.
         var detail = Detail is { } current && current.Row.Summary.Id == row.Summary.Id ? current : CreateDetail(row);
-        OpenInPage(detail);
+        // Rascunho abre direto na tela de composição.
+        if (detail.IsDraft)
+            _ = EditDraftAsync(detail);
+        else
+            OpenInPage(detail);
     }
 
     private void OpenInPage(MessageDetailViewModel detail) =>
