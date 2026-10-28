@@ -126,6 +126,22 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         return true;
     }
 
+    public async Task<bool> SetJunkAsync(Guid messageId, bool isJunk, CancellationToken ct = default)
+    {
+        var location = await _cache.GetLocationAsync(messageId, ct);
+        if (location is null)
+            return false;
+        var target = (await _cache.GetFoldersAsync(location.AccountId, ct))
+            .FirstOrDefault(f => f.Kind == (isJunk ? SpecialFolderKind.Junk : SpecialFolderKind.Inbox));
+        if (target is null || target.FullName == location.FolderFullName)
+            return false;
+        await _cache.DeleteMessageAsync(messageId, ct);
+        var due = DateTimeOffset.UtcNow + UndoWindow;
+        await _cache.EnqueueAsync(location.AccountId, messageId, OperationKind.Move, location, target.FullName, due, ct);
+        _ = Task.Delay(due - DateTimeOffset.UtcNow + TimeSpan.FromSeconds(1)).ContinueWith(_ => Wake(location.AccountId), TaskScheduler.Default);
+        return true;
+    }
+
     public async Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default)
     {
         var location = await _cache.GetLocationAsync(messageId, ct);

@@ -57,6 +57,13 @@ public interface IMailboxService
     /// </summary>
     Task<bool> UndoRemoveAsync(MessageSummary message, CancellationToken ct = default);
 
+    /// <summary>
+    /// Spam: move para a pasta Spam da conta; "não é spam" devolve para a caixa de entrada. Fica alguns segundos
+    /// na fila antes de ir ao servidor, como arquivar, para <see cref="UndoRemoveAsync"/> poder desfazer.
+    /// Falso se a conta não tem a pasta (ou a mensagem já está nela).
+    /// </summary>
+    Task<bool> SetJunkAsync(Guid messageId, bool isJunk, CancellationToken ct = default);
+
     /// <summary>Move para outra pasta da mesma conta (nome completo no servidor).</summary>
     Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default);
 

@@ -54,6 +54,10 @@
                 ToolTip.Tip="{Binding ReadTooltip}" AutomationProperties.Name="{l:Tr Action_MarkUnread}">
           <LucideIcon Kind="MailOpen" />
         </Button>
+        <Button Classes="icon" Command="{Binding ToggleSpamCommand}" IsEnabled="{Binding CanToggleSpam}"
+                ToolTip.Tip="{Binding SpamTooltip}" AutomationProperties.Name="{Binding SpamTooltip}">
+          <LucideIcon Kind="ShieldAlert" />
+        </Button>
         <Button Classes="icon" Command="{Binding CreateRuleCommand}" IsVisible="{Binding IsNotDraft}"
                 ToolTip.Tip="{l:Tr Rule_FromMessage}" AutomationProperties.Name="{l:Tr Rule_FromMessage}">
           <LucideIcon Kind="ListFilter" />

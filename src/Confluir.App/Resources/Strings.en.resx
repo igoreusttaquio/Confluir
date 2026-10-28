@@ -426,4 +426,11 @@
   <data name="Update_InstallNow"><value>Update now</value></data>
   <data name="Update_ReleaseNotes"><value>What&apos;s new</value></data>
   <data name="Update_AutoCheck"><value>Check for updates automatically</value></data>
+  <data name="Account_Options"><value>Account options</value></data>
+  <data name="Action_MarkSpam"><value>Mark as spam</value></data>
+  <data name="Action_NotSpam"><value>Not spam</value></data>
+  <data name="Feedback_Spam_One"><value>Message moved to Spam</value></data>
+  <data name="Feedback_Spam_Other"><value>{0:N0} messages moved to Spam</value></data>
+  <data name="Feedback_NotSpam_One"><value>Message moved back to the inbox</value></data>
+  <data name="Feedback_NotSpam_Other"><value>{0:N0} messages moved back to the inbox</value></data>
 </root>

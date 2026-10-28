@@ -126,4 +126,10 @@ public sealed class LayoutSettings
     public bool SidebarCollapsed { get; set; }
 
     public ReadingLayout ReadingLayout { get; set; } = ReadingLayout.ThreeColumns;
+
+    /// <summary>Tamanho da janela fora do modo maximizado (0 = padrão, ajustado à tela).</summary>
+    public double WindowWidth { get; set; }
+    public double WindowHeight { get; set; }
+
+    public bool WindowMaximized { get; set; }
 }

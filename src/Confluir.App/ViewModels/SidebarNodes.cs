@@ -15,10 +15,13 @@ public abstract partial class SidebarNode : ViewModelBase
 public sealed partial class UnifiedInboxNode : SidebarNode
 {
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasUnread))]
+    [NotifyPropertyChangedFor(nameof(HasUnread), nameof(RailCount))]
     public partial int UnreadCount { get; set; }
 
     public bool HasUnread => UnreadCount > 0;
+
+    /// <summary>Contador da barra recolhida, curto para caber no canto do ícone.</summary>
+    public string RailCount => UnreadCount > 99 ? "99+" : UnreadCount.ToString(System.Globalization.CultureInfo.CurrentCulture);
 
     public string Title => Strings.UnifiedInbox;
 }

@@ -176,6 +176,9 @@
             <Button Classes="icon" Command="{Binding ToggleReadSelectedCommand}" ToolTip.Tip="{Binding SelectionReadText}" AutomationProperties.Name="{Binding SelectionReadText}">
               <LucideIcon Kind="MailOpen" Size="16" />
             </Button>
+            <Button Classes="icon" Command="{Binding ToggleSpamSelectedCommand}" ToolTip.Tip="{Binding SelectionSpamText}" AutomationProperties.Name="{Binding SelectionSpamText}">
+              <LucideIcon Kind="ShieldAlert" Size="16" />
+            </Button>
             <Button Classes="icon" Command="{Binding ClearSelectionCommand}" ToolTip.Tip="{l:Tr Selection_Clear}" AutomationProperties.Name="{l:Tr Selection_Clear}">
               <LucideIcon Kind="X" Size="16" />
             </Button>
@@ -284,6 +287,10 @@
               </MenuItem>
               <MenuItem Header="{Binding ReadActionText}" Click="OnMenuRead">
                 <MenuItem.Icon><LucideIcon Kind="MailOpen" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+              <!-- Rótulo (spam / não é spam) definido ao abrir -->
+              <MenuItem Header="{l:Tr Action_MarkSpam}" Click="OnMenuSpam">
+                <MenuItem.Icon><LucideIcon Kind="ShieldAlert" Size="16" /></MenuItem.Icon>
               </MenuItem>
               <Separator Classes="single" />
               <MenuItem Header="{l:Tr Rule_FromMessage}" Click="OnMenuRule" Classes="single">

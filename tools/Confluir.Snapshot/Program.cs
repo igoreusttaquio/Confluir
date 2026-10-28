@@ -318,9 +318,32 @@ Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000
     }
     vm.GoBackCommand.Execute(null);
 
-    // Nova pasta pelo menu da conta: campo inline, cria "Clientes/Acme", seleciona; repetir o nome avisa.
+    // Nova pasta pelo menu da conta (botão direito de verdade): campo inline, cria "Clientes/Acme", seleciona;
+    // repetir o nome avisa.
     Pump(() => vm.Navigation.IsAtRoot);
     var folderAccount = vm.SidebarNodes.OfType<AccountNode>().First();
+    var nodes = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Nodes");
+    Pump(() => nodes.ContainerFromItem(folderAccount) is not null);
+    var accountPoint = ((Control)nodes.ContainerFromItem(folderAccount)!).TranslatePoint(new Point(60, 16), window)!.Value;
+    window.MouseDown(accountPoint, MouseButton.Right);
+    window.MouseUp(accountPoint, MouseButton.Right);
+    var accountMenu = nodes.ContextFlyout as MenuFlyout;
+    Pump(() => accountMenu?.IsOpen == true, 2000);
+    var newFolderItem = accountMenu?.Items.OfType<MenuItem>().FirstOrDefault();
+    Console.WriteLine($"menu da conta aberto: {accountMenu?.IsOpen == true}; itens: {string.Join(" | ", accountMenu?.Items.OfType<MenuItem>().Select(i => i.Header?.ToString()) ?? [])}");
+    Save(window, "account-menu.png");
+    newFolderItem?.Command?.Execute(null);
+    accountMenu?.Hide();
+    Pump(() => folderAccount.IsCreatingFolder, 1000);
+    Console.WriteLine($"Nova pasta pelo menu abriu o campo: {folderAccount.IsCreatingFolder}");
+    // Botão direito numa pasta não abre menu de conta.
+    var folderRow = (Control)nodes.ContainerFromItem(folderAccount.Folders[0])!;
+    var folderPoint = folderRow.TranslatePoint(new Point(60, 10), window)!.Value;
+    window.MouseDown(folderPoint, MouseButton.Right);
+    window.MouseUp(folderPoint, MouseButton.Right);
+    Pump(() => true);
+    Console.WriteLine($"menu da conta sobre pasta: {accountMenu?.IsOpen == true || nodes.ContextFlyout?.IsOpen == true}");
+    accountMenu?.Hide();
     folderAccount.AskCreateFolderCommand.Execute(null);
     folderAccount.NewFolderName = "Clientes/Acme";
     Pump(() => true);
@@ -348,6 +371,44 @@ custom.ImapStatus.Set(TestState.Ok, "Conectado");
 custom.SmtpStatus.Set(TestState.Failed, Confluir.App.Resources.Strings.Error_ServerUnreachable);
 Save(window, "add-account-custom-dark.png");
 vm.GoBackCommand.Execute(null);
+
+{
+    // Spam: na caixa de entrada vira "Marcar como spam" e sai da lista; na pasta Spam, "Não é spam".
+    Pump(() => vm.Navigation.IsAtRoot);
+    var inbox = vm.SidebarNodes.OfType<FolderNode>().First(f => f.Folder.Kind == Confluir.Core.Models.SpecialFolderKind.Inbox);
+    vm.SelectedNode = inbox;
+    Pump(() => vm.Rows.OfType<MessageRow>().Any(r => r.Summary.FolderId == inbox.Folder.Id), 3000);
+    var spamRow = vm.Rows.OfType<MessageRow>().First();
+    Console.WriteLine($"spam na caixa de entrada: \"{vm.SpamActionText([spamRow])}\", pode: {vm.CanSpamRows([spamRow])}");
+    var spamTask = vm.ToggleSpamRowsAsync([spamRow]);
+    Pump(() => spamTask.IsCompleted);
+    Console.WriteLine($"spam: saiu da lista {!vm.Rows.Contains(spamRow)}, aviso \"{vm.StatusMessage}\" com desfazer {vm.HasStatusUndo}");
+    var junk = vm.SidebarNodes.OfType<FolderNode>().First(f => f.Folder.Kind == Confluir.Core.Models.SpecialFolderKind.Junk);
+    vm.SelectedNode = junk;
+    Pump(() => vm.Rows.OfType<MessageRow>().Any(r => r.Summary.FolderId == junk.Folder.Id), 3000);
+    var junkRow = vm.Rows.OfType<MessageRow>().First();
+    vm.SelectedRow = junkRow;
+    Pump(() => vm.Detail is { IsLoading: false });
+    Console.WriteLine($"na pasta Spam: \"{vm.SpamActionText([junkRow])}\", barra da mensagem: \"{vm.Detail?.SpamTooltip}\"");
+    Save(window, "spam-folder.png");
+
+    // Janela estreita: a leitura vira tela própria em vez de ser cortada; volta ao alargar.
+    window.Width = 900;
+    Pump(() => vm.IsNarrow, 1500);
+    Console.WriteLine($"janela 900: estreita {vm.IsNarrow}, duas colunas {vm.IsTwoColumnLayout}");
+    Save(window, "narrow.png");
+    window.Width = 1320;
+    Pump(() => !vm.IsNarrow, 1500);
+    Console.WriteLine($"janela 1320: estreita {vm.IsNarrow}, duas colunas {vm.IsTwoColumnLayout}");
+
+    // Barra recolhida: o contador da caixa unificada inteiro.
+    vm.ToggleSidebarCommand.Execute(null);
+    Pump(() => true, 400);
+    Save(window, "rail-badge.png");
+    Console.WriteLine($"contador recolhido: \"{vm.UnifiedInbox.RailCount}\"");
+    vm.ToggleSidebarCommand.Execute(null);
+    Pump(() => true, 400);
+}
 
 window.Close();
 

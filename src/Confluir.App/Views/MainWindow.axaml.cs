@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly ISettingsStore? _settings;
     private readonly MainWindowViewModel? _vm;
     private readonly ShortcutService? _shortcuts;
+    private readonly FontService? _fonts;
 
     // Usado pelo previewer do XAML.
     public MainWindow() => InitializeComponent();
@@ -26,18 +27,30 @@ public partial class MainWindow : Window
     {
         _settings = settings;
         _shortcuts = shortcuts;
+        _fonts = fonts;
         _vm = viewModel;
         DataContext = viewModel;
 
         // Escala da interface (Configurações → Fontes): toda a janela, inclusive ícones e espaçamentos.
-        void ApplyScale() => ScaleHost.LayoutTransform = new ScaleTransform(fonts.Current.Scale, fonts.Current.Scale);
+        void ApplyScale()
+        {
+            ScaleHost.LayoutTransform = new ScaleTransform(fonts.Current.Scale, fonts.Current.Scale);
+            ApplyMinimumSize();
+            UpdateNarrow();
+        }
         ApplyScale();
         fonts.Changed += (_, _) => ApplyScale();
 
         ApplyLayout();
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         viewModel.FocusSearchRequested += (_, _) => this.FindDescendantOfType<MessageListView>()?.FocusSearch();
-        Opened += async (_, _) => await viewModel.InitializeAsync();
+        RestoreWindowSize();
+        Opened += async (_, _) =>
+        {
+            FitToScreen(center: true);
+            ApplyMinimumSize();
+            await viewModel.InitializeAsync();
+        };
     }
 
     private static readonly TimeSpan SidebarAnimation = TimeSpan.FromMilliseconds(220);
@@ -47,6 +60,7 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName == nameof(MainWindowViewModel.IsSidebarCollapsed))
         {
+            UpdateNarrow();
             SaveWidths();
             AnimateSidebar();
         }
@@ -150,6 +164,126 @@ public partial class MainWindow : Window
         if (_settings is null || e.Cancel)
             return;
         SaveWidths();
+        SaveWindowSize();
         _settings.Save();
+    }
+
+    // Tamanho da janela ------------------------------------------------------------------------------
+
+    // Mínimo em unidades da interface (antes da escala de Configurações → Fontes): barra lateral, lista e leitura
+    // em duas colunas, e as Configurações sem cortar.
+    private const double MinContentWidth = 860;
+    private const double MinContentHeight = 540;
+    private const double ScreenMargin = 16;
+
+    private Size _normalSize;
+
+    private double Scale => _fonts?.Current.Scale ?? 1;
+
+    /// <summary>Área útil da tela da janela (sem a barra de tarefas), em unidades da janela.</summary>
+    private (PixelRect Area, double Scaling)? WorkArea() =>
+        (Screens.ScreenFromWindow(this) ?? Screens.Primary) is { } screen ? (screen.WorkingArea, screen.Scaling) : null;
+
+    private void RestoreWindowSize()
+    {
+        if (_settings is null)
+            return;
+        var layout = _settings.Current.Layout;
+        if (layout is { WindowWidth: > 0, WindowHeight: > 0 })
+        {
+            Width = layout.WindowWidth;
+            Height = layout.WindowHeight;
+        }
+        if (layout.WindowMaximized)
+            WindowState = WindowState.Maximized;
+    }
+
+    private void SaveWindowSize()
+    {
+        if (_settings is null)
+            return;
+        var layout = _settings.Current.Layout;
+        layout.WindowMaximized = WindowState == WindowState.Maximized;
+        if (_normalSize is { Width: > 0, Height: > 0 })
+            (layout.WindowWidth, layout.WindowHeight) = (_normalSize.Width, _normalSize.Height);
+    }
+
+    /// <summary>
+    /// Fora do modo maximizado, a janela cabe na área útil da tela e fica dentro dela (ao abrir, ao sair do
+    /// maximizado e ao trocar de monitor).
+    /// </summary>
+    private void FitToScreen(bool center = false)
+    {
+        if (WindowState != WindowState.Normal || WorkArea() is not var (area, scaling))
+            return;
+        // Bordas e barra de título ficam fora do ClientSize.
+        var frame = FrameSize is { } f ? f - ClientSize : new Size(0, 0);
+        var maxWidth = area.Width / scaling - frame.Width - ScreenMargin * 2;
+        var maxHeight = area.Height / scaling - frame.Height - ScreenMargin * 2;
+        var width = Math.Min(ClientSize.Width, maxWidth);
+        var height = Math.Min(ClientSize.Height, maxHeight);
+        var resized = width < ClientSize.Width || height < ClientSize.Height;
+        if (resized)
+        {
+            MinWidth = Math.Min(MinWidth, width);
+            MinHeight = Math.Min(MinHeight, height);
+            Width = width;
+            Height = height;
+        }
+
+        var pixelWidth = (int)Math.Ceiling((width + frame.Width) * scaling);
+        var pixelHeight = (int)Math.Ceiling((height + frame.Height) * scaling);
+        var x = center && resized ? area.X + (area.Width - pixelWidth) / 2 : Position.X;
+        var y = center && resized ? area.Y + (area.Height - pixelHeight) / 2 : Position.Y;
+        // A barra de título precisa ficar à vista; o resto, dentro da área útil se couber.
+        x = Math.Clamp(x, area.X, Math.Max(area.X, area.Right - pixelWidth));
+        y = Math.Clamp(y, area.Y, Math.Max(area.Y, area.Bottom - pixelHeight));
+        if (x != Position.X || y != Position.Y)
+            Position = new PixelPoint(x, y);
+    }
+
+    /// <summary>O mínimo acompanha a escala da interface, sem passar do tamanho da tela.</summary>
+    private void ApplyMinimumSize()
+    {
+        var width = MinContentWidth * Scale;
+        var height = MinContentHeight * Scale;
+        if (WorkArea() is var (area, scaling))
+        {
+            width = Math.Min(width, area.Width / scaling - ScreenMargin * 2);
+            height = Math.Min(height, area.Height / scaling - ScreenMargin * 2);
+        }
+        MinWidth = width;
+        MinHeight = height;
+    }
+
+    /// <summary>
+    /// Sem largura para lista e leitura lado a lado, a mensagem abre em tela própria (como em duas colunas) em vez
+    /// de a leitura ser cortada. Uma folga evita alternar ao redimensionar perto do limite.
+    /// </summary>
+    private void UpdateNarrow()
+    {
+        if (_vm is null || _settings is null || ClientSize.Width <= 0)
+            return;
+        var available = ClientSize.Width / Scale;
+        var sidebar = _vm.IsSidebarCollapsed ? CollapsedSidebarWidth : _settings.Current.Layout.SidebarWidth;
+        var list = Math.Max(Columns.ColumnDefinitions[2].MinWidth, _settings.Current.Layout.MessageListWidth);
+        var needed = sidebar + list + Columns.ColumnDefinitions[4].MinWidth + 16;
+        _vm.IsNarrow = _vm.IsNarrow ? available < needed + 40 : available < needed;
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ClientSizeProperty)
+        {
+            if (WindowState == WindowState.Normal)
+                _normalSize = ClientSize;
+            UpdateNarrow();
+        }
+        else if (change.Property == WindowStateProperty && change.GetNewValue<WindowState>() == WindowState.Normal)
+        {
+            // Ao sair do maximizado o sistema devolve o tamanho anterior, que pode não caber nesta tela.
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => FitToScreen());
+        }
     }
 }

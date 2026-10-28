@@ -114,6 +114,12 @@ public partial class MessageListView : UserControl
         }
         if (menu.Items.OfType<MenuItem>().FirstOrDefault(i => i.Icon is Lucide.Avalonia.LucideIcon { Kind: Lucide.Avalonia.LucideIconKind.Archive }) is { } archive)
             archive.IsEnabled = vm.TargetsFor(row).Any(vm.CanArchiveRow);
+        if (menu.Items.OfType<MenuItem>().FirstOrDefault(i => i.Icon is Lucide.Avalonia.LucideIcon { Kind: Lucide.Avalonia.LucideIconKind.ShieldAlert }) is { } spam)
+        {
+            var targets = vm.TargetsFor(row);
+            spam.Header = vm.SpamActionText(targets);
+            spam.IsEnabled = vm.CanSpamRows(targets);
+        }
     }
 
     /// <summary>A mensagem do menu: os itens (MenuItem) recebem-na como DataContext para os rótulos.</summary>
@@ -135,6 +141,12 @@ public partial class MessageListView : UserControl
     {
         if (Targets(sender) is { } t)
             _ = t.Vm.ReplyToRowAsync(t.Row);
+    }
+
+    private void OnMenuSpam(object? sender, RoutedEventArgs e)
+    {
+        if (Targets(sender) is { } t)
+            _ = t.Vm.ToggleSpamRowsAsync(t.Targets);
     }
 
     private void OnMenuArchive(object? sender, RoutedEventArgs e)

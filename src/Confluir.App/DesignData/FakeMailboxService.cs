@@ -144,6 +144,12 @@ public sealed class FakeMailboxService : IMailboxService
 
     public Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default) => Remove(messageId);
 
+    public async Task<bool> SetJunkAsync(Guid messageId, bool isJunk, CancellationToken ct = default)
+    {
+        await Remove(messageId);
+        return true;
+    }
+
     public Task<MailFolder?> CreateFolderAsync(Guid accountId, string name, CancellationToken ct = default)
     {
         var fullName = string.Join("/", name.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));

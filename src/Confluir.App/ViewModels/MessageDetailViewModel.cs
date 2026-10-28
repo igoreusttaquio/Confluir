@@ -31,6 +31,9 @@ public interface IMessageActions
     Task DeleteAsync(MessageDetailViewModel message);
     Task ToggleFlagAsync(MessageDetailViewModel message);
     Task ToggleReadAsync(MessageDetailViewModel message);
+    Task ToggleSpamAsync(MessageDetailViewModel message);
+    bool CanToggleSpam(MessageDetailViewModel message);
+    string SpamText(MessageDetailViewModel message);
     Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode);
     Task EditDraftAsync(MessageDetailViewModel message);
     void CreateRule(MessageDetailViewModel message);
@@ -166,6 +169,14 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private Task Delete() => Actions?.DeleteAsync(this) ?? Task.CompletedTask;
+
+    /// <summary>"Marcar como spam", ou "Não é spam" se a mensagem está na pasta Spam.</summary>
+    public string SpamTooltip => Actions?.SpamText(this) ?? Strings.Action_MarkSpam;
+
+    public bool CanToggleSpam => Actions?.CanToggleSpam(this) ?? false;
+
+    [RelayCommand]
+    private Task ToggleSpam() => Actions?.ToggleSpamAsync(this) ?? Task.CompletedTask;
 
     [RelayCommand]
     private async Task ToggleFlag()

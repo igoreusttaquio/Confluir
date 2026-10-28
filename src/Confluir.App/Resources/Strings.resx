@@ -426,4 +426,11 @@
   <data name="Update_InstallNow"><value>Atualizar agora</value></data>
   <data name="Update_ReleaseNotes"><value>Novidades</value></data>
   <data name="Update_AutoCheck"><value>Procurar atualizações automaticamente</value></data>
+  <data name="Account_Options"><value>Opções da conta</value></data>
+  <data name="Action_MarkSpam"><value>Marcar como spam</value></data>
+  <data name="Action_NotSpam"><value>Não é spam</value></data>
+  <data name="Feedback_Spam_One"><value>Mensagem movida para o Spam</value></data>
+  <data name="Feedback_Spam_Other"><value>{0:N0} mensagens movidas para o Spam</value></data>
+  <data name="Feedback_NotSpam_One"><value>Mensagem devolvida à caixa de entrada</value></data>
+  <data name="Feedback_NotSpam_Other"><value>{0:N0} mensagens devolvidas à caixa de entrada</value></data>
 </root>

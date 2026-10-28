@@ -327,6 +327,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     public Task ToggleReadAsync(MessageDetailViewModel message) => ToggleReadRowsAsync([message.Row]);
 
+    public Task ToggleSpamAsync(MessageDetailViewModel message) => ToggleSpamRowsAsync([message.Row]);
+
+    public bool CanToggleSpam(MessageDetailViewModel message) => CanSpamRows([message.Row]);
+
+    public string SpamText(MessageDetailViewModel message) => SpamActionText([message.Row]);
+
     /// <summary>
     /// Arquivar/excluir: tira a mensagem da lista na hora, ajusta contadores, fecha a tela própria (se aberta)
     /// e seleciona a mensagem seguinte.
@@ -654,7 +660,23 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     // Layout ------------------------------------------------------------------------------------------
 
-    public bool IsTwoColumnLayout => _reading.Settings.Current.Layout.ReadingLayout == ReadingLayout.TwoColumns;
+    /// <summary>Duas colunas: escolhido em Aparência, ou porque a janela está estreita demais para três.</summary>
+    public bool IsTwoColumnLayout => _reading.Settings.Current.Layout.ReadingLayout == ReadingLayout.TwoColumns || IsNarrow;
+
+    /// <summary>A janela não comporta lista e leitura lado a lado (definido pela janela ao mudar de tamanho).</summary>
+    public bool IsNarrow
+    {
+        get;
+        set
+        {
+            if (field == value)
+                return;
+            var before = IsTwoColumnLayout;
+            field = value;
+            if (IsTwoColumnLayout != before)
+                OnLayoutChanged();
+        }
+    }
 
     public bool IsSidebarCollapsed
     {

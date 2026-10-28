@@ -48,6 +48,7 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(SelectionCountText));
         OnPropertyChanged(nameof(SelectionReadText));
         OnPropertyChanged(nameof(SelectionFlagText));
+        OnPropertyChanged(nameof(SelectionSpamText));
     }
 
     /// <summary>A mensagem do menu de contexto, ou a seleção inteira se ela faz parte dela.</summary>
@@ -75,6 +76,36 @@ public async Task ArchiveRowsAsync(IReadOnlyList<MessageRow> rows)
 var originals = Snapshot(rows);
         await RemoveRowsAsync(rows, _mailbox.DeleteAsync);
         ShowStatus(_loc.Plural("Feedback_Deleted", originals.Count), () => UndoRemovalAsync(originals));
+    }
+
+    private bool IsJunkRow(MessageRow row) =>
+        _folderNodes.TryGetValue(row.Summary.FolderId, out var folder) && folder.Folder.Kind == SpecialFolderKind.Junk;
+
+    private bool HasFolder(MessageRow row, SpecialFolderKind kind) =>
+        _folderNodes.Values.Any(f => f.Account.Id == row.Account.Id && f.Folder.Kind == kind);
+
+    /// <summary>Todas já estão no Spam: a ação vira "Não é spam" (volta para a caixa de entrada).</summary>
+    public bool AreAllJunk(IReadOnlyList<MessageRow> rows) => rows.Count > 0 && rows.All(IsJunkRow);
+
+    public string SpamActionText(IReadOnlyList<MessageRow> rows) =>
+        AreAllJunk(rows) ? Strings.Action_NotSpam : Strings.Action_MarkSpam;
+
+    public bool CanSpamRows(IReadOnlyList<MessageRow> rows) =>
+        rows.Any(r => HasFolder(r, AreAllJunk(rows) ? SpecialFolderKind.Inbox : SpecialFolderKind.Junk));
+
+    public string SelectionSpamText => SpamActionText(_selectedMessages);
+
+    /// <summary>Spam ou "não é spam", conforme <see cref="AreAllJunk"/>; com aviso e Desfazer, como arquivar.</summary>
+    public async Task ToggleSpamRowsAsync(IReadOnlyList<MessageRow> rows)
+    {
+        var notSpam = AreAllJunk(rows);
+        var targets = rows.Where(r => IsJunkRow(r) == notSpam &&
+                                      HasFolder(r, notSpam ? SpecialFolderKind.Inbox : SpecialFolderKind.Junk)).ToList();
+        if (targets.Count == 0)
+            return;
+        var originals = Snapshot(targets);
+        await RemoveRowsAsync(targets, (id, ct) => _mailbox.SetJunkAsync(id, !notSpam, ct));
+        ShowStatus(_loc.Plural(notSpam ? "Feedback_NotSpam" : "Feedback_Spam", targets.Count), () => UndoRemovalAsync(originals));
     }
 
     /// <summary>Estado atual das mensagens (lida/sinalizada podem ter mudado nesta sessão), para devolvê-las iguais.</summary>
@@ -171,6 +202,9 @@ var originals = Snapshot(rows);
 
     [RelayCommand]
     private Task ToggleReadSelected() => ToggleReadRowsAsync(_selectedMessages);
+
+    [RelayCommand]
+    private Task ToggleSpamSelected() => ToggleSpamRowsAsync(_selectedMessages);
 
     /// <summary>Pede à lista que desmarque tudo (a lista trata o pedido).</summary>
     public event EventHandler? ClearSelectionRequested;

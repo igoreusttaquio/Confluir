@@ -19,6 +19,12 @@
                      Button.accountHeader:pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
     </Style>
+    <Style Selector="Button.accountMore">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Button.accountHeader:pointerover Button.accountMore, Button.accountMore:focus-visible, Button.accountMore:flyout-open">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
     <Style Selector="LucideIcon.chevron">
       <Setter Property="RenderTransform" Value="rotate(0deg)" />
       <Setter Property="Transitions">
@@ -60,7 +66,7 @@
       <Setter Property="Height" Value="16" />
       <Setter Property="HorizontalAlignment" Value="Right" />
       <Setter Property="VerticalAlignment" Value="Top" />
-      <Setter Property="Margin" Value="0,-9,-12,0" />
+      <Setter Property="Margin" Value="0,-5,-10,0" />
     </Style>
     <Style Selector="Border.railBadge > TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
@@ -84,15 +90,16 @@
           <LucideIcon Kind="Menu" />
         </Button>
         <Border Height="1" Margin="8,6" Background="{DynamicResource Border}" />
-        <Button Classes="icon" Command="{Binding SelectUnifiedCommand}" HorizontalAlignment="Center"
-                ToolTip.Tip="{l:Tr UnifiedInbox}" AutomationProperties.Name="{l:Tr UnifiedInbox}">
-          <Panel>
+        <!-- O contador fica por cima do botão (fora dele): dentro, o fundo arredondado do botão o cortava. -->
+        <Panel HorizontalAlignment="Center">
+          <Button Classes="icon" Command="{Binding SelectUnifiedCommand}"
+                  ToolTip.Tip="{l:Tr UnifiedInbox}" AutomationProperties.Name="{l:Tr UnifiedInbox}">
             <LucideIcon Kind="Mails" Foreground="{DynamicResource Accent}" />
-            <Border Classes="railBadge" IsVisible="{Binding UnifiedInbox.HasUnread}">
-              <TextBlock Text="{Binding UnifiedInbox.UnreadCount, StringFormat={}{0:N0}}" />
-            </Border>
-          </Panel>
-        </Button>
+          </Button>
+          <Border Classes="railBadge" IsVisible="{Binding UnifiedInbox.HasUnread}" IsHitTestVisible="False">
+            <TextBlock Text="{Binding UnifiedInbox.RailCount}" />
+          </Border>
+        </Panel>
       </StackPanel>
 
       <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,6,0,10" HorizontalAlignment="Center">
@@ -180,11 +187,31 @@
         </StackPanel>
       </Border>
 
-      <ListBox ItemsSource="{Binding SidebarNodes}"
+      <ListBox x:Name="Nodes" ItemsSource="{Binding SidebarNodes}"
                SelectedItem="{Binding SelectedNode}"
                ItemContainerTheme="{StaticResource SidebarItemTheme}"
                Background="Transparent"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <!-- Botão direito numa conta: a View põe a conta como DataContext dos itens antes de abrir. -->
+        <ListBox.ContextFlyout>
+          <MenuFlyout x:DataType="vm:AccountNode" Opening="OnAccountMenuOpening" Placement="Pointer"
+                      OverlayDismissEventPassThrough="True">
+            <MenuItem Header="{l:Tr Folder_Create}" Command="{Binding AskCreateFolderCommand}">
+              <MenuItem.Icon>
+                <LucideIcon Kind="FolderPlus" Size="16" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{l:Tr Account_Edit}" Command="{Binding EditCommand}">
+              <MenuItem.Icon>
+                <LucideIcon Kind="Settings" Size="16" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">
+              <MenuItem.Icon>
+                <LucideIcon Kind="Trash" Size="16" />
+              </MenuItem.Icon>
+            </MenuItem>          </MenuFlyout>
+        </ListBox.ContextFlyout>
         <ListBox.DataTemplates>
           <DataTemplate DataType="vm:UnifiedInboxNode">
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,8">
@@ -202,25 +229,6 @@
             <StackPanel>
               <Button Classes="accountHeader" Command="{Binding ToggleCommand}"
                       ToolTip.Tip="{l:Tr Action_Collapse}">
-                <Button.ContextMenu>
-                  <ContextMenu>
-                    <MenuItem Header="{l:Tr Account_Edit}" Command="{Binding EditCommand}">
-                      <MenuItem.Icon>
-                        <LucideIcon Kind="Settings" Size="16" />
-                      </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="{l:Tr Folder_Create}" Command="{Binding AskCreateFolderCommand}">
-                      <MenuItem.Icon>
-                        <LucideIcon Kind="FolderPlus" Size="16" />
-                      </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">
-                      <MenuItem.Icon>
-                        <LucideIcon Kind="Trash" Size="16" />
-                      </MenuItem.Icon>
-                    </MenuItem>
-                  </ContextMenu>
-                </Button.ContextMenu>
                 <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                   <LucideIcon Classes="chevron" Classes.collapsed="{Binding !IsExpanded}"
                               Kind="ChevronDown" Size="14" Foreground="{DynamicResource TextSecondary}" />
@@ -231,7 +239,8 @@
                                Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="{Binding Account.Email}" Classes="caption" FontSize="{DynamicResource SidebarCaptionFontSize}" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
-                  <Panel Grid.Column="3">
+                  <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <Panel VerticalAlignment="Center">
                     <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"
                                 Foreground="{DynamicResource TextSecondary}"
                                 ToolTip.Tip="{l:Tr Account_Syncing}" />
@@ -239,6 +248,30 @@
                                 Foreground="{DynamicResource TextSecondary}"
                                 ToolTip.Tip="{l:Tr Account_Offline}" />
                   </Panel>
+                  <!-- Opções da conta (o mesmo menu do botão direito) -->
+                  <Button Classes="icon accountMore" Padding="4" ToolTip.Tip="{l:Tr Account_Options}"
+                          AutomationProperties.Name="{l:Tr Account_Options}">
+                    <LucideIcon Kind="Ellipsis" Size="16" />
+                    <Button.Flyout>
+                      <MenuFlyout Placement="BottomEdgeAlignedRight">
+                      <MenuItem Header="{l:Tr Folder_Create}" Command="{Binding AskCreateFolderCommand}">
+                        <MenuItem.Icon>
+                          <LucideIcon Kind="FolderPlus" Size="16" />
+                        </MenuItem.Icon>
+                      </MenuItem>
+                      <MenuItem Header="{l:Tr Account_Edit}" Command="{Binding EditCommand}">
+                        <MenuItem.Icon>
+                          <LucideIcon Kind="Settings" Size="16" />
+                        </MenuItem.Icon>
+                      </MenuItem>
+                      <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">
+                        <MenuItem.Icon>
+                          <LucideIcon Kind="Trash" Size="16" />
+                        </MenuItem.Icon>
+                      </MenuItem>                      </MenuFlyout>
+                    </Button.Flyout>
+                  </Button>
+                  </StackPanel>
                 </Grid>
               </Button>
               <!-- Confirmação de remoção (inline, sem diálogo) -->
