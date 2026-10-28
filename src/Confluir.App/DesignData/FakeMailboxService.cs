@@ -253,9 +253,10 @@ public sealed class FakeMailboxService : IMailboxService
             .Select(s => new MailAddress(s.Name, s.Address))
             .ToList());
 
-    public void RequestSync(Guid? accountId = null)
-    {
-    }
+    /// <summary>Sincronizações pedidas (nula = todas as contas), para os testes conferirem.</summary>
+    public List<Guid?> SyncRequests { get; } = [];
+
+    public void RequestSync(Guid? accountId = null) => SyncRequests.Add(accountId);
 
     public SyncStatus GetStatus(Guid accountId) => SyncStatus.UpToDate;
 

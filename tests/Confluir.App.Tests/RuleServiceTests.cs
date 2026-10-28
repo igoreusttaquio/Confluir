@@ -33,4 +33,18 @@ public sealed class RuleServiceTests : IDisposable
         // A ordem fica salva nas configurações.
         Assert.Equal(["a", "c", "b"], new JsonSettingsStore(_file).Current.Rules.Select(r => r.Name));
     }
+
+    [Fact]
+    public async Task Aplicar_sincroniza_as_contas_da_regra()
+    {
+        var mailbox = new FakeMailboxService(TimeProvider.System);
+        var service = new RuleService(new JsonSettingsStore(_file), mailbox);
+        var account = Guid.NewGuid();
+
+        await service.ApplyNowAsync(Rule("todas"));
+        await service.ApplyNowAsync(Rule("uma") with { AccountId = account });
+
+        // Nula = todas as contas; com conta, só ela.
+        Assert.Equal([null, account], mailbox.SyncRequests);
+    }
 }

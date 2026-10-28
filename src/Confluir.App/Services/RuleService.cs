@@ -46,12 +46,16 @@ public sealed class RuleService(ISettingsStore settings, IMailboxService mailbox
     public void SetEnabled(Guid id, bool enabled) =>
         Store(Rules.Select(r => r.Id == id ? r with { Enabled = enabled } : r).ToList());
 
-    /// <summary>Roda a regra nas mensagens que já estão na caixa de entrada.</summary>
+    /// <summary>
+    /// Roda a regra nas mensagens que já estão na caixa de entrada e, em seguida, sincroniza as contas da regra
+    /// (a fila envia as ações primeiro; a sincronização traz o resultado do servidor para a lista e os contadores).
+    /// </summary>
     public async Task<int> ApplyNowAsync(MailRule rule)
     {
         var count = await mailbox.ApplyRuleAsync(rule);
         if (count > 0)
             Applied?.Invoke(this, EventArgs.Empty);
+        mailbox.RequestSync(rule.AccountId);
         return count;
     }
 
