@@ -231,6 +231,8 @@ vm.GoBackCommand.Execute(null);
     vm.OpenSettingsCommand.Execute(null);
     ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Shortcuts;
     Save(window, "settings-shortcuts.png");
+    ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Notifications;
+    Save(window, "settings-notifications.png");
     vm.GoBackCommand.Execute(null);
 }
 

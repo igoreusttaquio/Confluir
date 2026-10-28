@@ -16,7 +16,31 @@ public sealed class AppSettings
     public FontSettings Fonts { get; set; } = new();
 
     /// <summary>Regras aplicadas às mensagens novas, na ordem da lista.</summary>
-    public List<Rules.MailRule> Rules { get; set; } = [];
+public List<Rules.MailRule> Rules { get; set; } = [];
+
+    public NotificationSettings Notifications { get; set; } = new();
+    public DesktopSettings Desktop { get; set; } = new();
+}
+
+public sealed class NotificationSettings
+{
+    /// <summary>Notificação do sistema para mensagens novas.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>Não perturbe: nenhuma notificação até desligar.</summary>
+    public bool DoNotDisturb { get; set; }
+
+    /// <summary>Contas que não notificam.</summary>
+    public List<Guid> MutedAccounts { get; set; } = [];
+}
+
+public sealed class DesktopSettings
+{
+    /// <summary>Fechar a janela mantém o Confluir na bandeja (recebendo e notificando).</summary>
+    public bool CloseToTray { get; set; }
+
+    /// <summary>Abrir com o sistema (já na bandeja).</summary>
+    public bool StartWithSystem { get; set; }
 }
 
 public sealed class ComposeSettings

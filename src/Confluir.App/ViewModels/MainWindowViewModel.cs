@@ -248,6 +248,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Navigation.NavigateTo(RuleEditorViewModel.FromMessage(_settingsServices.RuleEditor, _accounts.Values.ToList(),
             ShowStatus, row.Summary));
 
+    /// <summary>Clique numa notificação: caixa de entrada unificada com a mensagem selecionada (se for uma só).</summary>
+    public async Task RevealMessageAsync(Guid? messageId)
+    {
+        Navigation.GoToRoot();
+        EndSearchForNavigation();
+        if (SelectedNode != _unified)
+            SelectedNode = _unified;
+        await LoadListAsync(_unified);
+        if (messageId is not { } id || Rows.OfType<MessageRow>().FirstOrDefault(r => r.Summary.Id == id) is not { } row)
+            return;
+        SelectedRow = row;
+        if (IsTwoColumnLayout)
+            OpenMessageCommand.Execute(null);
+    }
+
     /// <summary>Recarrega a lista atual e os contadores a partir do cache.</summary>
     public void RefreshList()
     {

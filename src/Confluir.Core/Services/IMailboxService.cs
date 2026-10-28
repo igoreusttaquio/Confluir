@@ -19,6 +19,9 @@ public interface IMailboxService
     /// <summary>Uma ação otimista (ex.: marcar como lida) foi recusada pelo servidor e deve ser desfeita.</summary>
     event EventHandler<OperationFailedEventArgs>? OperationFailed;
 
+    /// <summary>Mensagens novas (não lidas, ainda na caixa de entrada) para notificar.</summary>
+    event EventHandler<MessagesArrivedEventArgs>? MessagesArrived;
+
     Task<IReadOnlyList<MailAccount>> GetAccountsAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<MailFolder>> GetFoldersAsync(Guid accountId, CancellationToken ct = default);

@@ -51,6 +51,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     public event EventHandler<MailboxChangedEventArgs>? MailboxChanged;
     public event EventHandler<AccountStatusEventArgs>? AccountStatusChanged;
     public event EventHandler<OperationFailedEventArgs>? OperationFailed;
+    public event EventHandler<MessagesArrivedEventArgs>? MessagesArrived;
 
     // Leitura (sempre do cache) -------------------------------------------------------------------
 
@@ -161,6 +162,10 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
     /// porque mover/arquivar tira a mensagem do cache antes de a fila marcar como lida ou sinalizar.
     /// </summary>
     private async Task<int> ExecuteRulesAsync(MailAccount account, IReadOnlyList<MailRule> rules,
+        IReadOnlyList<MessageSummary> messages, CancellationToken ct) =>
+        (await ExecuteRulesWithOutcomesAsync(account, rules, messages, ct)).Count;
+
+    private async Task<IReadOnlyList<RuleOutcome>> ExecuteRulesWithOutcomesAsync(MailAccount account, IReadOnlyList<MailRule> rules,
         IReadOnlyList<MessageSummary> messages, CancellationToken ct)
     {
         var outcomes = RuleEngine.Evaluate(rules, account.Id, messages);
@@ -201,7 +206,7 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
             Wake(account.Id);
             RaiseChanged(account.Id, foldersChanged: false);
         }
-        return outcomes.Count;
+        return outcomes;
     }
 
     private void Wake(Guid accountId)
@@ -382,18 +387,29 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
         if (changed)
             RaiseChanged(account.Id, foldersChanged: false);
 
+        if (arrived is not { Count: > 0 })
+            return;
+
         // Regras só nas que acabaram de chegar; as ações vão para a fila e são enviadas na próxima volta do laço.
-        if (arrived is { Count: > 0 } && _settings.Current.Rules is { Count: > 0 } rules)
+        IReadOnlyList<RuleOutcome> outcomes = [];
+        if (_settings.Current.Rules is { Count: > 0 } rules)
         {
             try
             {
-                await ExecuteRulesAsync(account, rules.ToList(), arrived, ct);
+                outcomes = await ExecuteRulesWithOutcomesAsync(account, rules.ToList(), arrived, ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogWarning(ex, "Falha ao aplicar regras (conta {AccountId})", account.Id);
             }
         }
+
+        // Notifica as que continuam não lidas na caixa de entrada.
+        var handled = outcomes.Where(o => o.Actions.MarkRead || o.Actions.Destination != RuleDestination.None)
+            .Select(o => o.Message.Id).ToHashSet();
+        var notify = arrived.Where(m => !m.IsRead && !handled.Contains(m.Id)).ToList();
+        if (notify.Count > 0)
+            MessagesArrived?.Invoke(this, new MessagesArrivedEventArgs(account.Id, notify));
     }
 
     private async Task ProcessQueueAsync(MailAccount account, CancellationToken ct)

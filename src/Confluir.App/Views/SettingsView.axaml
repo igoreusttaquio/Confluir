@@ -126,6 +126,12 @@
             <TextBlock Text="{l:Tr Settings_Compose}" VerticalAlignment="Center" />
           </StackPanel>
         </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsNotifications}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="Bell" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Notifications}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
         <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsShortcuts}">
           <StackPanel Orientation="Horizontal" Spacing="10">
             <LucideIcon Kind="Keyboard" Size="17" />
@@ -482,6 +488,55 @@
                   </StackPanel>
                 </RadioButton>
               </UniformGrid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Notificações e sistema -->
+        <StackPanel Classes="page" IsVisible="{Binding IsNotifications}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Notifications}" />
+          <Border Classes="card" IsVisible="{Binding !HasTray}" Padding="14,10">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <LucideIcon Kind="TriangleAlert" Size="16" Foreground="{DynamicResource Warning}" VerticalAlignment="Top" Margin="0,1,0,0" />
+              <TextBlock Grid.Column="1" Classes="hint" Text="{l:Tr Notifications_NoTray}" />
+            </Grid>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <ToggleSwitch IsChecked="{Binding NotificationsEnabled}" Content="{l:Tr Notifications_Enabled}" OnContent="" OffContent="" />
+              <ToggleSwitch IsChecked="{Binding DoNotDisturb}" Content="{l:Tr Notifications_DoNotDisturb}" OnContent="" OffContent=""
+                            IsEnabled="{Binding NotificationsEnabled}" />
+              <TextBlock Classes="hint" Text="{l:Tr Notifications_Hint}" />
+              <Button Content="{l:Tr Notifications_Test}" Command="{Binding TestNotificationCommand}" IsEnabled="{Binding HasTray}"
+                      HorizontalAlignment="Left" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card" IsVisible="{Binding HasAccounts}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Notifications_PerAccount}" />
+              <ItemsControl ItemsSource="{Binding AccountNotifications}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:AccountNotifyOption">
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
+                      <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                               Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                      <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Account.DisplayName}" Foreground="{DynamicResource TextPrimary}" />
+                        <TextBlock Text="{Binding Account.Email}" Classes="hint" />
+                      </StackPanel>
+                      <ToggleSwitch Grid.Column="2" IsChecked="{Binding Enabled}" OnContent="" OffContent="" MinWidth="0" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Notifications_System}" />
+              <ToggleSwitch IsChecked="{Binding CloseToTray}" Content="{l:Tr Desktop_CloseToTray}" OnContent="" OffContent=""
+                            IsEnabled="{Binding HasTray}" />
+              <ToggleSwitch IsChecked="{Binding StartWithSystem}" Content="{l:Tr Desktop_StartWithSystem}" OnContent="" OffContent="" />
             </StackPanel>
           </Border>
         </StackPanel>

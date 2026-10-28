@@ -1,3 +1,5 @@
+using Confluir.Core.Models;
+
 namespace Confluir.Core.Services;
 
 public enum SyncStatus
@@ -34,4 +36,12 @@ public sealed class OperationFailedEventArgs(Guid messageId, OperationKind kind)
 {
     public Guid MessageId { get; } = messageId;
     public OperationKind Kind { get; } = kind;
+}
+
+/// <summary>Mensagens novas chegaram na caixa de entrada (depois das regras: as que foram movidas, arquivadas ou
+/// marcadas como lidas por uma regra não entram).</summary>
+public sealed class MessagesArrivedEventArgs(Guid accountId, IReadOnlyList<MessageSummary> messages) : EventArgs
+{
+    public Guid AccountId { get; } = accountId;
+    public IReadOnlyList<MessageSummary> Messages { get; } = messages;
 }

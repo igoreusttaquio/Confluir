@@ -211,6 +211,7 @@ public sealed class FakeMailboxService : IMailboxService
     public event EventHandler<MailboxChangedEventArgs>? MailboxChanged { add { } remove { } }
     public event EventHandler<AccountStatusEventArgs>? AccountStatusChanged { add { } remove { } }
     public event EventHandler<OperationFailedEventArgs>? OperationFailed { add { } remove { } }
+    public event EventHandler<MessagesArrivedEventArgs>? MessagesArrived { add { } remove { } }
 
     public Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit = 8, CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<MailAddress>>(Senders

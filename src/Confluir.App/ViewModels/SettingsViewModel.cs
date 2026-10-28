@@ -19,6 +19,7 @@ public enum SettingsSection
     Fonts,
     Reading,
     Compose,
+    Notifications,
     Shortcuts,
     Advanced,
 }
@@ -32,6 +33,8 @@ public sealed record SettingsServices(
     NavigationService Navigation,
     RuleService Rules,
     RuleEditorServices RuleEditor,
+    Services.Desktop.DesktopIntegration Desktop,
+    Services.Desktop.AutostartService Autostart,
     ILogger<SettingsViewModel> Logger);
 
 public sealed partial class TrustedSenderViewModel(string address, SettingsViewModel owner) : ViewModelBase
@@ -43,6 +46,17 @@ public sealed partial class TrustedSenderViewModel(string address, SettingsViewM
 }
 
 public sealed record MarkReadOption(int Seconds, string LabelKey);
+
+public sealed class AccountNotifyOption(Core.Models.MailAccount account, SettingsViewModel owner)
+{
+    public Core.Models.MailAccount Account { get; } = account;
+
+    public bool Enabled
+    {
+        get => owner.IsAccountNotified(Account.Id);
+        set => owner.SetAccountNotified(Account.Id, value);
+    }
+}
 
 public sealed partial class RuleItemViewModel : ViewModelBase
 {
@@ -157,7 +171,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsAccounts), nameof(IsRules), nameof(IsFonts), nameof(IsReading),
-        nameof(IsCompose), nameof(IsShortcuts), nameof(IsAdvanced))]
+        nameof(IsCompose), nameof(IsNotifications), nameof(IsShortcuts), nameof(IsAdvanced))]
     public partial SettingsSection Section { get; set; }
 
     public bool IsAccounts { get => Section == SettingsSection.Accounts; set { if (value) Section = SettingsSection.Accounts; } }
@@ -165,6 +179,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     public bool IsFonts { get => Section == SettingsSection.Fonts; set { if (value) Section = SettingsSection.Fonts; } }
     public bool IsReading { get => Section == SettingsSection.Reading; set { if (value) Section = SettingsSection.Reading; } }
     public bool IsCompose { get => Section == SettingsSection.Compose; set { if (value) Section = SettingsSection.Compose; } }
+    public bool IsNotifications { get => Section == SettingsSection.Notifications; set { if (value) Section = SettingsSection.Notifications; } }
     public bool IsShortcuts { get => Section == SettingsSection.Shortcuts; set { if (value) Section = SettingsSection.Shortcuts; } }
     public bool IsAdvanced { get => Section == SettingsSection.Advanced; set { if (value) Section = SettingsSection.Advanced; } }
 
@@ -286,6 +301,64 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     }
 
     public bool IsRichTextAvailable => WebViewSupport.IsAvailable;
+
+    // Notificações e sistema ------------------------------------------------------------------------
+
+    private Core.Settings.NotificationSettings NotificationOptions => _services.Settings.Current.Notifications;
+    private Core.Settings.DesktopSettings DesktopOptions => _services.Settings.Current.Desktop;
+
+    public bool NotificationsEnabled
+    {
+        get => NotificationOptions.Enabled;
+        set => SaveSetting(() => NotificationOptions.Enabled = value);
+    }
+
+    public bool DoNotDisturb
+    {
+        get => NotificationOptions.DoNotDisturb;
+        set => SaveSetting(() => NotificationOptions.DoNotDisturb = value);
+    }
+
+    public bool CloseToTray
+    {
+        get => DesktopOptions.CloseToTray;
+        set => SaveSetting(() => DesktopOptions.CloseToTray = value);
+    }
+
+    public bool StartWithSystem
+    {
+        get => DesktopOptions.StartWithSystem;
+        set => SaveSetting(() =>
+        {
+            DesktopOptions.StartWithSystem = value;
+            _services.Autostart.Apply(value);
+        });
+    }
+
+    public bool HasTray => _services.Desktop.HasTray;
+
+    /// <summary>Uma chave por conta (ligada = notifica).</summary>
+    public IReadOnlyList<AccountNotifyOption> AccountNotifications =>
+        _main.AccountNodes.Select(n => new AccountNotifyOption(n.Account, this)).ToList();
+
+    public bool IsAccountNotified(Guid accountId) => !NotificationOptions.MutedAccounts.Contains(accountId);
+
+    public void SetAccountNotified(Guid accountId, bool notify) => SaveSetting(() =>
+    {
+        NotificationOptions.MutedAccounts.Remove(accountId);
+        if (!notify)
+            NotificationOptions.MutedAccounts.Add(accountId);
+    });
+
+    [RelayCommand]
+    private void TestNotification() => _services.Desktop.TestNotification();
+
+    private void SaveSetting(Action change, [System.Runtime.CompilerServices.CallerMemberName] string? property = null)
+    {
+        change();
+        _services.Settings.Save();
+        OnPropertyChanged(property);
+    }
 
     // Atalhos ---------------------------------------------------------------------------------------
 

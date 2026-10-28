@@ -348,6 +348,22 @@
   <data name="Shortcut_Search"><value>Search</value></data>
   <data name="Shortcut_ToggleRead"><value>Mark as read / unread</value></data>
   <data name="Shortcut_ToggleFlag"><value>Flag / unflag</value></data>
+  <data name="Settings_Notifications"><value>Notifications</value></data>
+  <data name="Notifications_Enabled"><value>Notify me about new messages</value></data>
+  <data name="Notifications_DoNotDisturb"><value>Do not disturb</value></data>
+  <data name="Notifications_Hint"><value>No notification while Confluir is in front, or for messages a rule archived, moved or marked as read.</value></data>
+  <data name="Notifications_Test"><value>Send a test notification</value></data>
+  <data name="Notifications_PerAccount"><value>Notify per account</value></data>
+  <data name="Notifications_System"><value>System</value></data>
+  <data name="Notifications_NoTray"><value>The system tray isn&apos;t available; Confluir works normally, but without a tray icon or notifications.</value></data>
+  <data name="Desktop_CloseToTray"><value>Keep Confluir in the tray when the window is closed</value></data>
+  <data name="Desktop_StartWithSystem"><value>Start with the system (in the tray)</value></data>
+  <data name="Tray_Open"><value>Open Confluir</value></data>
+  <data name="Tray_Exit"><value>Quit</value></data>
+  <data name="Notify_Many"><value>{0} new messages</value></data>
+  <data name="Notify_AndMore"><value>and {0} more</value></data>
+  <data name="Notify_TestTitle"><value>Confluir</value></data>
+  <data name="Notify_TestBody"><value>Notifications are working.</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>

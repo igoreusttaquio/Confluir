@@ -348,6 +348,22 @@
   <data name="Shortcut_Search"><value>Buscar</value></data>
   <data name="Shortcut_ToggleRead"><value>Marcar como lida / não lida</value></data>
   <data name="Shortcut_ToggleFlag"><value>Sinalizar / tirar sinalização</value></data>
+  <data name="Settings_Notifications"><value>Notificações</value></data>
+  <data name="Notifications_Enabled"><value>Avisar quando chegarem mensagens novas</value></data>
+  <data name="Notifications_DoNotDisturb"><value>Não perturbe</value></data>
+  <data name="Notifications_Hint"><value>O aviso não aparece com o Confluir na frente, nem para mensagens que uma regra arquivou, moveu ou marcou como lidas.</value></data>
+  <data name="Notifications_Test"><value>Testar notificação</value></data>
+  <data name="Notifications_PerAccount"><value>Avisar por conta</value></data>
+  <data name="Notifications_System"><value>Sistema</value></data>
+  <data name="Notifications_NoTray"><value>A área de notificação do sistema não está disponível; o Confluir funciona normalmente, mas sem ícone na bandeja e sem avisos.</value></data>
+  <data name="Desktop_CloseToTray"><value>Ao fechar a janela, manter o Confluir na bandeja</value></data>
+  <data name="Desktop_StartWithSystem"><value>Iniciar com o sistema (já na bandeja)</value></data>
+  <data name="Tray_Open"><value>Abrir o Confluir</value></data>
+  <data name="Tray_Exit"><value>Sair</value></data>
+  <data name="Notify_Many"><value>{0} mensagens novas</value></data>
+  <data name="Notify_AndMore"><value>e mais {0}</value></data>
+  <data name="Notify_TestTitle"><value>Confluir</value></data>
+  <data name="Notify_TestBody"><value>As notificações estão funcionando.</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>
