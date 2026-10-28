@@ -34,6 +34,14 @@
     <PackageReference Include="Serilog.Extensions.Hosting" />
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
+  <!-- Os .pdb nativos do SkiaSharp/HarfBuzz (~100 MB) não servem para quem instala o app; os nossos ficam
+       (dão número de linha nos logs de erro). -->
+  <Target Name="RemoveNativePdbsFromPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_NativePdb Include="$(PublishDir)lib*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(_NativePdb)" />
+  </Target>
   <ItemGroup>
     <ProjectReference Include="..\Confluir.Core\Confluir.Core.csproj" />
     <ProjectReference Include="..\Confluir.Mail\Confluir.Mail.csproj" />

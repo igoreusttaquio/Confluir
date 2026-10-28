@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>Confluir</string>
+  <key>CFBundleDisplayName</key>
+  <string>Confluir</string>
+  <key>CFBundleIdentifier</key>
+  <string>io.github.igoreusttaquio.confluir</string>
+  <key>CFBundleExecutable</key>
+  <string>Confluir</string>
+  <key>CFBundleIconFile</key>
+  <string>confluir</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>__SHORT_VERSION__</string>
+  <key>CFBundleVersion</key>
+  <string>__VERSION__</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>pt-BR</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>pt-BR</string>
+    <string>en</string>
+    <string>es</string>
+  </array>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.productivity</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>NSPrincipalClass</key>
+  <string>NSApplication</string>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>Email</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>mailto</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>

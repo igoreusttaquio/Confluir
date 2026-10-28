@@ -1,0 +1,141 @@
+# Gera os instaladores do Confluir.
+# - Tag "v1.2.3": testa, gera os instaladores e publica um lançamento no GitHub com eles.
+# - Manual (Actions → Instaladores → Run workflow): só gera os instaladores, como artefatos do workflow.
+name: Instaladores
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  PROJECT: src/Confluir.App/Confluir.App.csproj
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            V="${GITHUB_REF#refs/tags/v}"
+          else
+            V="0.0.0-ci.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Versão: $V"
+
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet test --solution Confluir.sln -c Release
+
+  windows:
+    needs: [version, test]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Publicar (win-x64)
+        run: >
+          dotnet publish ${{ env.PROJECT }} -c Release -r win-x64 --self-contained true
+          -p:PublishReadyToRun=true -p:Version=${{ needs.version.outputs.version }}
+          -o publish/win-x64
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          & $iscc "/DAppVersion=${{ needs.version.outputs.version }}" `
+                  "/DSourceDir=$env:GITHUB_WORKSPACE\publish\win-x64" `
+                  "/DOutputDir=$env:GITHUB_WORKSPACE\out" `
+                  packaging\windows\confluir.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: out/Confluir-Setup-x64.exe
+          if-no-files-found: error
+
+  linux:
+    needs: [version, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Publicar (linux-x64)
+        run: >
+          dotnet publish ${{ env.PROJECT }} -c Release -r linux-x64 --self-contained true
+          -p:PublishReadyToRun=true -p:Version=${{ needs.version.outputs.version }}
+          -o publish/linux-x64
+      - name: Pacote .deb
+        run: bash packaging/linux/build-deb.sh publish/linux-x64 "${{ needs.version.outputs.version }}" out/confluir_amd64.deb
+      - name: Conferir o pacote
+        run: dpkg-deb --info out/confluir_amd64.deb && dpkg-deb --contents out/confluir_amd64.deb | head -n 20
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: out/confluir_amd64.deb
+          if-no-files-found: error
+
+  macos:
+    needs: [version, test]
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Publicar (osx-${{ matrix.arch }})
+        run: >
+          dotnet publish ${{ env.PROJECT }} -c Release -r osx-${{ matrix.arch }} --self-contained true
+          -p:PublishReadyToRun=true -p:UseAppHost=true -p:Version=${{ needs.version.outputs.version }}
+          -o publish/osx-${{ matrix.arch }}
+      - name: Confluir.app e .dmg
+        run: bash packaging/macos/build-dmg.sh publish/osx-${{ matrix.arch }} "${{ needs.version.outputs.version }}" out/Confluir-macOS-${{ matrix.arch }}.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: out/Confluir-macOS-${{ matrix.arch }}.dmg
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, windows, linux, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Somas de verificação
+        run: cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Confluir ${{ needs.version.outputs.version }}
+          generate_release_notes: true
+          prerelease: ${{ contains(needs.version.outputs.version, '-') }}
+          files: dist/*

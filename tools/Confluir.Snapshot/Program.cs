@@ -7,6 +7,7 @@ using Confluir.App;
 using Confluir.App.Services;
 using Confluir.App.ViewModels;
 using Confluir.App.Views;
+using Confluir.Core.Rules;
 using Confluir.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -164,6 +165,31 @@ vm.SidebarNodes.OfType<AccountNode>().First().EditCommand.Execute(null);
 var editor = (AccountEditorViewModel)vm.Navigation.CurrentPage!;
 editor.AskRemoveCommand.Execute(null);
 Save(window, "edit-account.png");
+vm.GoBackCommand.Execute(null);
+
+// Configurações: regras (com exemplos) e fontes; editor de regra criado a partir de uma mensagem.
+theme.SetTheme(ThemeMode.Light);
+var ruleService = services.GetRequiredService<RuleService>();
+ruleService.Save(new MailRule(Guid.NewGuid(), "Newsletters", true, null, RuleMatch.Any,
+    [new RuleCondition(RuleField.Subject, RuleOperator.StartsWith, "Newsletter"), new RuleCondition(RuleField.From, RuleOperator.Contains, "news")],
+    new RuleActions(true, false, RuleDestination.Archive)));
+ruleService.Save(new MailRule(Guid.NewGuid(), "Faturas", true, null, RuleMatch.All,
+    [new RuleCondition(RuleField.Subject, RuleOperator.Contains, "fatura")],
+    new RuleActions(false, true, RuleDestination.None)));
+vm.OpenSettingsCommand.Execute(null);
+var settingsPage = (SettingsViewModel)vm.Navigation.CurrentPage!;
+settingsPage.Section = SettingsSection.Rules;
+Save(window, "settings-rules.png");
+settingsPage.Section = SettingsSection.Fonts;
+Save(window, "settings-fonts.png");
+vm.GoBackCommand.Execute(null);
+vm.SelectedRow = vm.Rows.OfType<MessageRow>().Skip(2).First();
+Pump(() => vm.Detail is { IsLoading: false });
+vm.CreateRule(vm.Detail!);
+var ruleEditor = (RuleEditorViewModel)vm.Navigation.CurrentPage!;
+ruleEditor.MarkRead = true;
+ruleEditor.IsDestinationArchive = true;
+Save(window, "rule-editor.png");
 vm.GoBackCommand.Execute(null);
 
 // Domínio desconhecido, tema escuro, com resultado de teste.

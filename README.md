@@ -1,93 +1,97 @@
-# Confluir
+<p align="center">
+  <img src="assets/icone/png/confluir-128.png" width="112" alt="Ícone do Confluir">
+</p>
 
-Cliente de email desktop que reúne várias contas (Gmail, Yahoo, Outlook/Hotmail e IMAP genérico) numa interface única. Feito em .NET 10 + Avalonia 12.
+<h1 align="center">Confluir</h1>
 
-O plano completo está em [PLANO_CONFLUIR.md](PLANO_CONFLUIR.md).
+<p align="center">
+  Todas as suas contas de email num só lugar.<br>
+  Cliente de email desktop para <b>Windows</b>, <b>Linux</b> e <b>macOS</b>, feito em .NET 10 + Avalonia 12.
+</p>
 
-## Estado atual
+<p align="center">
+  <a href="https://github.com/igoreusttaquio/Confluir/releases/latest"><b>Baixar</b></a> ·
+  <a href="https://igoreusttaquio.github.io/Confluir/">Site</a> ·
+  <a href="PLANO_CONFLUIR.md">Plano do projeto</a>
+</p>
 
-- **Fase 1 — Esqueleto**: solução e DI, tema claro/escuro/sistema com troca instantânea, cor de destaque configurável, layout de 3 colunas redimensionáveis (larguras salvas), lista virtualizada, modo compacto, ícones Lucide e ícone do app.
-- **Fase 2 — Conta IMAP com senha de app**: tela "Adicionar conta" (detecta o provedor pelo domínio; para outros domínios consulta a ISPDB do Thunderbird ou sugere `imap.`/`smtp.<domínio>`), teste de IMAP e SMTP com mensagens claras (com tentativa automática da porta SMTP alternativa 465 ↔ 587), senha no cofre do sistema, pastas com SPECIAL-USE, lista com os cabeçalhos das **200 mensagens mais recentes** de cada pasta, leitura em texto puro, marcar como lida no servidor e remover conta.
+<p align="center">
+  <img src="site/screenshots/caixa-de-entrada.png" alt="Caixa de entrada unificada do Confluir" width="900">
+</p>
 
-- **Idiomas**: Português (Brasil), English e Español, com troca instantânea em Aparência → Idioma (padrão: seguir o sistema; English se o idioma do sistema não for suportado). Datas e números seguem o idioma. Detalhes em [docs/PLANO_IDIOMAS.md](docs/PLANO_IDIOMAS.md).
+> As imagens usam os **dados de exemplo** do app (`--dados-falsos`): nenhuma conta ou mensagem real.
 
-- **Fase 3 — Cache e sincronização**: banco SQLite local (`confluir.db`) com contas, pastas, cabeçalhos, corpos e fila de operações; a interface lê sempre do cache (abre na hora e funciona offline). Sincronização incremental por UID (novas mensagens, preenchimento das antigas em lotes do mais novo para o mais antigo, remoções e reset quando o `UIDVALIDITY` muda), flags por CONDSTORE quando disponível, IMAP IDLE na Caixa de entrada com reconexão exponencial, sincronização completa a cada 10 minutos e ao voltar a rede, e "marcar como lida" otimista com fila persistente (reenviada quando a conexão voltar; desfeita se o servidor recusar).
+## Recursos
 
-- **Fase 4 — HTML seguro**: corpo em HTML num WebView nativo, sanitizado e com CSP; imagens remotas bloqueadas por padrão ("Mostrar imagens" / "Sempre mostrar deste remetente"), imagens embutidas (`cid:`) exibidas; emails sem estilo próprio seguem o tema (claro/escuro) e os com fundo próprio aparecem em "papel" branco; texto puro com links clicáveis; links sempre no navegador padrão; anexos com Salvar (seletor do sistema) e Abrir (arquivo temporário + programa padrão; executáveis só podem ser salvos).
+- **Várias contas, uma caixa de entrada** — Gmail, Yahoo, Outlook/Hotmail (login da Microsoft, OAuth2) e qualquer servidor IMAP/SMTP, cada conta com sua cor. Os servidores são detectados pelo endereço de email.
+- **Rápido e offline** — tudo é lido de um cache local (SQLite): abre na hora, funciona sem conexão e sincroniza em segundo plano (IMAP IDLE, CONDSTORE). Ações feitas offline vão para uma fila e são enviadas quando a rede volta.
+- **HTML seguro** — emails sanitizados num WebView nativo, sem scripts, com imagens remotas (rastreadores) bloqueadas até você permitir.
+- **Escrever** — responder, responder a todos e encaminhar, editor com formatação (ou texto simples), anexos por arrastar e soltar, sugestão de destinatários, rascunhos salvos sozinhos (no computador e no servidor) e envio em segundo plano.
+- **Filtros e regras** — filtros rápidos (não lidas, sinalizadas, com anexo) e regras que arquivam, movem, excluem, sinalizam ou marcam como lida as mensagens que chegam.
+- **Do seu jeito** — tema claro, escuro ou do sistema, cor de destaque, modo compacto, duas ou três colunas, tamanho do texto da lista, fontes do sistema, embutidas, de arquivo ou do Google Fonts, e escala da interface.
+- **Três idiomas** — Português (Brasil), English e Español, com troca instantânea.
 
-- **Fase 5 — Múltiplas contas e OAuth2**: caixa de entrada unificada e cores por conta (desde as fases 1–3) e login da Microsoft para Outlook/Hotmail com MSAL (navegador do sistema, retorno em `http://localhost`, escopos `IMAP.AccessAsUser.All` e `SMTP.Send`, renovação silenciosa, cache de tokens no cofre do sistema). IMAP, IDLE e o teste de conexão autenticam por XOAUTH2. **Ainda não testado contra a Microsoft**: requer o registro no Entra ID (abaixo).
+<table>
+  <tr>
+    <td><img src="site/screenshots/caixa-de-entrada-escuro.png" alt="Tema escuro"></td>
+    <td><img src="site/screenshots/responder.png" alt="Responder uma mensagem"></td>
+  </tr>
+  <tr>
+    <td align="center">Tema escuro</td>
+    <td align="center">Responder, com citação e sugestões</td>
+  </tr>
+  <tr>
+    <td><img src="site/screenshots/editor-de-regra.png" alt="Editor de regras"></td>
+    <td><img src="site/screenshots/regras.png" alt="Lista de regras"></td>
+  </tr>
+  <tr>
+    <td align="center">Regra criada a partir de uma mensagem</td>
+    <td align="center">Regras em Configurações</td>
+  </tr>
+  <tr>
+    <td><img src="site/screenshots/fontes.png" alt="Configurações de fontes"></td>
+    <td><img src="site/screenshots/adicionar-conta.png" alt="Adicionar conta"></td>
+  </tr>
+  <tr>
+    <td align="center">Fontes com pré-visualização</td>
+    <td align="center">Adicionar conta (servidores detectados)</td>
+  </tr>
+</table>
 
-Limitações conhecidas: remoções são detectadas com `UID SEARCH ALL` (QRESYNC/VANISHED ainda não é usado); sem busca (fase 8). Outlook/Hotmail aguarda o OAuth2 (fase 5).
+## Instalar
 
-Para ver a interface com dados de exemplo, sem tocar em servidores: `dotnet run --project src/Confluir.App -- --dados-falsos`.
+Baixe na [página de lançamentos](https://github.com/igoreusttaquio/Confluir/releases/latest):
 
-## Compilar e rodar
-
-Requisitos: SDK do .NET 10 (fixado em `global.json`).
-
-```sh
-dotnet build Confluir.sln
-dotnet run --project src/Confluir.App
-dotnet test --solution Confluir.sln
-```
-
-Dados do app (configurações, logs, fontes) ficam em `%APPDATA%\Confluir` no Windows, `~/.config/Confluir` no Linux e `~/Library/Application Support/Confluir` no macOS (`Environment.SpecialFolder.ApplicationData`).
-
-### Ferramentas
-
-| Projeto | Para quê |
-|---|---|
-| `tools/Confluir.Snapshot` | Renderiza as telas sem abrir janela (Avalonia Headless + Skia) e salva PNGs para revisão visual. Usa uma pasta de dados temporária. `dotnet run --project tools/Confluir.Snapshot -- <pasta>` |
-| `tools/Confluir.IconGen` | Gera `assets/icone/confluir.icns` e `assets/icone/png/*.png` a partir do SVG. `dotnet run --project tools/Confluir.IconGen -- assets/confluir-icone.svg assets/icone` |
-
-## Estrutura
-
-```
-src/Confluir.App    Avalonia: Views, ViewModels, temas, estilos, recursos
-src/Confluir.Core   Modelos, interfaces, regras (sem UI nem MailKit)
-src/Confluir.Mail   IMAP/SMTP (fase 2+)
-src/Confluir.Auth   Senha de app, OAuth2, cofre de credenciais (fase 2+)
-src/Confluir.Data   SQLite, FTS5 (fase 3+)
-tests/              xUnit v3 (Core, Mail, Data)
-tools/              Snapshot e IconGen
-```
-
-## Decisões técnicas
-
-| Tema | Escolha | Motivo |
+| Sistema | Arquivo | Observação |
 |---|---|---|
-| UI | Avalonia 12.1.4 | Última estável no NuGet. |
-| Camada visual | **FluentAvaloniaUI 3.1** (`FluentAvaloniaTheme`) | Compilado para Avalonia 12.1, mantido (ago/2026), visual WinUI coerente com Fluent e geração da rampa de destaque a partir de uma cor (`CustomAccentColor`). O Semi.Avalonia também é compatível, mas segue outra linguagem visual. O `FluentAvaloniaTheme` substitui o `FluentTheme` (é derivado dele). |
-| Ícones | **Lucide.Avalonia 0.2.28** | Primeira opção do plano. O pacote declara dependência de Avalonia ≥ 11.3; foi testado renderizando no Avalonia 12 sem problemas. Atualizado semanalmente. Plano B, se quebrar: FluentIcons.Avalonia (compilado para Avalonia 12). |
-| Seletor de cor | `ColorPicker` do Avalonia (`Avalonia.Controls.ColorPicker`) | O FA 3 removeu o `ColorPickerButton`; o controle oficial já é dependência do FA. |
-| Cores | Tokens da paleta oficial em `Themes/Light.axaml` e `Themes/Dark.axaml` via `ThemeDictionaries`, sempre usados com `DynamicResource` | A cor de destaque do usuário é gravada no dicionário raiz (`Accent`, `OnAccent` calculado por contraste WCAG, `AccentSubtle` a 12%), que tem precedência sobre os dois temas. |
-| Strings e idiomas | `Resources/Strings.resx` (pt-BR, neutro) + `Strings.en.resx` + `Strings.es.resx` | No XAML, `{l:Tr Chave}` (atualiza ao trocar de idioma); no C#, a classe gerada `Strings`. Testes em `Confluir.App.Tests` garantem as mesmas chaves e marcadores nos três idiomas. **Toda string nova precisa ir para os três arquivos.** |
-| Testes | xUnit v3 no Microsoft Testing Platform | Exigido pelo `dotnet test` do .NET 10 (`global.json` → `test.runner`). |
-| Navegação | Telas dentro da janela principal (`NavigationService`, Esc volta) em vez de janelas/diálogos modais; confirmações são inline | Preferência do projeto. |
-| Email | MailKit/MimeKit 4.18 | Uma conexão IMAP por conta (`ImapConnectionPool`), reconexão automática se o servidor derrubar a conexão ociosa. |
-| Cofre de credenciais | `Microsoft.Identity.Client.Extensions.Msal` (`SystemCredentialStore`) | Mantido pela Microsoft e já necessário para o MSAL (fase 5). Windows: arquivo cifrado com DPAPI do usuário; macOS: Keychain; Linux: libsecret. Se o cofre não estiver disponível, falha em vez de gravar em texto puro. **Testado só no Windows até agora.** |
-| Banco local | SQLite (`Microsoft.Data.Sqlite` + Dapper), modo WAL, migrações por `PRAGMA user_version` | Leituras da interface não bloqueiam a sincronização que escreve em segundo plano. Contas ficam na tabela `accounts` (sem segredos); o `accounts.json` da fase 2 é importado e renomeado para `.migrado`. |
-| Sincronização | `SyncingMailboxService` (um laço e um IDLE por conta) + `ImapSyncEngine` + `SyncPlanner` | O planejador compara UIDs do servidor com os do cache e é testado isoladamente; cada lote usa a conexão só pelo tempo necessário, para não atrasar a abertura de mensagens. |
-| Autoconfiguração | ISPDB do Thunderbird (`autoconfig.thunderbird.net`) | Cobre milhares de provedores. Só o **domínio** é enviado, nunca o endereço. |
-| WebView para HTML | **`Avalonia.Controls.WebView` 12.1** (`NativeWebView`, MIT) | Componente oficial da AvaloniaUI, compatível com Avalonia 12 e gratuito; usa o motor do sistema (WebView2 no Windows, WebKit no macOS, WebKitGTK no Linux), sem embutir o Chromium. Descartados: CefGlue (~150 MB de Chromium por plataforma) e pacotes da comunidade sem suporte ao Avalonia 12. Sem motor disponível (ex.: Linux sem WebKitGTK), o leitor usa texto puro. Sessão sem persistência (InPrivate/efêmera). |
-| Segurança do HTML | `HtmlSanitizer` 9.2 (MIT) + CSP no documento | O sanitizador remove scripts, iframes, formulários, `<base>`, handlers e `javascript:`; imagens remotas são trocadas por um GIF transparente até o usuário liberar. A CSP (`default-src 'none'`, sem `script-src`, `img-src data: cid:`) é a segunda barreira: mesmo que algo passe, não executa nem acessa a rede. Toda navegação no WebView é cancelada e o link abre no navegador padrão. |
+| Windows 10/11 (x64) | `Confluir-Setup-x64.exe` | Instala para o seu usuário, sem pedir administrador. Usa o WebView2, que já vem no Windows 10/11. |
+| Ubuntu, Debian e derivados (x64) | `confluir_amd64.deb` | `sudo apt install ./confluir_amd64.deb` |
+| macOS (Apple Silicon) | `Confluir-macOS-arm64.dmg` | Ainda sem assinatura da Apple: na primeira vez, botão direito no app → **Abrir**. |
+| macOS (Intel) | `Confluir-macOS-x64.dmg` | Idem. |
+
+Os dados do app (contas, cache, configurações, fontes importadas, logs) ficam em `%APPDATA%\Confluir` no Windows, `~/.config/Confluir` no Linux e `~/Library/Application Support/Confluir` no macOS, e não são apagados ao desinstalar. Senhas e tokens ficam no cofre do sistema (DPAPI, Keychain ou libsecret).
 
 ## Configurar contas
 
-Use o botão **Adicionar conta** (rodapé da barra lateral). Gmail, Yahoo e qualquer servidor IMAP/SMTP com usuário e senha funcionam desde a fase 2; Outlook/Hotmail exige OAuth2 e chega na fase 5. Para remover uma conta, clique com o botão direito no nome dela.
+Use **Adicionar conta** (rodapé da barra lateral, ou Configurações → Contas). Gmail e Yahoo pedem uma senha de app; Outlook/Hotmail usa o login da Microsoft.
 
-### Senha de app — Gmail
+<details>
+<summary><b>Senha de app — Gmail</b></summary>
 
 1. Ative a verificação em duas etapas em <https://myaccount.google.com/security>.
 2. Acesse <https://myaccount.google.com/apppasswords>, dê um nome (ex.: "Confluir") e gere a senha.
 3. Use a senha de 16 caracteres no lugar da sua senha normal.
+</details>
 
-### Senha de app — Yahoo
+<details>
+<summary><b>Senha de app — Yahoo</b></summary>
 
 1. Em <https://login.yahoo.com/account/security>, abra **Gerar senha de app** (ou "Gerenciar senhas de app").
 2. Dê um nome ao app, gere e use a senha exibida.
+</details>
 
-### Outlook/Hotmail — registrar o app no Entra ID
+<details>
+<summary><b>Outlook/Hotmail — registrar o app no Entra ID</b></summary>
 
 O Outlook exige OAuth2 (XOAUTH2). É preciso um app registrado:
 
@@ -98,7 +102,7 @@ O Outlook exige OAuth2 (XOAUTH2). É preciso um app registrado:
 5. Em **Permissões de API** → **Adicionar** → **APIs que minha organização usa** → *Office 365 Exchange Online* → permissões delegadas `IMAP.AccessAsUser.All` e `SMTP.Send` (além de `offline_access`).
 6. Copie o **ID do aplicativo (cliente)** e informe ao Confluir (nunca no código), de uma destas formas — a última que existir vale:
    - `appsettings.json` ao lado do executável (já vem com o campo vazio);
-   - `%APPDATA%\Confluir\appsettings.json` (sobrevive a atualizações do app);
+   - `appsettings.json` na pasta de dados do app (sobrevive a atualizações);
    - variável de ambiente `CONFLUIR_Microsoft__ClientId`.
 
    ```json
@@ -106,4 +110,71 @@ O Outlook exige OAuth2 (XOAUTH2). É preciso um app registrado:
    ```
 7. No Outlook.com, IMAP/POP precisa estar ativo: Configurações → Email → Encaminhamento e IMAP.
 
-Ao adicionar uma conta Outlook/Hotmail, use **Entrar com a Microsoft**: o navegador abre, você entra, e o Confluir testa IMAP e SMTP com o token. Os tokens ficam no cofre do sistema (`msal.cache`, cifrado) e são renovados sozinhos; se a sessão expirar, a conta mostra "Sua sessão da Microsoft expirou" e basta editá-la e entrar de novo.
+Ao adicionar a conta, use **Entrar com a Microsoft**: o navegador abre, você entra e o Confluir testa IMAP e SMTP com o token. Os tokens ficam no cofre do sistema e são renovados sozinhos; se a sessão expirar, edite a conta e entre de novo. *Ainda não testado contra a Microsoft.*
+</details>
+
+## Compilar e rodar
+
+Requisitos: SDK do .NET 10 (fixado em `global.json`).
+
+```sh
+dotnet build Confluir.sln
+dotnet run --project src/Confluir.App                    # app normal
+dotnet run --project src/Confluir.App -- --dados-falsos  # contas e mensagens de exemplo, sem servidores
+dotnet test --solution Confluir.sln
+```
+
+No Linux, o leitor de HTML usa o WebKitGTK (`libwebkit2gtk-4.1-0`) e o cofre de senhas, o libsecret (`libsecret-1-0`).
+
+### Ferramentas
+
+| Projeto | Para quê |
+|---|---|
+| `tools/Confluir.Snapshot` | Renderiza as telas sem abrir janela (Avalonia Headless + Skia), com dados de exemplo numa pasta temporária, e salva PNGs. As capturas deste README e do site saem daqui. `dotnet run --project tools/Confluir.Snapshot -- <pasta>` |
+| `tools/Confluir.IconGen` | Gera `assets/icone/confluir.icns` e `assets/icone/png/*.png` a partir do SVG. `dotnet run --project tools/Confluir.IconGen -- assets/confluir-icone.svg assets/icone` |
+
+### Instaladores e site
+
+| Arquivo | O que faz |
+|---|---|
+| `.github/workflows/release.yml` | Ao enviar uma tag `v*` (ex.: `git tag v0.1.0 && git push origin v0.1.0`): roda os testes, gera o instalador do Windows (Inno Setup, `packaging/windows/confluir.iss`), o `.deb` (`packaging/linux/build-deb.sh`) e os `.dmg` do macOS para Apple Silicon e Intel (`packaging/macos/build-dmg.sh`), e publica um lançamento com eles e as somas SHA-256. Também pode ser rodado à mão em **Actions → Instaladores**, gerando só os artefatos. |
+| `.github/workflows/pages.yml` | Publica a pasta `site/` no GitHub Pages a cada mudança nela. Uma vez só: **Settings → Pages → Source: GitHub Actions**. |
+
+Os instaladores são *self-contained* (não precisam do .NET instalado) e compilados com ReadyToRun (inicialização mais rápida). Os `.dmg` têm só assinatura ad hoc: para abrir sem o aviso do Gatekeeper seria preciso um certificado Developer ID e notarização da Apple.
+
+## Estrutura
+
+```
+src/Confluir.App    Avalonia: Views, ViewModels, temas, estilos, recursos, fontes embutidas
+src/Confluir.Core   Modelos, interfaces, regras de negócio (sem UI nem MailKit)
+src/Confluir.Mail   IMAP/SMTP, sincronização, sanitização de HTML
+src/Confluir.Auth   OAuth2 (MSAL) e cofre de credenciais
+src/Confluir.Data   SQLite: cache, fila de operações, rascunhos
+tests/              xUnit v3 (Core, Mail, Data, App)
+tools/              Snapshot e IconGen
+packaging/          Inno Setup, .deb e .app/.dmg
+site/               Site do GitHub Pages
+```
+
+## Decisões técnicas
+
+| Tema | Escolha | Motivo |
+|---|---|---|
+| UI | Avalonia 12.1.4 | Multiplataforma, última estável no NuGet. |
+| Camada visual | **FluentAvaloniaUI 3.1** (`FluentAvaloniaTheme`) | Compilado para Avalonia 12.1, mantido, visual WinUI coerente e geração da rampa de destaque a partir de uma cor. |
+| Ícones | **Lucide.Avalonia** | Primeira opção do plano; testado no Avalonia 12. Plano B: FluentIcons.Avalonia. |
+| Cores | Tokens em `Themes/Light.axaml` e `Themes/Dark.axaml` via `ThemeDictionaries`, sempre com `DynamicResource` | A cor de destaque do usuário é gravada no dicionário raiz (`Accent`, `OnAccent` por contraste WCAG, `AccentSubtle`). |
+| Fontes | Inter, Source Serif 4 e JetBrains Mono embutidas (OFL); importadas ficam em `<dados>/fonts/<família>` | Carregadas por coleções de fonte do Avalonia (`EmbeddedFontCollection` e uma coleção de arquivos). Google Fonts pela API de CSS, que entrega TTF quando o cliente não pede WOFF2; a licença vem do repositório `google/fonts`. No leitor, a fonte vai como `@font-face` com `data:` (o documento não acessa a rede). |
+| Strings e idiomas | `Resources/Strings.resx` (pt-BR) + `Strings.en.resx` + `Strings.es.resx` | No XAML, `{l:Tr Chave}` (atualiza ao trocar de idioma). Testes garantem as mesmas chaves e marcadores nos três. **Toda string nova vai para os três arquivos.** Detalhes em [docs/PLANO_IDIOMAS.md](docs/PLANO_IDIOMAS.md). |
+| Navegação | Telas dentro da janela principal (`NavigationService`, Esc volta), confirmações inline | O app prefere navegar a abrir janelas ou diálogos modais. |
+| Email | MailKit/MimeKit 4.18 | Uma conexão IMAP por conta (`ImapConnectionPool`), reconexão automática. SMTP com troca automática de porta (465 ↔ 587) se uma estiver bloqueada. |
+| Cofre de credenciais | `Microsoft.Identity.Client.Extensions.Msal` | Windows: DPAPI; macOS: Keychain; Linux: libsecret. Sem cofre, falha em vez de gravar em texto puro. |
+| Banco local | SQLite (`Microsoft.Data.Sqlite` + Dapper), WAL, migrações por `PRAGMA user_version` | Toda consulta roda fora da thread da interface (o provedor do SQLite é síncrono por dentro). |
+| Sincronização | `SyncingMailboxService` (um laço e um IDLE por conta) + `ImapSyncEngine` + `SyncPlanner` | O planejador compara UIDs do servidor com os do cache e é testado isoladamente. As regras rodam aqui, nas mensagens que acabaram de chegar, e as ações vão pela mesma fila otimista. |
+| Autoconfiguração | ISPDB do Thunderbird | Cobre milhares de provedores. Só o **domínio** é enviado, nunca o endereço. |
+| WebView | **`Avalonia.Controls.WebView`** (`NativeWebView`, MIT) | Usa o motor do sistema (WebView2, WebKit, WebKitGTK), sem embutir o Chromium. Sem motor, o leitor e a escrita usam texto puro. Sessão sem persistência. |
+| Segurança do HTML | `HtmlSanitizer` + CSP | O sanitizador remove scripts, iframes, formulários e handlers; a CSP (`default-src 'none'`) impede execução e acesso à rede mesmo se algo passar. O editor de mensagens só roda o próprio script (nonce). |
+| Editor de mensagens | `contenteditable` no WebView | O editor rico do Avalonia é pago (Pro). O editor avisa que o texto mudou e o app pede o HTML só ao salvar, enviar ou sair, para digitar sem atrasos. |
+| Testes | xUnit v3 no Microsoft Testing Platform | Exigido pelo `dotnet test` do .NET 10 (`global.json` → `test.runner`). |
+
+Limitações conhecidas: remoções no servidor são detectadas com `UID SEARCH ALL` (QRESYNC ainda não é usado); a condição "destinatário" das regras vale para mensagens sincronizadas a partir da versão com regras; os instaladores do macOS e do Linux ainda não foram testados em máquinas reais.

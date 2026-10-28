@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Confluir
+GenericName=Email Client
+GenericName[pt_BR]=Cliente de email
+GenericName[es]=Cliente de correo
+Comment=All your email accounts in one place
+Comment[pt_BR]=Todas as suas contas de email num só lugar
+Comment[es]=Todas tus cuentas de correo en un solo lugar
+Exec=/opt/confluir/Confluir %U
+Icon=confluir
+Terminal=false
+Categories=Network;Email;Office;
+Keywords=email;mail;imap;smtp;gmail;outlook;
+MimeType=x-scheme-handler/mailto;
+StartupWMClass=Confluir
