@@ -21,6 +21,7 @@ public sealed record ReadingServices(
     ThemeService Theme,
     ISettingsStore Settings,
     AttachmentService Attachments,
+    FontService Fonts,
     ILogger<MessageDetailViewModel> Logger);
 
 public interface IMessageActions
@@ -38,8 +39,6 @@ public interface IMessageActions
 public sealed partial class MessageDetailViewModel : ViewModelBase
 {
     // Fonte de leitura até a fase 7 (fontes configuráveis).
-    private const string ReadingFont = "\"Segoe UI\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif";
-
     private readonly ReadingServices _services;
     private MessageBody? _body;
     private bool _allowRemoteImages;
@@ -236,7 +235,11 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     {
         if (_body is null)
             return;
-        var document = EmailDocumentBuilder.Build(_body, _allowRemoteImages, _services.Theme.CurrentPalette(), ReadingFont);
+        var fonts = _services.Fonts;
+        var (faces, family) = fonts.Css(FontRole.Reading);
+        var (monoFaces, mono) = fonts.Css(FontRole.Mono);
+        var document = EmailDocumentBuilder.Build(_body, _allowRemoteImages, _services.Theme.CurrentPalette(),
+            new EmailFonts(family, mono, faces + monoFaces, 15 * fonts.Current.Scale, fonts.Current.ReadingLineHeight));
         BlockedImages = document.BlockedRemoteImages;
         Document = document.Html;
     }

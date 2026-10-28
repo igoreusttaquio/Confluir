@@ -13,6 +13,7 @@ public sealed class AppSettings
     public LayoutSettings Layout { get; set; } = new();
     public ReadingSettings Reading { get; set; } = new();
     public ComposeSettings Compose { get; set; } = new();
+    public FontSettings Fonts { get; set; } = new();
 }
 
 public sealed class ComposeSettings
@@ -25,6 +26,26 @@ public sealed class ReadingSettings
 {
     /// <summary>Remetentes (endereços em minúsculas) cujas imagens remotas são sempre exibidas.</summary>
     public List<string> TrustedImageSenders { get; set; } = [];
+
+    /// <summary>Segundos com a mensagem aberta até marcá-la como lida: 0 na hora, negativo nunca (só manualmente).</summary>
+    public int MarkReadDelaySeconds { get; set; }
+}
+
+/// <summary>
+/// Fontes escolhidas. Cada uma é uma chave "origem:família" (ex.: "system:Segoe UI", "bundled:Inter",
+/// "imported:Nunito"); nulo usa o padrão do app.
+/// </summary>
+public sealed class FontSettings
+{
+    public string? Interface { get; set; }
+    public string? Reading { get; set; }
+    public string? Mono { get; set; }
+
+    /// <summary>Escala de toda a interface (1 = 100%).</summary>
+    public double Scale { get; set; } = 1.0;
+
+    /// <summary>Altura de linha do corpo dos emails.</summary>
+    public double ReadingLineHeight { get; set; } = 1.6;
 }
 
 public sealed class AppearanceSettings

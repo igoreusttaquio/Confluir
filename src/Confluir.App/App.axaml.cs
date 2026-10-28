@@ -23,6 +23,7 @@ public partial class App : Application
         var settings = Services.GetRequiredService<ISettingsStore>();
         Services.GetRequiredService<LocalizationService>().Apply(settings.Current.Appearance.Language);
         Services.GetRequiredService<ThemeService>().ApplyAll();
+        Services.GetRequiredService<FontService>().Initialize();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();

@@ -20,6 +20,8 @@ public partial class ComposeView : UserControl
         foreach (var box in new[] { ToBox, CcBox, BccBox })
         {
             box.AsyncPopulator = (text, ct) => ViewModel?.SuggestAsync(text, ct) ?? Task.FromResult<IEnumerable<object>>([]);
+            // Busca só depois de uma pausa na digitação (não a cada tecla); a anterior é cancelada.
+            box.MinimumPopulateDelay = TimeSpan.FromMilliseconds(200);
             // Escolher uma sugestão troca só o último destinatário digitado e deixa pronto para o próximo.
             box.TextSelector = (text, item) =>
             {
@@ -45,6 +47,7 @@ public partial class ComposeView : UserControl
         Editor.ThemeService = (Application.Current as App)?.Services.GetService<ThemeService>();
         Editor.Placeholder = Strings.Compose_BodyPlaceholder;
         Editor.ContentChanged += (_, html) => ViewModel?.OnEditorContent(html);
+        Editor.Dirty += (_, _) => ViewModel?.OnEditorDirty();
         Editor.FormatChanged += (_, s) =>
         {
             BoldButton.Classes.Set("on", s.Bold);

@@ -4,8 +4,7 @@
              xmlns:vm="using:Confluir.App.ViewModels"
              xmlns:conv="using:Confluir.App.Converters"
              x:Class="Confluir.App.Views.AppearanceView"
-             x:DataType="vm:AppearanceViewModel"
-             Width="300">
+             x:DataType="vm:AppearanceViewModel">
   <UserControl.Styles>
     <Style Selector="RadioButton.themeOption">
       <Setter Property="Theme" Value="{StaticResource {x:Type ToggleButton}}" />
@@ -16,10 +15,7 @@
     </Style>
   </UserControl.Styles>
 
-  <ScrollViewer MaxHeight="620" HorizontalScrollBarVisibility="Disabled">
-  <StackPanel Spacing="14" Margin="4,4,12,4">
-    <TextBlock Text="{l:Tr Appearance}" FontSize="16" FontWeight="SemiBold"
-               Foreground="{DynamicResource TextPrimary}" />
+  <StackPanel Spacing="14">
 
     <StackPanel Spacing="6">
       <TextBlock Text="{l:Tr Theme}" Classes="caption" />
@@ -139,5 +135,4 @@
     <ToggleSwitch Content="{l:Tr CompactMode}" IsChecked="{Binding CompactMode}"
                   OnContent="" OffContent="" />
   </StackPanel>
-  </ScrollViewer>
 </UserControl>

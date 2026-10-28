@@ -63,6 +63,7 @@ public sealed class SqliteAccountStore : IAccountStore
 
     private async Task<List<MailAccount>> LoadAsync(string? legacyJsonPath)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await _db.OpenAsync();
         var rows = (await c.QueryAsync<string>("SELECT data FROM accounts ORDER BY position")).ToList();
         if (rows.Count > 0)
@@ -79,6 +80,7 @@ public sealed class SqliteAccountStore : IAccountStore
 
     private async Task SaveAsync(IReadOnlyList<MailAccount> accounts)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await _db.OpenAsync();
         await using var tx = await c.BeginTransactionAsync();
         await c.ExecuteAsync("DELETE FROM accounts", transaction: tx);

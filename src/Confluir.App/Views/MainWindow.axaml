@@ -50,6 +50,7 @@
   </Window.Styles>
 
   <!-- A barra lateral fica sempre visível; a área de conteúdo alterna entre a caixa de email e as páginas. -->
+  <LayoutTransformControl x:Name="ScaleHost">
   <Grid x:Name="Columns" Classes.navigated="{Binding !Navigation.IsAtRoot}" ClipToBounds="True">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="260" MinWidth="200" MaxWidth="420" />
@@ -81,6 +82,9 @@
           <DataTemplate DataType="vm:MessagePageViewModel">
             <views:MessagePageView />
           </DataTemplate>
+          <DataTemplate DataType="vm:SettingsViewModel">
+            <views:SettingsView />
+          </DataTemplate>
           <DataTemplate DataType="vm:ComposeViewModel">
             <views:ComposeView />
           </DataTemplate>
@@ -99,4 +103,5 @@
       </StackPanel>
     </Border>
   </Grid>
+  </LayoutTransformControl>
 </Window>

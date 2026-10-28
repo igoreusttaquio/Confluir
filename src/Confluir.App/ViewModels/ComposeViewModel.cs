@@ -262,14 +262,29 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         HtmlReplaced?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Conteúdo novo vindo do editor.</summary>
+    // O editor avisa que o texto mudou; o HTML só vem quando pedido (salvar, enviar, sair).
+    private bool _editorDirty;
+
+    public void OnEditorDirty()
+    {
+        _editorDirty = true;
+        ScheduleSave();
+    }
+
+    /// <summary>Conteúdo vindo do editor (resposta a um pedido de <see cref="FlushEditor"/>).</summary>
     public void OnEditorContent(string html)
     {
-        if (html == Html)
-            return;
+        _editorDirty = false;
         Html = html;
-        Body = ComposeHtml.ToText(html);
-        ScheduleSave();
+    }
+
+    /// <summary>Texto simples atual; no modo formatado é convertido do HTML fora da thread da interface.</summary>
+    private Task<string> CurrentTextAsync()
+    {
+        if (IsPlainText)
+            return Task.FromResult(Body);
+        var html = Html;
+        return Task.Run(() => ComposeHtml.ToText(html));
     }
 
     /// <summary>Anexa arquivos do disco (botão ou arrastar e soltar).</summary>
@@ -333,27 +348,45 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
             return;
         }
 
-        var message = new OutgoingMessage(SelectedFrom.Account.Id, to, cc, bcc, Subject.Trim(),
-            IsPlainText ? Body : ComposeHtml.ToText(Html),
-            IsPlainText ? null : ComposeHtml.Document(Html),
-            Attachments.Select(a => a.Attachment).ToList(), _inReplyTo, _references);
-
         IsSending = true;
+        var text = await CurrentTextAsync();
+        var html = IsPlainText ? null : ComposeHtml.Document(Html);
+        var message = new OutgoingMessage(SelectedFrom.Account.Id, to, cc, bcc, Subject.Trim(), text, html,
+            Attachments.Select(a => a.Attachment).ToList(), _inReplyTo, _references);
+        var draft = Snapshot(text);
+        var provider = SelectedFrom.Account.Provider;
+
+        // O envio continua em segundo plano: a tela fecha na hora e o aviso informa o resultado.
+        _finished = true;
+        _saveTimer.Stop();
+        IsSending = false;
+        _services.Navigation.GoBack();
+        _notify(Strings.Compose_Sending);
+        _ = SendInBackgroundAsync(message, draft, provider);
+    }
+
+    private async Task SendInBackgroundAsync(OutgoingMessage message, Draft draft, MailProvider provider)
+    {
         try
         {
-            await _services.Sender.SendAsync(message, _services.Drafts.LoadAttachmentAsync);
-            Finish();
-            _services.Navigation.GoBack();
+            await Task.Run(() => _services.Sender.SendAsync(message, _services.Drafts.LoadAttachmentAsync));
             _notify(Strings.Compose_Sent);
+            DeleteDraftInBackground();
         }
         catch (Exception ex)
         {
             _services.Logger.LogWarning(ex, "Falha ao enviar mensagem");
-            Error = $"{Strings.Compose_SendFailed} {ErrorMessages.For(ex, SelectedFrom.Account.Provider)}";
-        }
-        finally
-        {
-            IsSending = false;
+            _notify(string.Format(Strings.Compose_SendFailedKept, ErrorMessages.For(ex, provider)));
+            // Nada se perde: a mensagem fica como rascunho (no aparelho e, se der, no servidor).
+            try
+            {
+                await _services.Drafts.SaveLocalAsync(draft);
+                await _services.Drafts.UploadAsync(draft);
+            }
+            catch (Exception saveEx)
+            {
+                _services.Logger.LogInformation(saveEx, "Rascunho da mensagem não enviada ficou só no aparelho");
+            }
         }
     }
 
@@ -367,7 +400,7 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     [RelayCommand]
     private void Discard()
     {
-        if ((IsDirty || _hasLocalDraft || _server is not null) && !IsConfirmingDiscard)
+        if ((IsDirty || _editorDirty || _hasLocalDraft || _server is not null) && !IsConfirmingDiscard)
         {
             IsConfirmingDiscard = true;
             return;
@@ -379,7 +412,9 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     private void ConfirmDiscard()
     {
         IsConfirmingDiscard = false;
-        Finish();
+        _finished = true;
+        _saveTimer.Stop();
+        DeleteDraftInBackground();
         _services.Navigation.GoBack();
         if (_hasLocalDraft || _server is not null)
             _notify(Strings.Compose_DraftDiscarded);
@@ -392,10 +427,8 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     private void ToggleCcBcc() => ShowCcBcc = !ShowCcBcc;
 
     /// <summary>Enviada ou descartada: o rascunho (local, servidor e arquivos soltos) deixa de existir.</summary>
-    private void Finish()
+    private void DeleteDraftInBackground()
     {
-        _finished = true;
-        _saveTimer.Stop();
         var accountId = SelectedFrom?.Account.Id ?? Guid.Empty;
         _ = Task.Run(async () =>
         {
@@ -425,8 +458,8 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         string.Join('\u0001', SelectedFrom?.Account.Id, To, Cc, Bcc, Subject, IsPlainText ? Body : Html, IsPlainText,
             string.Join('\u0002', Attachments.Select(a => a.Attachment)));
 
-    private Draft Snapshot() => new(
-        _draftId, SelectedFrom?.Account.Id ?? Guid.Empty, Mode, To, Cc, Bcc, Subject, Html, Body, IsPlainText,
+    private Draft Snapshot(string text) => new(
+        _draftId, SelectedFrom?.Account.Id ?? Guid.Empty, Mode, To, Cc, Bcc, Subject, Html, text, IsPlainText,
         Attachments.Select(a => a.Attachment).ToList(), _inReplyTo, _references, DateTimeOffset.Now, _server);
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -464,13 +497,15 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     {
         if (_finished || SelectedFrom is null)
             return;
+        if (_editorDirty)
+            await FlushAsync();
         var state = State();
         var changed = state != _savedState;
         if (changed && (state != _initialState || _hasLocalDraft))
         {
             try
             {
-                await _services.Drafts.SaveLocalAsync(Snapshot());
+                await _services.Drafts.SaveLocalAsync(Snapshot(await CurrentTextAsync()));
                 _savedState = state;
                 _hasLocalDraft = true;
             }
@@ -492,7 +527,7 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
             if (_finished)
                 return;
             _lastUpload = DateTimeOffset.Now;
-            var saved = await _services.Drafts.UploadAsync(Snapshot());
+            var saved = await _services.Drafts.UploadAsync(Snapshot(await CurrentTextAsync()));
             _server = saved.Server;
         }
         catch (Exception ex)
@@ -520,9 +555,25 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         var dirty = State() != _savedState;
         if (!dirty && !wasSaved)
             return;
-        if (dirty || wasSaved)
-            _notify(Strings.Compose_DraftSaved);
+        _notify(Strings.Compose_DraftSaved);
         await SaveLocalAsync(upload: dirty || _server is null);
+    }
+
+    private async Task ToPlainTextAsync()
+    {
+        if (FlushEditor is { } flush)
+        {
+            try
+            {
+                await flush();
+            }
+            catch (Exception ex)
+            {
+                _services.Logger.LogDebug(ex, "Editor não respondeu ao pedir o conteúdo");
+            }
+        }
+        var html = Html;
+        Body = await Task.Run(() => ComposeHtml.ToText(html));
     }
 
     partial void OnSelectedFromChanged(FromOption? value) => OnPropertyChanged(nameof(CanSend));
@@ -531,11 +582,15 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
     {
         if (_loading)
             return;
-        // Texto → formatado: o texto vira HTML; formatado → texto: o texto já acompanha o editor.
+        // Texto → formatado: o texto vira HTML; formatado → texto: o HTML do editor vira texto.
         if (!value)
         {
             Html = ComposeHtml.FromText(Body);
             HtmlReplaced?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            _ = ToPlainTextAsync();
         }
         _services.Settings.Current.Compose.PlainText = value;
         _services.Settings.Save();

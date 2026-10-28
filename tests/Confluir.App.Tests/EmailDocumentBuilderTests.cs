@@ -13,7 +13,7 @@ public class EmailDocumentBuilderTests
     [Fact]
     public void Politica_de_seguranca_bloqueia_scripts_e_rede_por_padrao()
     {
-        var doc = EmailDocumentBuilder.Build(Body(html: "<p>oi</p>"), allowRemoteImages: false, Dark, "sans-serif");
+        var doc = EmailDocumentBuilder.Build(Body(html: "<p>oi</p>"), allowRemoteImages: false, Dark, EmailFonts.Default);
 
         Assert.Contains("Content-Security-Policy", doc.Html);
         Assert.Contains("default-src 'none'", doc.Html);
@@ -27,8 +27,8 @@ public class EmailDocumentBuilderTests
     {
         var html = "<img src=\"https://cdn.example/a.png\">";
 
-        var blocked = EmailDocumentBuilder.Build(Body(html: html), allowRemoteImages: false, Dark, "sans-serif");
-        var allowed = EmailDocumentBuilder.Build(Body(html: html), allowRemoteImages: true, Dark, "sans-serif");
+        var blocked = EmailDocumentBuilder.Build(Body(html: html), allowRemoteImages: false, Dark, EmailFonts.Default);
+        var allowed = EmailDocumentBuilder.Build(Body(html: html), allowRemoteImages: true, Dark, EmailFonts.Default);
 
         Assert.Equal(1, blocked.BlockedRemoteImages);
         Assert.DoesNotContain("cdn.example", blocked.Html);
@@ -42,7 +42,7 @@ public class EmailDocumentBuilderTests
     {
         var doc = EmailDocumentBuilder.Build(
             Body("Oi <script>x</script>, veja https://exemplo.com/a?b=1&c=2. Fale com ana@exemplo.com"),
-            allowRemoteImages: false, Dark, "sans-serif");
+            allowRemoteImages: false, Dark, EmailFonts.Default);
 
         Assert.Contains("&lt;script&gt;", doc.Html);
         Assert.Contains("<a href=\"https://exemplo.com/a?b=1&amp;c=2\">", doc.Html);
@@ -54,7 +54,7 @@ public class EmailDocumentBuilderTests
     [Fact]
     public void Email_simples_usa_as_cores_do_tema()
     {
-        var doc = EmailDocumentBuilder.Build(Body(html: "<p>oi</p>"), false, Dark, "sans-serif");
+        var doc = EmailDocumentBuilder.Build(Body(html: "<p>oi</p>"), false, Dark, EmailFonts.Default);
         Assert.Contains(".mail { background: #111833; color: #E8ECFF;", doc.Html);
         Assert.Contains("content=\"dark\"", doc.Html);
     }
@@ -62,7 +62,7 @@ public class EmailDocumentBuilderTests
     [Fact]
     public void Email_com_fundo_proprio_fica_em_papel_branco_no_tema_escuro()
     {
-        var doc = EmailDocumentBuilder.Build(Body(html: "<table bgcolor=\"#f4f4f4\"><tr><td>oferta</td></tr></table>"), false, Dark, "sans-serif");
+        var doc = EmailDocumentBuilder.Build(Body(html: "<table bgcolor=\"#f4f4f4\"><tr><td>oferta</td></tr></table>"), false, Dark, EmailFonts.Default);
         Assert.Contains(".mail { background: #FFFFFF; color: #141A33;", doc.Html);
         Assert.Contains("content=\"light\"", doc.Html);
     }

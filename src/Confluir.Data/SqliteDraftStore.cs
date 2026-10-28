@@ -13,6 +13,7 @@ public sealed class SqliteDraftStore(Database database) : IDraftStore
 
     public async Task<Draft?> GetAsync(Guid id, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var connection = await database.OpenAsync(ct);
         var data = await connection.ExecuteScalarAsync<string?>(
             new CommandDefinition("SELECT data FROM drafts WHERE id = @id", new { id = id.ToString() }, cancellationToken: ct));
@@ -21,6 +22,7 @@ public sealed class SqliteDraftStore(Database database) : IDraftStore
 
     public async Task<IReadOnlyList<Draft>> ListAsync(CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var connection = await database.OpenAsync(ct);
         var rows = await connection.QueryAsync<string>(
             new CommandDefinition("SELECT data FROM drafts ORDER BY updated_at DESC", cancellationToken: ct));
@@ -29,6 +31,7 @@ public sealed class SqliteDraftStore(Database database) : IDraftStore
 
     public async Task SaveAsync(Draft draft, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var connection = await database.OpenAsync(ct);
         await connection.ExecuteAsync(new CommandDefinition(
             """
@@ -47,6 +50,7 @@ public sealed class SqliteDraftStore(Database database) : IDraftStore
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var connection = await database.OpenAsync(ct);
         await connection.ExecuteAsync(
             new CommandDefinition("DELETE FROM drafts WHERE id = @id", new { id = id.ToString() }, cancellationToken: ct));

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using Confluir.Core.Models;
@@ -6,6 +7,12 @@ using Confluir.Mail;
 namespace Confluir.App.Services;
 
 public sealed record EmailDocument(string Html, int BlockedRemoteImages);
+
+/// <summary>Fontes do leitor: famílias CSS, regras @font-face (embutidas) e tamanho/altura de linha.</summary>
+public sealed record EmailFonts(string Family, string MonoFamily, string FontFaces, double FontSize, double LineHeight)
+{
+    public static readonly EmailFonts Default = new(FontService.SystemSansCss, "Consolas, monospace", "", 15, 1.6);
+}
 
 /// <summary>
 /// Monta o documento HTML exibido no painel de leitura: conteúdo sanitizado, política de segurança (CSP)
@@ -18,7 +25,7 @@ public static partial class EmailDocumentBuilder
     private const string PaperText = "#141A33";
     private const string PaperLink = "#2F5BEA";
 
-    public static EmailDocument Build(MessageBody body, bool allowRemoteImages, ThemePalette palette, string fontFamily)
+    public static EmailDocument Build(MessageBody body, bool allowRemoteImages, ThemePalette palette, EmailFonts fonts)
     {
         string content;
         var blocked = 0;
@@ -54,8 +61,10 @@ public static partial class EmailDocumentBuilder
             <meta http-equiv="Content-Security-Policy" content="{{csp}}">
             <meta name="color-scheme" content="{{(palette.IsDark && !ownBackground ? "dark" : "light")}}">
             <style>
+              {{fonts.FontFaces}}
               html, body { margin: 0; padding: 0; background: {{palette.Surface}}; }
-              body { font-family: {{fontFamily}}; font-size: 15px; line-height: 1.6; color: {{palette.TextPrimary}};
+              body { font-family: {{fonts.Family}}; font-size: {{fonts.FontSize.ToString("0.#", CultureInfo.InvariantCulture)}}px;
+                     line-height: {{fonts.LineHeight.ToString("0.##", CultureInfo.InvariantCulture)}}; color: {{palette.TextPrimary}};
                      overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
               .mail { background: {{paper}}; color: {{text}}; {{(ownBackground ? "padding: 16px; border-radius: 10px;" : "")}} }
               a { color: {{link}}; }
@@ -64,7 +73,7 @@ public static partial class EmailDocumentBuilder
               blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid {{palette.Border}};
                            color: {{(ownBackground ? "#5B6385" : palette.TextSecondary)}}; }
               .plain { white-space: pre-wrap; }
-              pre, code { font-family: Consolas, "JetBrains Mono", monospace; font-size: 13px; }
+              pre, code { font-family: {{fonts.MonoFamily}}; font-size: 0.87em; }
               ::selection { background: {{palette.Accent}}33; }
             </style>
             </head>

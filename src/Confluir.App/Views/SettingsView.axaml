@@ -1,0 +1,472 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:svc="using:Confluir.App.Services"
+             xmlns:conv="using:Confluir.App.Converters"
+             xmlns:views="using:Confluir.App.Views"
+             x:Class="Confluir.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <UserControl.Styles>
+    <!-- Navegação entre seções (lista à esquerda) -->
+    <Style Selector="RadioButton.section">
+      <Setter Property="Theme" Value="{StaticResource {x:Type ToggleButton}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="12,9" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="RadioButton.section:checked /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSubtle}" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+    </Style>
+    <Style Selector="RadioButton.option">
+      <Setter Property="Theme" Value="{StaticResource {x:Type ToggleButton}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <Style Selector="TextBlock.groupTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="20" />
+    </Style>
+    <!-- Conteúdo da seção entra com um leve deslizar -->
+    <Style Selector="StackPanel.page">
+      <Setter Property="Spacing" Value="16" />
+      <Setter Property="MaxWidth" Value="760" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Margin" Value="40,28,40,40" />
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.Resources>
+    <!-- Cada fonte aparece escrita nela mesma -->
+    <DataTemplate x:Key="FontChoiceTemplate" x:DataType="svc:FontChoice">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{Binding FamilyName}" FontFamily="{Binding Family}" VerticalAlignment="Center" />
+        <TextBlock Classes="caption" VerticalAlignment="Center" IsVisible="{Binding Origin, Converter={x:Static conv:FontOriginConverter.IsTagged}}">
+          <TextBlock.Text>
+            <MultiBinding Converter="{x:Static conv:FontOriginConverter.Label}">
+              <Binding Path="Origin" />
+              <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <DockPanel Background="{DynamicResource Background}">
+    <!-- Barra superior -->
+    <Border DockPanel.Dock="Top" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1" Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
+      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Classes="icon" Command="{Binding BackCommand}"
+                ToolTip.Tip="{l:Tr Action_Back}" AutomationProperties.Name="{l:Tr Action_Back}">
+          <LucideIcon Kind="ArrowLeft" />
+        </Button>
+        <TextBlock Text="{l:Tr Settings}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextPrimary}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Seções -->
+    <Border DockPanel.Dock="Left" Width="220" Background="{DynamicResource Surface}"
+            BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0" Padding="10,14">
+      <StackPanel Spacing="2">
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsAccounts}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="Users" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Accounts}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsAppearance}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="Palette" Size="17" />
+            <TextBlock Text="{l:Tr Appearance}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsFonts}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="Type" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Fonts}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsReading}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="BookOpen" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Reading}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsCompose}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="PenLine" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Compose}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsAdvanced}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="Wrench" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Advanced}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer x:Name="ContentScroll" HorizontalScrollBarVisibility="Disabled">
+      <Panel>
+        <!-- Contas -->
+        <StackPanel Classes="page" IsVisible="{Binding IsAccounts}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Accounts}" />
+          <TextBlock Classes="hint" Text="{l:Tr Settings_AccountsHint}" />
+          <TextBlock Classes="hint" Text="{l:Tr NoAccounts_Title}" IsVisible="{Binding !HasAccounts}" />
+          <ItemsControl ItemsSource="{Binding Accounts}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="10" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:AccountNode">
+                <Border Classes="card" Padding="16,12">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <Border Width="36" Height="36" CornerRadius="18" VerticalAlignment="Center"
+                              Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}">
+                        <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" Foreground="{DynamicResource OnAccountColor}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="1">
+                        <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" />
+                        <TextBlock Text="{Binding Account.Email}" Classes="hint" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Command="{Binding EditCommand}">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <LucideIcon Kind="Pencil" Size="14" />
+                            <TextBlock Text="{l:Tr Account_Edit}" />
+                          </StackPanel>
+                        </Button>
+                        <Button Classes="icon" Command="{Binding AskRemoveCommand}"
+                                ToolTip.Tip="{l:Tr Account_Remove}" AutomationProperties.Name="{l:Tr Account_Remove}">
+                          <LucideIcon Kind="Trash" Size="16" />
+                        </Button>
+                      </StackPanel>
+                    </Grid>
+                    <!-- Confirmação inline -->
+                    <Border IsVisible="{Binding IsConfirmingRemoval}" Background="{DynamicResource SurfaceAlt}"
+                            CornerRadius="8" Padding="12,10">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{l:Tr Account_Remove_Confirm}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimary}" FontSize="13" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0">
+                          <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelRemoveCommand}" />
+                          <Button Classes="danger" Content="{l:Tr Account_Remove_ConfirmButton}" Command="{Binding ConfirmRemoveCommand}" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Command="{Binding AddAccountCommand}" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <LucideIcon Kind="UserPlus" Size="16" />
+              <TextBlock Text="{l:Tr Account_Add}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <!-- Aparência -->
+        <StackPanel Classes="page" IsVisible="{Binding IsAppearance}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Appearance}" />
+          <Border Classes="card">
+            <views:AppearanceView DataContext="{Binding Appearance}" MaxWidth="460" HorizontalAlignment="Left" />
+          </Border>
+        </StackPanel>
+
+        <!-- Fontes -->
+        <Panel IsVisible="{Binding IsFonts}">
+        <StackPanel Classes="page" DataContext="{Binding Fonts}" x:DataType="vm:FontSettingsViewModel">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Fonts}" />
+          <TextBlock Classes="hint" Text="{l:Tr Fonts_Hint}" />
+
+          <Border Classes="card">
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="14">
+              <Grid.Styles>
+                <Style Selector="ComboBox">
+                  <Setter Property="HorizontalAlignment" Value="Stretch" />
+                  <Setter Property="MaxDropDownHeight" Value="360" />
+                </Style>
+              </Grid.Styles>
+              <TextBlock Text="{l:Tr Fonts_Interface}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding InterfaceChoices}" SelectedItem="{Binding SelectedInterface}"
+                        ItemTemplate="{StaticResource FontChoiceTemplate}" />
+              <TextBlock Grid.Row="1" Text="{l:Tr Fonts_Reading}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+              <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ReadingChoices}" SelectedItem="{Binding SelectedReading}"
+                        ItemTemplate="{StaticResource FontChoiceTemplate}" />
+              <TextBlock Grid.Row="2" Text="{l:Tr Fonts_Mono}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+              <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding MonoChoices}" SelectedItem="{Binding SelectedMono}"
+                        ItemTemplate="{StaticResource FontChoiceTemplate}" />
+              <TextBlock Grid.Row="3" Text="{l:Tr Fonts_Scale}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+              <ListBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ScaleOptions}" SelectedItem="{Binding SelectedScale}"
+                       Classes="segmented" Background="Transparent">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Rows="1" ColumnSpacing="6" />
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="vm:ScaleOption">
+                    <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <TextBlock Grid.Row="4" Text="{l:Tr Fonts_LineHeight}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+              <ListBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding LineHeightOptions}" SelectedItem="{Binding SelectedLineHeight}"
+                       Classes="segmented" Background="Transparent">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Rows="1" ColumnSpacing="6" />
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="vm:LineHeightOption">
+                    <TextBlock HorizontalAlignment="Center">
+                      <TextBlock.Text>
+                        <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                          <Binding Path="LabelKey" />
+                          <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                        </MultiBinding>
+                      </TextBlock.Text>
+                    </TextBlock>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Grid>
+          </Border>
+
+          <!-- Pré-visualização ao vivo (antes de aplicar) -->
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Fonts_Preview}" />
+              <TextBlock Text="{l:Tr Fonts_PreviewInterface}" FontFamily="{Binding SelectedInterface.Family}"
+                         FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+              <TextBlock Text="{l:Tr Fonts_PreviewReading}" FontFamily="{Binding SelectedReading.Family}"
+                         FontSize="{Binding PreviewFontSize}" LineHeight="{Binding PreviewLineHeight}"
+                         TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}" />
+              <Border Background="{DynamicResource SurfaceAlt}" CornerRadius="8" Padding="12,8">
+                <TextBlock Text="Message-ID: &lt;CAF8x2@mail.example.com&gt;  ·  0123456789  ·  {} [] =&gt;"
+                           FontFamily="{Binding SelectedMono.Family}" FontSize="13" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondary}" />
+              </Border>
+            </StackPanel>
+          </Border>
+
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Classes="accent" Content="{l:Tr Fonts_Apply}" Command="{Binding ApplyCommand}" IsEnabled="{Binding HasChanges}" />
+            <Button Content="{l:Tr Fonts_Revert}" Command="{Binding RevertCommand}" IsEnabled="{Binding HasChanges}" />
+            <Button Content="{l:Tr Fonts_Defaults}" Command="{Binding UseDefaultsCommand}" />
+          </StackPanel>
+
+          <!-- Importar -->
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Fonts_Import}" />
+              <TextBlock Classes="hint" Text="{l:Tr Fonts_ImportHint}" />
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <Button Click="OnImportFileClick" IsEnabled="{Binding !IsImporting}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="FileUp" Size="16" />
+                    <TextBlock Text="{l:Tr Fonts_ImportFile}" />
+                  </StackPanel>
+                </Button>
+                <TextBox x:Name="GoogleBox" Grid.Column="1" Text="{Binding GoogleFamily}"
+                         PlaceholderText="{l:Tr Fonts_GooglePlaceholder}" />
+                <Button Grid.Column="2" Command="{Binding ImportGoogleCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="LoaderCircle" Size="16" Classes="spin" IsVisible="{Binding IsImporting}" />
+                    <LucideIcon Kind="Download" Size="16" IsVisible="{Binding !IsImporting}" />
+                    <TextBlock Text="{l:Tr Fonts_GoogleDownload}" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+              <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasImportMessage}">
+                <LucideIcon Kind="CircleCheck" Size="16" Foreground="{DynamicResource Accent}" IsVisible="{Binding !ImportFailed}" />
+                <LucideIcon Kind="CircleAlert" Size="16" Foreground="{DynamicResource Danger}" IsVisible="{Binding ImportFailed}" />
+                <TextBlock Text="{Binding ImportMessage}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+              </StackPanel>
+              <StackPanel Spacing="4" IsVisible="{Binding HasImported}">
+                <TextBlock Text="{l:Tr Fonts_ImportedList}" Classes="caption" />
+                <ItemsControl ItemsSource="{Binding ImportedSummary}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        </Panel>
+
+        <!-- Leitura -->
+        <StackPanel Classes="page" IsVisible="{Binding IsReading}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Reading}" />
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Settings_MarkRead}" />
+              <ListBox ItemsSource="{Binding MarkReadOptions}" SelectedItem="{Binding SelectedMarkRead}"
+                       Classes="segmented" Background="Transparent">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Rows="1" ColumnSpacing="6" />
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="vm:MarkReadOption">
+                    <TextBlock HorizontalAlignment="Center">
+                      <TextBlock.Text>
+                        <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                          <Binding Path="LabelKey" />
+                          <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                        </MultiBinding>
+                      </TextBlock.Text>
+                    </TextBlock>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Settings_TrustedSenders}" />
+              <TextBlock Classes="hint" Text="{l:Tr Settings_TrustedSendersHint}" />
+              <TextBlock Classes="hint" Text="{l:Tr Settings_TrustedSendersEmpty}" IsVisible="{Binding !HasTrustedSenders}"
+                         FontStyle="Italic" />
+              <ItemsControl ItemsSource="{Binding TrustedSenders}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:TrustedSenderViewModel">
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                      <TextBlock Text="{Binding Address}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+                      <Button Grid.Column="1" Classes="icon" Command="{Binding RemoveCommand}"
+                              ToolTip.Tip="{l:Tr Settings_TrustedSenderRemove}" AutomationProperties.Name="{l:Tr Settings_TrustedSenderRemove}">
+                        <LucideIcon Kind="X" Size="15" />
+                      </Button>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Escrita -->
+        <StackPanel Classes="page" IsVisible="{Binding IsCompose}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Compose}" />
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Settings_ComposeFormat}" />
+              <TextBlock Classes="hint" Text="{l:Tr Settings_ComposeFormatHint}" />
+              <UniformGrid Columns="2" ColumnSpacing="6" MaxWidth="420" HorizontalAlignment="Left"
+                           IsEnabled="{Binding IsRichTextAvailable}">
+                <RadioButton Classes="option" GroupName="composeFormat" IsChecked="{Binding ComposeRichText}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="Bold" Size="16" />
+                    <TextBlock Text="{l:Tr Settings_ComposeRich}" />
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton Classes="option" GroupName="composeFormat" IsChecked="{Binding ComposePlainText}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="Type" Size="16" />
+                    <TextBlock Text="{l:Tr Compose_PlainText}" />
+                  </StackPanel>
+                </RadioButton>
+              </UniformGrid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Avançado -->
+        <StackPanel Classes="page" IsVisible="{Binding IsAdvanced}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Advanced}" />
+          <Border Classes="card">
+            <StackPanel Spacing="16">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="groupTitle" Text="{l:Tr Settings_DataFolder}" />
+                  <SelectableTextBlock Text="{Binding DataDirectory}" FontFamily="{DynamicResource MonoFontFamily}"
+                                       FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" />
+                </StackPanel>
+                <Button Grid.Column="1" Content="{l:Tr Settings_OpenFolder}" Click="OnOpenDataFolder" VerticalAlignment="Center" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="groupTitle" Text="{l:Tr Settings_Logs}" />
+                  <TextBlock Classes="hint" Text="{l:Tr Settings_LogsHint}" />
+                </StackPanel>
+                <Button Grid.Column="1" Content="{l:Tr Settings_OpenFolder}" Click="OnOpenLogsFolder" VerticalAlignment="Center" />
+              </Grid>
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <StackPanel Spacing="2">
+                    <TextBlock Classes="groupTitle" Text="{l:Tr Settings_ClearCache}" />
+                    <TextBlock Classes="hint" Text="{l:Tr Settings_ClearCacheHint}" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Content="{l:Tr Settings_ClearCache}" Command="{Binding AskClearCacheCommand}"
+                          VerticalAlignment="Center" />
+                </Grid>
+                <Border IsVisible="{Binding IsConfirmingClearCache}" Background="{DynamicResource SurfaceAlt}"
+                        CornerRadius="8" Padding="12,10">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{l:Tr Settings_ClearCacheConfirm}" TextWrapping="Wrap" VerticalAlignment="Center"
+                               FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0">
+                      <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelClearCacheCommand}" />
+                      <Button Classes="danger" Content="{l:Tr Settings_ClearCacheButton}" Command="{Binding ConfirmClearCacheCommand}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+                <TextBlock Text="{Binding ClearCacheMessage}" IsVisible="{Binding HasClearCacheMessage}" Classes="hint" />
+              </StackPanel>
+              <TextBlock Classes="hint">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="Confluir {0}">
+                    <Binding Path="Version" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Panel>
+    </ScrollViewer>
+  </DockPanel>
+
+
+</UserControl>

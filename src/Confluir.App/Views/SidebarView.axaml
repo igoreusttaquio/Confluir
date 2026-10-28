@@ -101,11 +101,11 @@
           <LucideIcon Kind="Palette" />
           <Button.Flyout>
             <Flyout Placement="RightEdgeAlignedBottom">
-              <views:AppearanceView DataContext="{Binding Appearance}" />
+              <ScrollViewer MaxHeight="620" Width="312" HorizontalScrollBarVisibility="Disabled"><StackPanel Spacing="14" Margin="4,4,12,4"><TextBlock Text="{l:Tr Appearance}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" /><views:AppearanceView DataContext="{Binding Appearance}" /></StackPanel></ScrollViewer>
             </Flyout>
           </Button.Flyout>
         </Button>
-        <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" IsEnabled="False">
+        <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" Command="{Binding OpenSettingsCommand}">
           <LucideIcon Kind="Settings" />
         </Button>
       </StackPanel>
@@ -154,11 +154,11 @@
             <LucideIcon Kind="Palette" />
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
-                <views:AppearanceView DataContext="{Binding Appearance}" />
+                <ScrollViewer MaxHeight="620" Width="312" HorizontalScrollBarVisibility="Disabled"><StackPanel Spacing="14" Margin="4,4,12,4"><TextBlock Text="{l:Tr Appearance}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" /><views:AppearanceView DataContext="{Binding Appearance}" /></StackPanel></ScrollViewer>
               </Flyout>
             </Button.Flyout>
           </Button>
-          <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" IsEnabled="False">
+          <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" Command="{Binding OpenSettingsCommand}">
             <LucideIcon Kind="Settings" />
           </Button>
         </StackPanel>

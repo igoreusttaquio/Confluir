@@ -18,6 +18,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     private readonly LocalizationService _loc;
     private readonly ReadingServices _reading;
     private readonly ComposeServices _compose;
+    private readonly SettingsServices _settingsServices;
+    private DispatcherTimer? _markReadTimer;
     private readonly IMailboxService _mailbox;
     private readonly IAccountStore _accountStore;
     private readonly AccountService _accountService;
@@ -49,11 +51,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         LocalizationService localization,
         ReadingServices reading,
         ComposeServices compose,
+        SettingsServices settingsServices,
         TimeProvider time,
         ILogger<MainWindowViewModel> logger)
     {
         _reading = reading;
         _compose = compose;
+        _settingsServices = settingsServices;
+        // Fontes, escala e altura de linha também entram no HTML do email.
+        settingsServices.Fonts.Changed += (_, _) => Dispatcher.UIThread.Post(() => Detail?.RebuildDocument());
         // O HTML do email usa as cores do tema: remonta ao trocar de tema ou de cor de destaque.
         reading.Theme.PaletteChanged += (_, _) => Dispatcher.UIThread.Post(() => Detail?.RebuildDocument());
         _loc = localization;
@@ -237,7 +243,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         {
             if (id == _statusId)
                 StatusMessage = null;
-        }, TimeSpan.FromSeconds(4));
+        }, TimeSpan.FromSeconds(Math.Clamp(message.Length / 12.0, 4, 12)));
     }
 
     public async Task ToggleFlagAsync(MessageDetailViewModel message)
@@ -465,6 +471,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     private void AddAccount() => Navigation.NavigateTo(_accountEditor());
 
     [RelayCommand]
+    private void OpenSettings()
+    {
+        if (Navigation.CurrentPage is SettingsViewModel)
+            return;
+        Navigation.NavigateTo(new SettingsViewModel(_settingsServices, this));
+    }
+
+    [RelayCommand]
     private void GoBack()
     {
         if (!Navigation.IsAtRoot)
@@ -650,7 +664,34 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         }
     }
 
+/// <summary>Marca como lida ao abrir, depois de alguns segundos ou nunca (Configurações → Leitura).</summary>
     private void MarkRead(MessageRow row)
+    {
+        _markReadTimer?.Stop();
+        if (row.IsRead)
+            return;
+        var delay = _reading.Settings.Current.Reading.MarkReadDelaySeconds;
+        if (delay < 0)
+            return;
+        if (delay == 0)
+        {
+            MarkReadNow(row);
+            return;
+        }
+        _markReadTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(delay) };
+        _markReadTimer.Tick += (_, _) =>
+        {
+            _markReadTimer?.Stop();
+            // Só se a mensagem continua aberta (no painel ou em tela própria).
+            var open = Detail?.Row == row ||
+                       (Navigation.CurrentPage is MessagePageViewModel page && page.Detail.Row == row);
+            if (open)
+                MarkReadNow(row);
+        };
+        _markReadTimer.Start();
+    }
+
+    private void MarkReadNow(MessageRow row)
     {
         if (row.IsRead)
             return;

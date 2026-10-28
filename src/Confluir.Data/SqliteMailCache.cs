@@ -15,6 +15,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<IReadOnlyList<MailFolder>> GetFoldersAsync(Guid accountId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<FolderRow>(new CommandDefinition("""
             SELECT f.id AS Id, f.account_id AS AccountId, f.name AS Name, f.full_name AS FullName, f.kind AS Kind,
@@ -48,6 +49,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<FolderSyncState?> GetSyncStateAsync(Guid folderId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var row = await c.QuerySingleOrDefaultAsync<SyncRow>(new CommandDefinition(
             "SELECT uid_validity AS UidValidity, highest_modseq AS HighestModSeq, last_synced_at AS LastSyncedAt FROM folders WHERE id = @id",
@@ -79,6 +81,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<IReadOnlyList<MessageSummary>> GetMessagesAsync(Guid folderId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<MessageRow>(new CommandDefinition(
             $"SELECT {MessageColumns} FROM messages WHERE folder_id = @f ORDER BY date_utc_ms DESC",
@@ -88,6 +91,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<IReadOnlyList<MessageSummary>> GetInboxMessagesAsync(CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<MessageRow>(new CommandDefinition($"""
             SELECT {MessageColumns} FROM messages
@@ -134,6 +138,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<IReadOnlyList<uint>> GetUidsAsync(Guid folderId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var uids = await c.QueryAsync<long>(new CommandDefinition(
             "SELECT uid FROM messages WHERE folder_id = @f", new { f = folderId.ToString() }, cancellationToken: ct));
@@ -190,6 +195,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         if (string.IsNullOrWhiteSpace(text))
             return [];
         await using var c = await db.OpenAsync(ct);
@@ -219,6 +225,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<MessageLocation?> GetLocationAsync(Guid messageId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var row = await c.QuerySingleOrDefaultAsync<LocationRow>(new CommandDefinition("""
             SELECT m.account_id AS AccountId, m.folder_id AS FolderId, f.full_name AS FullName, m.uid AS Uid
@@ -235,6 +242,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<MessageBody?> GetBodyAsync(Guid messageId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var data = await c.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
             "SELECT data FROM bodies WHERE message_id = @id", new { id = messageId.ToString() }, cancellationToken: ct));
@@ -252,6 +260,9 @@ public sealed class SqliteMailCache(Database db) : IMailCache
             data = JsonSerializer.Serialize(body, BodyJson),
             at = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
         }, tx, cancellationToken: ct)), ct);
+
+    public Task ClearBodiesAsync(CancellationToken ct = default) =>
+        WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition("DELETE FROM bodies", transaction: tx, cancellationToken: ct)), ct);
 
     // Fila --------------------------------------------------------------------------------------
 
@@ -290,6 +301,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
 
     public async Task<IReadOnlyList<PendingOperation>> GetPendingAsync(Guid accountId, CancellationToken ct = default)
     {
+        await ThreadPoolSwitch.Instance;
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<PendingRow>(new CommandDefinition("""
             SELECT id AS Id, account_id AS AccountId, message_id AS MessageId, kind AS Kind, attempts AS Attempts,
@@ -328,6 +340,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
     private async Task WriteAsync(Func<Microsoft.Data.Sqlite.SqliteConnection, System.Data.Common.DbTransaction, Task> write,
         CancellationToken ct)
     {
+        await ThreadPoolSwitch.Instance;
         await _writeGate.WaitAsync(ct);
         try
         {

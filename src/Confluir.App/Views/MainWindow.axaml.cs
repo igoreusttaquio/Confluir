@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Media;
+using Confluir.App.Services;
 using Confluir.App.ViewModels;
 using Confluir.Core.Settings;
 
@@ -15,11 +17,16 @@ public partial class MainWindow : Window
     // Usado pelo previewer do XAML.
     public MainWindow() => InitializeComponent();
 
-    public MainWindow(MainWindowViewModel viewModel, ISettingsStore settings) : this()
+    public MainWindow(MainWindowViewModel viewModel, ISettingsStore settings, FontService fonts) : this()
     {
         _settings = settings;
         _vm = viewModel;
         DataContext = viewModel;
+
+        // Escala da interface (Configurações → Fontes): toda a janela, inclusive ícones e espaçamentos.
+        void ApplyScale() => ScaleHost.LayoutTransform = new ScaleTransform(fonts.Current.Scale, fonts.Current.Scale);
+        ApplyScale();
+        fonts.Changed += (_, _) => ApplyScale();
 
         ApplyLayout();
         viewModel.PropertyChanged += OnViewModelPropertyChanged;

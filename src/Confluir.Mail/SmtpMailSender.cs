@@ -1,11 +1,15 @@
+using System.Collections.Concurrent;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Confluir.Core.Compose;
 using Confluir.Core.Models;
+using Confluir.Core.Providers;
 using Confluir.Core.Services;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Search;
+using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 
@@ -22,7 +26,13 @@ public sealed partial class SmtpMailSender(
     ImapConnectionPool pool,
     ILogger<SmtpMailSender> logger) : IMailSender
 {
-    private const int TimeoutMs = 60_000;
+private const int TimeoutMs = 60_000;
+
+    // Conexão sem resposta em pouco tempo: tenta a outra porta em vez de esperar o limite inteiro.
+    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(12);
+
+    // Porta SMTP que funcionou por conta nesta sessão (redes que bloqueiam 465 ou 587).
+    private static readonly ConcurrentDictionary<Guid, ServerEndpoint> WorkingSmtp = new();
 
     public async Task SendAsync(OutgoingMessage message, Func<OutgoingAttachment, CancellationToken, Task<byte[]>> loadAttachment,
         CancellationToken ct = default)
@@ -31,10 +41,8 @@ public sealed partial class SmtpMailSender(
             ?? throw new InvalidOperationException("Conta de envio não encontrada.");
         var mime = await BuildAsync(message, account, loadAttachment, ct);
 
-        using (var smtp = new SmtpClient { Timeout = TimeoutMs })
+        using (var smtp = await ConnectSmtpAsync(account, ct))
         {
-            var endpoint = account.Servers.Smtp;
-            await smtp.ConnectAsync(endpoint.Host, endpoint.Port, endpoint.Security.ToSocketOptions(), ct);
             await authenticator.AuthenticateAsync(smtp, account, ct);
             await smtp.SendAsync(mime, ct);
             await smtp.DisconnectAsync(quit: true, ct);
@@ -43,6 +51,40 @@ public sealed partial class SmtpMailSender(
 
         if (account.Provider is MailProvider.Imap)
             await SaveToSentAsync(account, mime, ct);
+    }
+
+private async Task<SmtpClient> ConnectSmtpAsync(MailAccount account, CancellationToken ct)
+    {
+        var first = WorkingSmtp.TryGetValue(account.Id, out var known) ? known : account.Servers.Smtp;
+        var candidates = new List<ServerEndpoint> { first };
+        if (KnownProviders.AlternativeSmtp(first) is { } alternative)
+            candidates.Add(alternative);
+        if (!candidates.Contains(account.Servers.Smtp))
+            candidates.Add(account.Servers.Smtp);
+
+        Exception? last = null;
+        foreach (var endpoint in candidates)
+        {
+            var smtp = new SmtpClient { Timeout = TimeoutMs };
+            using var connect = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            connect.CancelAfter(ConnectTimeout);
+            try
+            {
+                await smtp.ConnectAsync(endpoint.Host, endpoint.Port, endpoint.Security.ToSocketOptions(), connect.Token);
+                WorkingSmtp[account.Id] = endpoint;
+                return smtp;
+            }
+            catch (Exception ex) when (!ct.IsCancellationRequested &&
+                                       ex is SocketException or OperationCanceledException or IOException or SslHandshakeException)
+            {
+                smtp.Dispose();
+                last = ex;
+                logger.LogInformation("SMTP {Host}:{Port} sem resposta; tentando a próxima opção", endpoint.Host, endpoint.Port);
+            }
+        }
+        throw last is OperationCanceledException or null
+            ? new TimeoutException("O servidor de envio não respondeu.", last)
+            : last;
     }
 
     public static async Task<MimeMessage> BuildAsync(OutgoingMessage message, MailAccount account,

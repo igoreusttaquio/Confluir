@@ -28,7 +28,7 @@ public sealed class DraftService(
     /// <summary>Grava no servidor (substituindo a versão anterior) e retorna o rascunho atualizado.</summary>
     public async Task<Draft> UploadAsync(Draft draft, CancellationToken ct = default)
     {
-        var server = await sender.SaveDraftAsync(draft.Id, ToOutgoing(draft), draft.Server, LoadAttachmentAsync, ct);
+        var server = await Task.Run(() => sender.SaveDraftAsync(draft.Id, ToOutgoing(draft), draft.Server, LoadAttachmentAsync, ct), ct);
         // Sem pasta Rascunhos conhecida (ainda não sincronizou): tenta de novo na próxima abertura.
         var updated = draft with { Server = server ?? draft.Server, NeedsUpload = server is null };
         await store.SaveAsync(updated, ct);

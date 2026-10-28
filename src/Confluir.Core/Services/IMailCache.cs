@@ -76,6 +76,9 @@ public interface IMailCache
 
     Task SaveBodyAsync(MessageBody body, CancellationToken ct = default);
 
+    /// <summary>Apaga os corpos guardados (voltam a ser baixados ao abrir cada mensagem).</summary>
+    Task ClearBodiesAsync(CancellationToken ct = default);
+
     // Fila de operações
     Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null, CancellationToken ct = default);
 

@@ -60,6 +60,9 @@ public partial class RichEditorView : UserControl
     public string Placeholder { get; set; } = "";
 
     public event EventHandler<string>? ContentChanged;
+
+    /// <summary>O texto mudou desde o último conteúdo entregue (o conteúdo em si vem com <see cref="FlushAsync"/>).</summary>
+    public event EventHandler? Dirty;
     public event EventHandler<EditorFormatState>? FormatChanged;
     public event EventHandler<(string Name, byte[] Data)>? FileDropped;
     public event EventHandler<string>? FileTooLarge;
@@ -175,6 +178,9 @@ public partial class RichEditorView : UserControl
                     _pendingFocusStart = false;
                     FocusStart();
                 }
+                break;
+            case "dirty":
+                Dirty?.Invoke(this, EventArgs.Empty);
                 break;
             case "content":
                 ContentChanged?.Invoke(this, Str("html"));

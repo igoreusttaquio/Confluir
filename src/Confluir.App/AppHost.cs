@@ -80,6 +80,7 @@ public static class AppHost
 
         builder.Services.AddSingleton(LocalizationService.Instance);
         builder.Services.AddSingleton<ThemeService>();
+        builder.Services.AddSingleton<FontService>();
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IUrlLauncher, UrlLauncher>();
         builder.Services.AddSingleton<AccountService>();
@@ -87,6 +88,7 @@ public static class AppHost
         builder.Services.AddSingleton<ReadingServices>();
         builder.Services.AddSingleton<DraftService>();
         builder.Services.AddSingleton<ComposeServices>();
+        builder.Services.AddSingleton<SettingsServices>();
 
         builder.Services.AddSingleton<AppearanceViewModel>();
         builder.Services.AddSingleton<MainWindowViewModel>();

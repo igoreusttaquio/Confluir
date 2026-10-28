@@ -10,7 +10,8 @@ namespace Confluir.App.Services;
 /// O conteúdo entra depois de carregar (<c>setContent</c>), sem o limite de tamanho de NavigateToString.
 /// </summary>
 /// <remarks>
-/// Mensagens para o app (JSON): <c>ready</c>, <c>content</c> (html), <c>state</c> (formatação no cursor),
+/// Mensagens para o app (JSON): <c>ready</c>, <c>dirty</c> (o texto mudou), <c>content</c> (html, quando pedido),
+/// <c>state</c> (formatação no cursor),
 /// <c>file</c> (arquivo solto no editor, em base64), <c>send</c> (Ctrl+Enter) e <c>escape</c>.
 /// </remarks>
 public static class EditorDocument
@@ -55,14 +56,16 @@ public static class EditorDocument
                 if (window.invokeCSharpAction) window.invokeCSharpAction(s);
                 else if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(s);
               };
-              let saved = null, timer = null, last = '';
+              // Digitar só avisa que mudou (uma vez por rodada); o HTML vai para o app quando ele pede (flush),
+              // para não mandar o documento inteiro, que pode ter megabytes de citação, a cada tecla.
+              let saved = null, last = '', dirtySent = false;
               const flush = () => {
-                clearTimeout(timer);
+                dirtySent = false;
                 const html = ed.innerHTML;
                 if (html !== last) { last = html; send({ type: 'content', html }); }
                 else send({ type: 'flushed' });
               };
-              const changed = () => { clearTimeout(timer); timer = setTimeout(flush, 150); };
+              const changed = () => { if (!dirtySent) { dirtySent = true; send({ type: 'dirty' }); } };
               const state = () => send({ type: 'state',
                 bold: document.queryCommandState('bold'), italic: document.queryCommandState('italic'),
                 underline: document.queryCommandState('underline'), strike: document.queryCommandState('strikeThrough'),
