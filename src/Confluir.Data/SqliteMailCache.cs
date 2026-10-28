@@ -312,7 +312,7 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
     // Fila --------------------------------------------------------------------------------------
 
     public Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null,
-        string? targetFolder = null, CancellationToken ct = default) =>
+        string? targetFolder = null, DateTimeOffset? notBefore = null, CancellationToken ct = default) =>
         WriteAsync(async (c, tx) =>
         {
             // Lida/não lida e sinalizada/não sinalizada: só a última intenção importa.
@@ -329,8 +329,8 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
                     new { m = messageId.ToString(), kinds = opposites }, tx, cancellationToken: ct));
             }
             await c.ExecuteAsync(new CommandDefinition("""
-                INSERT INTO pending_ops (account_id, message_id, kind, created_at, folder_name, folder_id, uid, target_folder)
-                VALUES (@a, @m, @k, @t, @folderName, @folderId, @uid, @target)
+                INSERT INTO pending_ops (account_id, message_id, kind, created_at, folder_name, folder_id, uid, target_folder, not_before_ms)
+                VALUES (@a, @m, @k, @t, @folderName, @folderId, @uid, @target, @notBefore)
                 """,
                 new
                 {
@@ -342,6 +342,7 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
                     folderId = location?.FolderId.ToString(),
                     uid = location is null ? (long?)null : location.Uid,
                     target = targetFolder,
+                    notBefore = notBefore?.ToUnixTimeMilliseconds(),
                 }, tx, cancellationToken: ct));
         }, ct);
 
@@ -351,7 +352,8 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<PendingRow>(new CommandDefinition("""
             SELECT id AS Id, account_id AS AccountId, message_id AS MessageId, kind AS Kind, attempts AS Attempts,
-                   folder_name AS FolderName, folder_id AS FolderId, uid AS Uid, target_folder AS TargetFolder
+                   folder_name AS FolderName, folder_id AS FolderId, uid AS Uid, target_folder AS TargetFolder,
+                   not_before_ms AS NotBeforeMs
             FROM pending_ops WHERE account_id = @a ORDER BY id
             """, new { a = accountId.ToString() }, cancellationToken: ct));
         return rows.Select(r =>
@@ -361,9 +363,35 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
             var location = r.FolderName is not null && r.FolderId is not null && r.Uid is { } uid
                 ? new MessageLocation(message, account, Guid.Parse(r.FolderId), r.FolderName, (uint)uid)
                 : null;
-            return new PendingOperation(r.Id, account, message, (OperationKind)r.Kind, (int)r.Attempts, location, r.TargetFolder);
+            return new PendingOperation(r.Id, account, message, (OperationKind)r.Kind, (int)r.Attempts, location, r.TargetFolder,
+                r.NotBeforeMs is { } ms ? DateTimeOffset.FromUnixTimeMilliseconds(ms) : null);
         }).ToList();
     }
+    public async Task<PendingOperation?> CancelPendingRemovalAsync(Guid messageId, CancellationToken ct = default)
+    {
+        await ThreadPoolSwitch.Instance;
+        PendingOperation? cancelled = null;
+        await WriteAsync(async (c, tx) =>
+        {
+            var row = await c.QuerySingleOrDefaultAsync<PendingRow>(new CommandDefinition("""
+                SELECT id AS Id, account_id AS AccountId, message_id AS MessageId, kind AS Kind, attempts AS Attempts,
+                       folder_name AS FolderName, folder_id AS FolderId, uid AS Uid, target_folder AS TargetFolder,
+                       not_before_ms AS NotBeforeMs
+                FROM pending_ops
+                WHERE message_id = @m AND kind IN @kinds AND folder_id IS NOT NULL
+                ORDER BY id DESC LIMIT 1
+                """, new { m = messageId.ToString(), kinds = new[] { (int)OperationKind.Archive, (int)OperationKind.Delete, (int)OperationKind.Move } },
+                tx, cancellationToken: ct));
+            if (row is null)
+                return;
+            await c.ExecuteAsync(new CommandDefinition("DELETE FROM pending_ops WHERE id = @id", new { id = row.Id }, tx, cancellationToken: ct));
+            var account = Guid.Parse(row.AccountId);
+            cancelled = new PendingOperation(row.Id, account, messageId, (OperationKind)row.Kind, (int)row.Attempts,
+                new MessageLocation(messageId, account, Guid.Parse(row.FolderId!), row.FolderName!, (uint)row.Uid!.Value), row.TargetFolder);
+        }, ct);
+        return cancelled;
+    }
+
     public Task CompleteAsync(long operationId, CancellationToken ct = default) =>
         WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition(
             "DELETE FROM pending_ops WHERE id = @id", new { id = operationId }, tx, cancellationToken: ct)), ct);
@@ -464,5 +492,6 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
         public string? FolderId { get; set; }
         public long? Uid { get; set; }
         public string? TargetFolder { get; set; }
+        public long? NotBeforeMs { get; set; }
     }
 }

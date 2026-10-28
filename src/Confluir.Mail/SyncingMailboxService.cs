@@ -23,6 +23,9 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     private static readonly TimeSpan ProgressThrottle = TimeSpan.FromMilliseconds(500);
     private const int MaxOperationAttempts = 3;
 
+    /// <summary>Arquivar/excluir esperam isto na fila antes de ir ao servidor: é a janela do "Desfazer".</summary>
+    public static readonly TimeSpan UndoWindow = TimeSpan.FromSeconds(15);
+
     private readonly IAccountStore _accounts;
     private readonly IMailCache _cache;
     private readonly ImapSyncEngine _engine;
@@ -105,10 +108,23 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
             () => _cache.SetFlaggedAsync(messageId, isFlagged, ct), keepLocation: false, ct);
 
     public Task ArchiveAsync(Guid messageId, CancellationToken ct = default) =>
-        EnqueueAsync(messageId, OperationKind.Archive, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct);
+        EnqueueAsync(messageId, OperationKind.Archive, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct,
+            DateTimeOffset.UtcNow + UndoWindow);
 
-public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
-        EnqueueAsync(messageId, OperationKind.Delete, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct);
+    public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
+        EnqueueAsync(messageId, OperationKind.Delete, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct,
+            DateTimeOffset.UtcNow + UndoWindow);
+
+    public async Task<bool> UndoRemoveAsync(MessageSummary message, CancellationToken ct = default)
+    {
+        // Só enquanto a remoção não foi ao servidor: aí basta tirá-la da fila e devolver a mensagem ao cache.
+        if (await _cache.CancelPendingRemovalAsync(message.Id, ct) is not { Location: { } location })
+            return false;
+        await _cache.UpsertMessagesAsync(location.FolderId,
+            [new CachedMessage(message with { FolderId = location.FolderId }, location.Uid)], ct);
+        RaiseChanged(location.AccountId, foldersChanged: false);
+        return true;
+    }
 
     public async Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default)
     {
@@ -116,7 +132,7 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
         if (location is null || location.FolderFullName == folderFullName)
             return;
         await _cache.DeleteMessageAsync(messageId, ct);
-        await _cache.EnqueueAsync(location.AccountId, messageId, OperationKind.Move, location, folderFullName, ct);
+        await _cache.EnqueueAsync(location.AccountId, messageId, OperationKind.Move, location, folderFullName, ct: ct);
         Wake(location.AccountId);
     }
 
@@ -197,7 +213,7 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
             if (kind is { } destination && (destination != OperationKind.Move || target != location.FolderFullName))
             {
                 await _cache.DeleteMessageAsync(id, ct);
-                await _cache.EnqueueAsync(account.Id, id, destination, location, target, ct);
+                await _cache.EnqueueAsync(account.Id, id, destination, location, target, ct: ct);
             }
         }
         if (outcomes.Count > 0)
@@ -217,15 +233,18 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
 
     /// <param name="keepLocation">A ação tira a mensagem do cache: a fila guarda onde ela estava no servidor.</param>
     private async Task EnqueueAsync(Guid messageId, OperationKind kind, Func<Task> applyLocally, bool keepLocation,
-        CancellationToken ct)
+        CancellationToken ct, DateTimeOffset? notBefore = null)
     {
         var location = await _cache.GetLocationAsync(messageId, ct);
         if (location is null)
             return;
         await applyLocally();
-        await _cache.EnqueueAsync(location.AccountId, messageId, kind, keepLocation ? location : null, ct: ct);
+        await _cache.EnqueueAsync(location.AccountId, messageId, kind, keepLocation ? location : null, notBefore: notBefore, ct: ct);
         if (_runners.TryGetValue(location.AccountId, out var runner))
             runner.Wake(queue: true);
+        // Passada a janela do "Desfazer", acorda a fila de novo para enviar.
+        if (notBefore is { } due)
+            _ = Task.Delay(due - DateTimeOffset.UtcNow + TimeSpan.FromSeconds(1)).ContinueWith(_ => Wake(location.AccountId), TaskScheduler.Default);
     }
 
     public void RequestSync(Guid? accountId = null)
@@ -421,6 +440,9 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
 
         foreach (var op in pending)
         {
+            // Ainda na janela do "Desfazer": fica para a próxima volta.
+            if (op.NotBefore is { } due && due > DateTimeOffset.UtcNow)
+                continue;
             // Mover/excluir já tiraram a mensagem do cache: usam o local guardado na fila.
             var location = op.Location ?? await _cache.GetLocationAsync(op.MessageId, ct);
             if (location is null)

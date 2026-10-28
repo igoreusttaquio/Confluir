@@ -31,8 +31,9 @@ public enum OperationKind
 
 /// <param name="Location">Onde a mensagem estava ao enfileirar (necessário para mover/excluir, que a tiram do cache na hora).</param>
 /// <param name="TargetFolder">Pasta de destino (nome completo no servidor) de <see cref="OperationKind.Move"/>.</param>
+/// <param name="NotBefore">Não enviar antes disto (janela do "Desfazer").</param>
 public sealed record PendingOperation(long Id, Guid AccountId, Guid MessageId, OperationKind Kind, int Attempts,
-    MessageLocation? Location = null, string? TargetFolder = null);
+    MessageLocation? Location = null, string? TargetFolder = null, DateTimeOffset? NotBefore = null);
 
 /// <summary>Cache local (offline) de pastas, cabeçalhos, corpos e operações pendentes.</summary>
 public interface IMailCache
@@ -89,7 +90,13 @@ public interface IMailCache
 
     // Fila de operações
     Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null,
-        string? targetFolder = null, CancellationToken ct = default);
+        string? targetFolder = null, DateTimeOffset? notBefore = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Desfazer: tira da fila a remoção (arquivar, excluir, mover) ainda não enviada desta mensagem e a retorna;
+    /// nula se já foi para o servidor.
+    /// </summary>
+    Task<PendingOperation?> CancelPendingRemovalAsync(Guid messageId, CancellationToken ct = default);
 
     Task<IReadOnlyList<PendingOperation>> GetPendingAsync(Guid accountId, CancellationToken ct = default);
 

@@ -130,6 +130,11 @@ Pump(() => vm.Detail is { IsLoading: false });
 Console.WriteLine($"arquivada saiu da lista: {vm.Rows.OfType<MessageRow>().All(r => r.Summary.Id != archived.Summary.Id)}; " +
                   $"selecionada agora: {(vm.SelectedRow as MessageRow)?.Subject}");
 Save(window, "action-archived.png");
+// Desfazer o arquivamento: a mensagem volta à lista.
+Console.WriteLine($"aviso apos arquivar: \"{vm.StatusMessage}\" com desfazer: {vm.HasStatusUndo}");
+var undoing = vm.UndoStatusCommand.ExecuteAsync(null);
+Pump(() => undoing.IsCompleted && vm.Rows.OfType<MessageRow>().Any(r => r.Summary.Id == archived.Summary.Id), 5000);
+Console.WriteLine($"desfazer devolveu a arquivada: {vm.Rows.OfType<MessageRow>().Any(r => r.Summary.Id == archived.Summary.Id)}");
 
 // Troca de idioma ao vivo (pelo seletor de Aparência), com a mensagem aberta.
 foreach (var (code, name) in new[] { ("en", "en"), ("es", "es") })

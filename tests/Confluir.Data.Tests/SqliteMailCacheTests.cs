@@ -89,6 +89,7 @@ public sealed class SqliteMailCacheTests : IDisposable
                 DROP TRIGGER messages_fts_delete;
                 DROP TRIGGER messages_fts_update;
                 DROP TABLE messages_fts;
+                ALTER TABLE pending_ops DROP COLUMN not_before_ms;
                 ALTER TABLE pending_ops DROP COLUMN target_folder;
                 ALTER TABLE messages DROP COLUMN recipients;
                 PRAGMA user_version = 1;
@@ -244,10 +245,31 @@ public sealed class SqliteMailCacheTests : IDisposable
         Assert.Equal("eu@exemplo.com ana@exemplo.com", Assert.Single(await _cache.GetMessagesAsync(inbox.Id, _ct)).Recipients);
 
         var location = await _cache.GetLocationAsync(message.Summary.Id, _ct);
-        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Move, location, "Promoções", _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Move, location, "Promoções", ct: _ct);
         var op = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
         Assert.Equal(OperationKind.Move, op.Kind);
         Assert.Equal("Promoções", op.TargetFolder);
+    }
+
+    [Fact]
+    public async Task Desfazer_cancela_a_remocao_pendente_e_devolve_o_local()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        var message = Message(inbox, 11);
+        await _cache.UpsertMessagesAsync(inbox.Id, [message], _ct);
+        var location = await _cache.GetLocationAsync(message.Summary.Id, _ct);
+        var due = DateTimeOffset.UtcNow.AddSeconds(15);
+
+        await _cache.DeleteMessageAsync(message.Summary.Id, _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Archive, location, notBefore: due, ct: _ct);
+        var queued = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
+        Assert.Equal(due.ToUnixTimeMilliseconds(), queued.NotBefore!.Value.ToUnixTimeMilliseconds());
+
+        var cancelled = await _cache.CancelPendingRemovalAsync(message.Summary.Id, _ct);
+        Assert.Equal(location, cancelled!.Location);
+        Assert.Empty(await _cache.GetPendingAsync(_account, _ct));
+        Assert.Null(await _cache.CancelPendingRemovalAsync(message.Summary.Id, _ct)); // nada mais a desfazer
     }
 
     [Fact]

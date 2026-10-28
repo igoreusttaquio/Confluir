@@ -133,6 +133,11 @@ public sealed class Database
             WHERE rowid = old.rowid;
         END;
         """,
+
+        // v9: arquivar/excluir esperam alguns segundos na fila (o "Desfazer" cancela antes de ir ao servidor).
+        """
+        ALTER TABLE pending_ops ADD COLUMN not_before_ms INTEGER;
+        """,
     ];
 
     private readonly string _connectionString;

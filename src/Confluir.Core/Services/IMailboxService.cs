@@ -52,6 +52,12 @@ public interface IMailboxService
     Task DeleteAsync(Guid messageId, CancellationToken ct = default);
 
     /// <summary>Move para outra pasta da mesma conta (nome completo no servidor).</summary>
+    /// <summary>
+    /// Desfaz arquivar/excluir se ainda não foi ao servidor (janela de alguns segundos): a mensagem volta ao lugar.
+    /// Falso se já foi enviado.
+    /// </summary>
+    Task<bool> UndoRemoveAsync(MessageSummary message, CancellationToken ct = default);
+
     Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default);
 
     /// <summary>Aplica uma regra às mensagens que já estão na caixa de entrada; retorna quantas foram afetadas.</summary>

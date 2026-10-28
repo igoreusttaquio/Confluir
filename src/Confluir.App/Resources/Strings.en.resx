@@ -377,6 +377,7 @@
   <data name="Feedback_Read_Other"><value>{0:N0} messages marked as read</value></data>
   <data name="Feedback_Unread_One"><value>Message marked as unread</value></data>
   <data name="Feedback_Unread_Other"><value>{0:N0} messages marked as unread</value></data>
+  <data name="Undo_TooLate"><value>Some messages had already reached the server and weren&apos;t restored.</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>

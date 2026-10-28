@@ -377,6 +377,7 @@
   <data name="Feedback_Read_Other"><value>{0:N0} mensajes marcados como leídos</value></data>
   <data name="Feedback_Unread_One"><value>Mensaje marcado como no leído</value></data>
   <data name="Feedback_Unread_Other"><value>{0:N0} mensajes marcados como no leídos</value></data>
+  <data name="Undo_TooLate"><value>Algunos mensajes ya habían llegado al servidor y no se recuperaron.</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

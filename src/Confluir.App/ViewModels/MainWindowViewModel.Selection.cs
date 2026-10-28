@@ -63,17 +63,43 @@ public async Task ArchiveRowsAsync(IReadOnlyList<MessageRow> rows)
         var archivable = rows.Where(CanArchiveRow).ToList();
         if (archivable.Count == 0)
             return;
+        var originals = Snapshot(archivable);
         await RemoveRowsAsync(archivable, _mailbox.ArchiveAsync);
-        ShowStatus(_loc.Plural("Feedback_Archived", archivable.Count));
+        ShowStatus(_loc.Plural("Feedback_Archived", archivable.Count), () => UndoRemovalAsync(originals));
     }
 
     public async Task DeleteRowsAsync(IReadOnlyList<MessageRow> rows)
     {
         if (rows.Count == 0)
             return;
-        var count = rows.Count;
+var originals = Snapshot(rows);
         await RemoveRowsAsync(rows, _mailbox.DeleteAsync);
-        ShowStatus(_loc.Plural("Feedback_Deleted", count));
+        ShowStatus(_loc.Plural("Feedback_Deleted", originals.Count), () => UndoRemovalAsync(originals));
+    }
+
+    /// <summary>Estado atual das mensagens (lida/sinalizada podem ter mudado nesta sessão), para devolvê-las iguais.</summary>
+    private static List<MessageSummary> Snapshot(IReadOnlyList<MessageRow> rows) =>
+        rows.Select(r => r.Summary with { IsRead = r.IsRead, IsFlagged = r.IsFlagged }).ToList();
+
+    /// <summary>Desfazer arquivar/excluir: volta o que ainda não foi ao servidor e recarrega a lista.</summary>
+    private async Task UndoRemovalAsync(IReadOnlyList<MessageSummary> messages)
+    {
+        var restored = 0;
+        foreach (var message in messages)
+        {
+            try
+            {
+                if (await _mailbox.UndoRemoveAsync(message))
+                    restored++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao desfazer a remoção");
+            }
+        }
+        RefreshList();
+        if (restored < messages.Count)
+            ShowStatus(Strings.Undo_TooLate);
     }
 
     /// <summary>Se alguma não está sinalizada, sinaliza todas; senão tira a sinalização de todas.</summary>

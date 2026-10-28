@@ -197,10 +197,27 @@ public sealed class FakeMailboxService : IMailboxService
         return Task.FromResult(count);
     }
 
+    private readonly Dictionary<Guid, MessageSummary> _removed = [];
+
+    public Task<bool> UndoRemoveAsync(MessageSummary message, CancellationToken ct = default)
+    {
+        if (!_removed.Remove(message.Id, out var original))
+            return Task.FromResult(false);
+        var restored = message with { FolderId = original.FolderId };
+        var list = _messages[original.FolderId];
+        var index = list.FindIndex(m => m.Date < restored.Date);
+        list.Insert(index < 0 ? list.Count : index, restored);
+        _byId[restored.Id] = restored;
+        return Task.FromResult(true);
+    }
+
     private Task Remove(Guid messageId)
     {
         if (_byId.Remove(messageId, out var m))
+        {
             _messages[m.FolderId].Remove(m);
+            _removed[m.Id] = m;
+        }
         return Task.CompletedTask;
     }
 
