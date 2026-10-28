@@ -25,6 +25,12 @@
       <SolidColorBrush x:Key="Brand.Teal" Color="#14C7B4" />
       <SolidColorBrush x:Key="Brand.Amber" Color="#FFB938" />
 
+      <!-- Cantos: controles (botões, campos, combos) e sobreposições (menus, flyouts, dicas) -->
+      <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+      <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
+      <!-- Painéis (lista, leitura, páginas) como cartões -->
+      <CornerRadius x:Key="PanelCornerRadius">14</CornerRadius>
+
       <!-- Altura comum dos cabeçalhos de painel (lista e leitura), para as bordas ficarem alinhadas -->
       <x:Double x:Key="PaneHeaderHeight">64</x:Double>
 

@@ -71,7 +71,8 @@
     </Style>
   </UserControl.Styles>
 
-  <Border Classes="panel" Background="{DynamicResource SurfaceAlt}" ClipToBounds="True">
+  <!-- Cartão como os demais, com o mesmo respiro de 8px também na borda esquerda da janela -->
+  <Border Classes="panel" Background="{DynamicResource SurfaceAlt}" ClipToBounds="True" Margin="8,8,8,8">
     <!-- As duas versões ficam sobrepostas e trocam por esmaecimento enquanto a coluna anima a largura. -->
     <Panel Classes="sidebarRoot" Classes.collapsed="{Binding IsSidebarCollapsed}">
     <!-- Barra recolhida: faixa de ícones (caixa unificada, uma bolinha por conta e o rodapé). -->

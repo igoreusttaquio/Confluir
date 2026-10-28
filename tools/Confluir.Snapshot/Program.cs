@@ -194,6 +194,28 @@ ruleEditor.IsDestinationArchive = true;
 Save(window, "rule-editor.png");
 vm.GoBackCommand.Execute(null);
 
+// Busca com o filtro avançado aberto.
+vm.SearchText = "orcamento";
+vm.IsAdvancedSearchOpen = true;
+await vm.SearchNowCommand.ExecuteAsync(null);
+Pump(() => !vm.IsListLoading && vm.Rows.Count > 0);
+Save(window, "search.png");
+vm.IsAdvancedSearchOpen = false;
+await vm.ClearSearchCommand.ExecuteAsync(null);
+Pump(() => !vm.IsSearchActive && !vm.IsListLoading);
+
+// Seleção de várias mensagens: barra e painel de ações em lote.
+{
+    var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
+    list.SelectedItems!.Clear();
+    foreach (var r in vm.Rows.OfType<MessageRow>().Skip(1).Take(3))
+        list.SelectedItems.Add(r);
+    Pump(() => vm.HasMultipleSelection);
+    Save(window, "multi-select.png");
+    list.SelectedItems.Clear();
+    Pump(() => !vm.HasMultipleSelection);
+}
+
 // Clique direito numa mensagem: o menu de contexto precisa abrir com as ações.
 {
     var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
@@ -204,11 +226,12 @@ vm.GoBackCommand.Execute(null);
     var point = container.TranslatePoint(new Point(40, 10), window)!.Value;
     window.MouseDown(point, MouseButton.Right);
     window.MouseUp(point, MouseButton.Right);
-    var rowMenu = list.ContextMenu;
+    var rowMenu = list.ContextFlyout as MenuFlyout;
     Pump(() => rowMenu?.IsOpen == true, 2000);
     var headers = rowMenu?.Items.OfType<MenuItem>().Where(i => i.IsVisible).Select(i => i.Header?.ToString()) ?? [];
     Console.WriteLine($"menu de contexto aberto: {rowMenu?.IsOpen == true}; itens: {string.Join(" | ", headers)}");
-    rowMenu?.Close();
+    rowMenu?.Hide();
+    Pump(() => rowMenu?.IsOpen != true, 1000);
 
 }
 
@@ -224,6 +247,10 @@ vm.GoBackCommand.Execute(null);
     window.KeyPress(Key.S, RawInputModifiers.Control | RawInputModifiers.Shift, PhysicalKey.S, "S");
     Pump(() => row.IsRead != read && row.IsFlagged != flagged, 1500);
     Console.WriteLine($"atalhos: Ctrl+Q alternou lida: {row.IsRead != read}; Ctrl+Shift+S alternou sinalizada: {row.IsFlagged != flagged}");
+    Console.WriteLine($"aviso: \"{vm.StatusMessage}\" com desfazer: {vm.HasStatusUndo}");
+    Save(window, "feedback-toast.png");
+    await vm.UndoStatusCommand.ExecuteAsync(null);
+    Console.WriteLine($"desfazer voltou a sinalização: {row.IsFlagged == flagged}");
     window.GetVisualDescendants().OfType<MessageListView>().First().FocusSearch();
     Pump(() => true);
     window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, null);

@@ -67,7 +67,9 @@
     <views:ReadingPaneView x:Name="ReadingPane" Grid.Column="4" Classes="home" />
 
     <!-- Páginas navegadas (adicionar conta, configurações…) sobre a área de conteúdo -->
-    <Border x:Name="PageHost" Grid.Column="2" Grid.ColumnSpan="3" ZIndex="1" Background="{DynamicResource Background}">
+    <Border x:Name="PageHost" Grid.Column="2" Grid.ColumnSpan="3" ZIndex="1" Background="{DynamicResource Background}"
+            Padding="0,8,8,8">
+      <Border CornerRadius="{DynamicResource PanelCornerRadius}" ClipToBounds="True" BorderBrush="{DynamicResource Border}" BorderThickness="1">
       <TransitioningContentControl Content="{Binding Navigation.DisplayedPage}">
         <TransitioningContentControl.PageTransition>
           <CompositePageTransition>
@@ -93,6 +95,7 @@
           </DataTemplate>
         </TransitioningContentControl.DataTemplates>
       </TransitioningContentControl>
+      </Border>
     </Border>
 
     <!-- Aviso temporário (ex.: "Mensagem enviada"). Fica sobre a lista: o painel de leitura é um WebView nativo,
@@ -102,7 +105,10 @@
             Background="{DynamicResource TextPrimary}" CornerRadius="10" Padding="16,10">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <LucideIcon Kind="CircleCheck" Size="16" Foreground="{DynamicResource Surface}" />
-        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource Surface}" FontSize="13" />
+        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource Surface}" FontSize="13" VerticalAlignment="Center" />
+        <Button Content="{l:Tr Status_Undo}" Command="{Binding UndoStatusCommand}" IsVisible="{Binding HasStatusUndo}"
+                Padding="8,2" Margin="6,-4,-8,-4" Background="Transparent" BorderThickness="0" FontWeight="SemiBold"
+                Foreground="{DynamicResource Surface}" TextElement.FontWeight="Bold" />
       </StackPanel>
     </Border>
   </Grid>

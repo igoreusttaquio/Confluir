@@ -364,6 +364,19 @@
   <data name="Notify_AndMore"><value>e mais {0}</value></data>
   <data name="Notify_TestTitle"><value>Confluir</value></data>
   <data name="Notify_TestBody"><value>As notificações estão funcionando.</value></data>
+  <data name="Status_Undo"><value>Desfazer</value></data>
+  <data name="Feedback_Archived_One"><value>Mensagem arquivada</value></data>
+  <data name="Feedback_Archived_Other"><value>{0:N0} mensagens arquivadas</value></data>
+  <data name="Feedback_Deleted_One"><value>Mensagem excluída</value></data>
+  <data name="Feedback_Deleted_Other"><value>{0:N0} mensagens excluídas</value></data>
+  <data name="Feedback_Flagged_One"><value>Mensagem sinalizada</value></data>
+  <data name="Feedback_Flagged_Other"><value>{0:N0} mensagens sinalizadas</value></data>
+  <data name="Feedback_Unflagged_One"><value>Sinalização removida</value></data>
+  <data name="Feedback_Unflagged_Other"><value>Sinalização removida de {0:N0} mensagens</value></data>
+  <data name="Feedback_Read_One"><value>Mensagem marcada como lida</value></data>
+  <data name="Feedback_Read_Other"><value>{0:N0} mensagens marcadas como lidas</value></data>
+  <data name="Feedback_Unread_One"><value>Mensagem marcada como não lida</value></data>
+  <data name="Feedback_Unread_Other"><value>{0:N0} mensagens marcadas como não lidas</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

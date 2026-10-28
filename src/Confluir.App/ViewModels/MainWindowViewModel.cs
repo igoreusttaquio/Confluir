@@ -172,9 +172,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         _folderNodes.Values.Any(f => f.Account.Id == message.Row.Account.Id && f.Folder.Kind == SpecialFolderKind.Archive) &&
         !(_folderNodes.TryGetValue(message.Row.Summary.FolderId, out var current) && current.Folder.Kind == SpecialFolderKind.Archive);
 
-    public Task ArchiveAsync(MessageDetailViewModel message) => RemoveFromListAsync(message, _mailbox.ArchiveAsync);
+    public Task ArchiveAsync(MessageDetailViewModel message) => ArchiveRowsAsync([message.Row]);
 
-    public Task DeleteAsync(MessageDetailViewModel message) => RemoveFromListAsync(message, _mailbox.DeleteAsync);
+    public Task DeleteAsync(MessageDetailViewModel message) => DeleteRowsAsync([message.Row]);
 
     // Composição --------------------------------------------------------------------------------------
 
@@ -285,32 +285,47 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     public bool HasStatus => StatusMessage is not null;
 
+    /// <summary>"Desfazer" do aviso atual (nulo = sem botão).</summary>
+    private Func<Task>? _statusUndo;
+
+    [ObservableProperty]
+    public partial bool HasStatusUndo { get; private set; }
+
+    [RelayCommand]
+    private async Task UndoStatusAsync()
+    {
+        var undo = _statusUndo;
+        _statusUndo = null;
+        HasStatusUndo = false;
+        StatusMessage = null;
+        if (undo is not null)
+            await undo();
+    }
+
     private int _statusId;
 
-    public void ShowStatus(string message)
+    public void ShowStatus(string message) => ShowStatus(message, null);
+
+    /// <param name="undo">Ação do botão "Desfazer" (o aviso fica um pouco mais na tela).</param>
+    public void ShowStatus(string message, Func<Task>? undo)
     {
         StatusMessage = message;
+        _statusUndo = undo;
+        HasStatusUndo = undo is not null;
         var id = ++_statusId;
         DispatcherTimer.RunOnce(() =>
         {
-            if (id == _statusId)
-                StatusMessage = null;
-        }, TimeSpan.FromSeconds(Math.Clamp(message.Length / 12.0, 4, 12)));
+            if (id != _statusId)
+                return;
+            StatusMessage = null;
+            _statusUndo = null;
+            HasStatusUndo = false;
+        }, TimeSpan.FromSeconds(Math.Clamp(message.Length / 12.0, undo is null ? 4 : 7, 12)));
     }
 
-    public async Task ToggleFlagAsync(MessageDetailViewModel message)
-    {
-        var row = message.Row;
-        row.IsFlagged = !row.IsFlagged;
-        await _mailbox.SetFlaggedAsync(row.Summary.Id, row.IsFlagged);
-    }
+    public Task ToggleFlagAsync(MessageDetailViewModel message) => ToggleFlagRowsAsync([message.Row]);
 
-    public async Task ToggleReadAsync(MessageDetailViewModel message)
-    {
-        var row = message.Row;
-        SetRead(row, !row.IsRead);
-        await _mailbox.SetReadAsync(row.Summary.Id, row.IsRead);
-    }
+    public Task ToggleReadAsync(MessageDetailViewModel message) => ToggleReadRowsAsync([message.Row]);
 
     /// <summary>
     /// Arquivar/excluir: tira a mensagem da lista na hora, ajusta contadores, fecha a tela própria (se aberta)

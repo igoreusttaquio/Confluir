@@ -83,14 +83,16 @@
       </StackPanel>
 
       <!-- Remetente, destinatários e data -->
-      <Grid ColumnDefinitions="Auto,*,Auto">
+      <!-- Remetente, destinatários e data em linhas próprias com a largura toda: nada quebra letra por letra
+           nem espreme o nome com o painel estreito. -->
+      <Grid ColumnDefinitions="Auto,*">
         <Border Width="40" Height="40" CornerRadius="20" VerticalAlignment="Top"
                 Background="{Binding AvatarColor, Converter={x:Static conv:HexToBrushConverter.Instance}}">
           <TextBlock Text="{Binding Initials}" Foreground="{DynamicResource OnAccountColor}" FontWeight="SemiBold"
                      HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
-        <StackPanel Grid.Column="1" Margin="12,0" Spacing="2">
-          <SelectableTextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}">
+        <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2">
+          <SelectableTextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap">
             <Run Text="{Binding FromName}" />
             <Run Text="{Binding FromAddress, StringFormat='&lt;{0}&gt;'}" FontWeight="Normal"
                  Foreground="{DynamicResource TextSecondary}" FontSize="13" />
@@ -101,8 +103,8 @@
           <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" IsVisible="{Binding HasCc}">
             <Run Text="{l:Tr Reading_Cc}" /><Run Text=": " /><Run Text="{Binding Cc}" />
           </SelectableTextBlock>
+          <TextBlock Text="{Binding DateText}" Classes="caption" TextWrapping="Wrap" />
         </StackPanel>
-        <TextBlock Grid.Column="2" Text="{Binding DateText}" Classes="caption" />
       </Grid>
 
       <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" />

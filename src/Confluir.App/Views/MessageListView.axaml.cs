@@ -24,12 +24,12 @@ public partial class MessageListView : UserControl
         Messages.AddHandler(PointerPressedEvent, (_, e) =>
         {
             if (e.GetCurrentPoint(Messages).Properties.IsRightButtonPressed)
-                RowMenu.DataContext = (e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as MessageRow;
+                SetMenuRow((e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as MessageRow);
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
         Messages.AddHandler(KeyDownEvent, (_, e) =>
         {
             if (e.Key == Key.Apps || (e.Key == Key.F10 && e.KeyModifiers.HasFlag(KeyModifiers.Shift)))
-                RowMenu.DataContext = ViewModel?.SelectedRow as MessageRow;
+                SetMenuRow(ViewModel?.SelectedRow as MessageRow);
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
 
         SearchBox.KeyDown += (_, e) =>
@@ -97,11 +97,11 @@ public partial class MessageListView : UserControl
     /// Ao abrir: a mensagem clicada passa a ser a selecionada, a menos que já faça parte de uma seleção
     /// (aí o menu vale para todas). Responder e criar regra só aparecem para uma mensagem.
     /// </summary>
-    private void OnRowMenuOpening(object? sender, CancelEventArgs e)
+    private void OnRowMenuOpening(object? sender, EventArgs e)
     {
-        if (sender is not ContextMenu { DataContext: MessageRow row } menu || ViewModel is not { } vm)
+        if (sender is not MenuFlyout menu || RowMenuRow is not { } row || ViewModel is not { } vm)
         {
-            e.Cancel = true;
+            (sender as MenuFlyout)?.Hide();
             return;
         }
         if (Messages.SelectedItems?.Contains(row) != true)
@@ -116,8 +116,20 @@ public partial class MessageListView : UserControl
             archive.IsEnabled = vm.TargetsFor(row).Any(vm.CanArchiveRow);
     }
 
+    /// <summary>A mensagem do menu: os itens (MenuItem) recebem-na como DataContext para os rótulos.</summary>
+    private MessageRow? RowMenuRow { get; set; }
+
+    private MenuFlyout RowMenu => (MenuFlyout)Messages.ContextFlyout!;
+
+    private void SetMenuRow(MessageRow? row)
+    {
+        RowMenuRow = row;
+        foreach (var item in RowMenu.Items.OfType<Control>())
+            item.DataContext = row;
+    }
+
     private (MainWindowViewModel Vm, IReadOnlyList<MessageRow> Targets, MessageRow Row)? Targets(object? sender) =>
-        sender is MenuItem { DataContext: MessageRow row } && ViewModel is { } vm ? (vm, vm.TargetsFor(row), row) : null;
+        RowMenuRow is { } row && ViewModel is { } vm ? (vm, vm.TargetsFor(row), row) : null;
 
     private void OnMenuReply(object? sender, RoutedEventArgs e)
     {

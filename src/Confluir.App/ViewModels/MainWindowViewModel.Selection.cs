@@ -58,16 +58,31 @@ public sealed partial class MainWindowViewModel
         _folderNodes.Values.Any(f => f.Account.Id == row.Account.Id && f.Folder.Kind == SpecialFolderKind.Archive) &&
         !(_folderNodes.TryGetValue(row.Summary.FolderId, out var current) && current.Folder.Kind == SpecialFolderKind.Archive);
 
-    public Task ArchiveRowsAsync(IReadOnlyList<MessageRow> rows) =>
-        RemoveRowsAsync(rows.Where(CanArchiveRow).ToList(), _mailbox.ArchiveAsync);
+public async Task ArchiveRowsAsync(IReadOnlyList<MessageRow> rows)
+    {
+        var archivable = rows.Where(CanArchiveRow).ToList();
+        if (archivable.Count == 0)
+            return;
+        await RemoveRowsAsync(archivable, _mailbox.ArchiveAsync);
+        ShowStatus(_loc.Plural("Feedback_Archived", archivable.Count));
+    }
 
-    public Task DeleteRowsAsync(IReadOnlyList<MessageRow> rows) => RemoveRowsAsync(rows, _mailbox.DeleteAsync);
+    public async Task DeleteRowsAsync(IReadOnlyList<MessageRow> rows)
+    {
+        if (rows.Count == 0)
+            return;
+        var count = rows.Count;
+        await RemoveRowsAsync(rows, _mailbox.DeleteAsync);
+        ShowStatus(_loc.Plural("Feedback_Deleted", count));
+    }
 
     /// <summary>Se alguma não está sinalizada, sinaliza todas; senão tira a sinalização de todas.</summary>
-    public async Task ToggleFlagRowsAsync(IReadOnlyList<MessageRow> rows)
+    public Task ToggleFlagRowsAsync(IReadOnlyList<MessageRow> rows) => SetFlagRowsAsync(rows, rows.Any(r => !r.IsFlagged), feedback: true);
+
+    private async Task SetFlagRowsAsync(IReadOnlyList<MessageRow> rows, bool flag, bool feedback)
     {
-        var flag = rows.Any(r => !r.IsFlagged);
-        foreach (var row in rows.Where(r => r.IsFlagged != flag))
+        var changed = rows.Where(r => r.IsFlagged != flag).ToList();
+        foreach (var row in changed)
         {
             row.IsFlagged = flag;
             try
@@ -81,13 +96,18 @@ public sealed partial class MainWindowViewModel
             }
         }
         RaiseSelectionLabels();
+        if (feedback && changed.Count > 0)
+            ShowStatus(_loc.Plural(flag ? "Feedback_Flagged" : "Feedback_Unflagged", changed.Count),
+                () => SetFlagRowsAsync(changed, !flag, feedback: false));
     }
 
     /// <summary>Se alguma não foi lida, marca todas como lidas; senão marca todas como não lidas.</summary>
-    public async Task ToggleReadRowsAsync(IReadOnlyList<MessageRow> rows)
+    public Task ToggleReadRowsAsync(IReadOnlyList<MessageRow> rows) => SetReadRowsAsync(rows, rows.Any(r => !r.IsRead), feedback: true);
+
+    private async Task SetReadRowsAsync(IReadOnlyList<MessageRow> rows, bool read, bool feedback)
     {
-        var read = rows.Any(r => !r.IsRead);
-        foreach (var row in rows.Where(r => r.IsRead != read))
+        var changed = rows.Where(r => r.IsRead != read).ToList();
+        foreach (var row in changed)
         {
             SetRead(row, read);
             try
@@ -101,6 +121,9 @@ public sealed partial class MainWindowViewModel
             }
         }
         RaiseSelectionLabels();
+        if (feedback && changed.Count > 0)
+            ShowStatus(_loc.Plural(read ? "Feedback_Read" : "Feedback_Unread", changed.Count),
+                () => SetReadRowsAsync(changed, !read, feedback: false));
     }
 
     private void RaiseSelectionLabels()

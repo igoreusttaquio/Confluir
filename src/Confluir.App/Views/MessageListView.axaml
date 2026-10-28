@@ -247,8 +247,9 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
           <!-- Botão direito numa mensagem. Fica na lista (é ela que recebe o clique: os itens capturam o mouse) e tem
                os itens fixos, como o menu das contas; recebe a mensagem clicada como DataContext (code-behind). -->
-          <ListBox.ContextMenu>
-            <ContextMenu x:Name="RowMenu" x:DataType="vm:MessageRow" Opening="OnRowMenuOpening">
+          <ListBox.ContextFlyout>
+            <MenuFlyout x:DataType="vm:MessageRow" Opening="OnRowMenuOpening" Placement="Pointer"
+                        OverlayDismissEventPassThrough="True">
               <MenuItem Header="{l:Tr Action_Reply}" Click="OnMenuReply" Classes="single">
                 <MenuItem.Icon><LucideIcon Kind="Reply" Size="16" /></MenuItem.Icon>
               </MenuItem>
@@ -269,8 +270,8 @@
               <MenuItem Header="{l:Tr Rule_FromMessage}" Click="OnMenuRule" Classes="single">
                 <MenuItem.Icon><LucideIcon Kind="ListFilter" Size="16" /></MenuItem.Icon>
               </MenuItem>
-            </ContextMenu>
-          </ListBox.ContextMenu>
+            </MenuFlyout>
+          </ListBox.ContextFlyout>
           <ListBox.DataTemplates>
             <DataTemplate DataType="vm:DateHeaderRow">
               <TextBlock Classes="groupHeader" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
