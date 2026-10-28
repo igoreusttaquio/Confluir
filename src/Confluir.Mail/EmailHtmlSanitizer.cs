@@ -8,7 +8,10 @@ namespace Confluir.Mail;
 /// <param name="BlockedRemoteImages">Imagens remotas removidas (protege contra rastreamento).</param>
 /// <param name="HasOwnBackground">O email define cores de fundo próprias (não deve receber as cores do tema escuro).</param>
 /// <param name="HasDarkText">O email fixa cores de texto escuras (ex.: Outlook com "windowtext"): ilegível sobre fundo escuro.</param>
-public sealed record SanitizedHtml(string Html, int BlockedRemoteImages, bool HasOwnBackground, bool HasDarkText = false);
+/// <param name="OuterBackground">Cor de fundo externa do email (#rrggbb), para a folha do leitor continuar o mesmo fundo;
+/// nula se não dá para saber com segurança (imagem, gradiente, cor por classe…).</param>
+public sealed record SanitizedHtml(string Html, int BlockedRemoteImages, bool HasOwnBackground, bool HasDarkText = false,
+    string? OuterBackground = null);
 
 /// <summary>
 /// Sanitiza o HTML de emails antes de exibir. Remove tudo que executa código ou envia dados
@@ -66,7 +69,8 @@ public static partial class EmailHtmlSanitizer
         };
 
 var content = sanitizer.Sanitize(ExtractBody(html));
-        return new SanitizedHtml(content, blocked, OwnBackground().IsMatch(content), HasDarkTextColor(content));
+        return new SanitizedHtml(content, blocked, OwnBackground().IsMatch(content), HasDarkTextColor(content),
+            OuterBackgroundColor(content));
     }
 
     /// <summary>
@@ -85,6 +89,107 @@ var content = sanitizer.Sanitize(ExtractBody(html));
         }
         return false;
     }
+
+    // Invólucros comuns no topo de emails (o conteúdo de verdade fica dentro deles).
+    private static readonly HashSet<string> WrapperTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "DIV", "CENTER", "TABLE", "TBODY", "THEAD", "TR", "TD", "SECTION", "MAIN", "ARTICLE",
+    };
+
+    /// <summary>
+    /// Cor de fundo do "invólucro" externo do email: o fundo do corpo ou de elementos que ocupam a largura toda e são
+    /// o único conteúdo do nível (div, center, table…). Para na caixa de conteúdo de largura fixa (ex.: 600px), que não
+    /// é o fundo externo. Nulo quando não há cor sólida reconhecível.
+    /// </summary>
+    public static string? OuterBackgroundColor(string html)
+    {
+        var document = new HtmlParser().ParseDocument($"<html><body>{html}</body></html>");
+        AngleSharp.Dom.IElement? current = null;
+        var children = Meaningful(document.Body!.Children);
+        for (var depth = 0; depth < 8 && children.Count == 1; depth++)
+        {
+            current = children[0];
+            if (!WrapperTags.Contains(current.TagName))
+                return null;
+            if (BackgroundOf(current) is { } color)
+                return IsFullWidth(current) ? color : null;
+            if (!IsFullWidth(current))
+                return null;
+            children = Meaningful(current.Children);
+        }
+        return null;
+
+        // Folhas de estilo e elementos vazios (ex.: pré-cabeçalho escondido) não contam como conteúdo.
+        static List<AngleSharp.Dom.IElement> Meaningful(AngleSharp.Dom.IHtmlCollection<AngleSharp.Dom.IElement> elements) =>
+            elements.Where(e => e.TagName is not ("STYLE" or "SCRIPT" or "META" or "LINK" or "BR") &&
+                                !(e.GetAttribute("style") ?? "").Replace(" ", "").Contains("display:none", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+    }
+
+    private static string? BackgroundOf(AngleSharp.Dom.IElement element)
+    {
+        var style = element.GetAttribute("style") ?? "";
+        // Imagem ou gradiente: a cor sozinha não representa o fundo.
+        if (style.Contains("url(", StringComparison.OrdinalIgnoreCase) || style.Contains("gradient", StringComparison.OrdinalIgnoreCase) ||
+            element.HasAttribute("background"))
+            return null;
+        var match = BackgroundDeclaration().Match(style);
+        var value = match.Success ? match.Groups["value"].Value : element.GetAttribute("bgcolor");
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        // Em "background: #f4f4f4 no-repeat", a cor é o primeiro valor reconhecível.
+        foreach (Match token in ColorToken().Matches(value))
+        {
+            if (NormalizeColor(token.Value) is { } hex)
+                return hex;
+        }
+        return null;
+    }
+
+    private static bool IsFullWidth(AngleSharp.Dom.IElement element)
+    {
+        var width = element.GetAttribute("width");
+        var style = (element.GetAttribute("style") ?? "").ToLowerInvariant();
+        var styleWidth = Regex.Match(style, @"(?<![\w-])(max-)?width\s*:\s*([^;]+)");
+        if (styleWidth.Success && !styleWidth.Groups[2].Value.Trim().StartsWith("100%", StringComparison.Ordinal))
+            return false;
+        return string.IsNullOrWhiteSpace(width) || width.Trim() == "100%";
+    }
+
+    /// <summary>Cor CSS simples como #rrggbb; nulo se não reconhecida (ou transparente).</summary>
+    public static string? NormalizeColor(string color)
+    {
+        var c = color.Trim().ToLowerInvariant();
+        if (NamedColors.TryGetValue(c, out var named))
+            return named;
+        if (c.StartsWith('#'))
+        {
+            var h = c[1..];
+            if (h.Length is 3 or 4)
+                h = string.Concat(h.Take(3).Select(ch => $"{ch}{ch}"));
+            return h.Length >= 6 && int.TryParse(h[..6], System.Globalization.NumberStyles.HexNumber, null, out _) ? "#" + h[..6] : null;
+        }
+        var fn = RgbFunction().Match(c);
+        if (!fn.Success || (c.StartsWith("rgba", StringComparison.Ordinal) && c.Contains(",0)", StringComparison.Ordinal)))
+            return null;
+        try
+        {
+            static int Part(string p) => p.EndsWith('%')
+                ? (int)Math.Round(double.Parse(p.TrimEnd('%'), System.Globalization.CultureInfo.InvariantCulture) * 2.55)
+                : (int)Math.Round(double.Parse(p, System.Globalization.CultureInfo.InvariantCulture));
+            return $"#{Math.Clamp(Part(fn.Groups[1].Value), 0, 255):x2}{Math.Clamp(Part(fn.Groups[2].Value), 0, 255):x2}{Math.Clamp(Part(fn.Groups[3].Value), 0, 255):x2}";
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    [GeneratedRegex(@"(?<![\w-])background(-color)?\s*:\s*(?<value>[^;]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex BackgroundDeclaration();
+
+    [GeneratedRegex(@"#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|\b[a-z]+\b", RegexOptions.IgnoreCase)]
+    private static partial Regex ColorToken();
 
     /// <summary>Luminância relativa (0 = preto, 1 = branco) de uma cor CSS simples; nulo se não reconhecida.</summary>
     public static double? Luminance(string color)

@@ -6,6 +6,7 @@ namespace Confluir.App.Tests;
 public class EmailDocumentBuilderTests
 {
     private static readonly ThemePalette Dark = new("#0B1020", "#111833", "#1A2347", "#26305A", "#E8ECFF", "#9AA3C7", "#7B97FF", IsDark: true);
+    private static readonly ThemePalette Light = new("#F6F7FB", "#FFFFFF", "#F1F3F9", "#E3E6EF", "#141A33", "#5B6385", "#2F5BEA", IsDark: false);
 
     private static MessageBody Body(string text = "", string? html = null) =>
         new(Guid.NewGuid(), [], [], text, [], html);
@@ -60,10 +61,11 @@ public class EmailDocumentBuilderTests
     }
 
     [Fact]
-    public void Email_com_fundo_proprio_fica_em_papel_branco_no_tema_escuro()
+    public void Email_com_fundo_proprio_usa_a_propria_cor_no_tema_escuro()
     {
+        // Tabela de largura total com fundo: a folha continua esse fundo (e não papel branco em volta).
         var doc = EmailDocumentBuilder.Build(Body(html: "<table bgcolor=\"#f4f4f4\"><tr><td>oferta</td></tr></table>"), false, Dark, EmailFonts.Default);
-        Assert.Contains(".mail { background: #FFFFFF; color: #141A33;", doc.Html);
+        Assert.Contains(".mail { background: #f4f4f4; color: #141A33;", doc.Html);
         Assert.Contains("content=\"light\"", doc.Html);
     }
 
@@ -82,6 +84,18 @@ public class EmailDocumentBuilderTests
         var papel = EmailDocumentBuilder.Build(Body(html: "<p style=\"color:#000\">oi</p>"), false, Dark, EmailFonts.Default).Html;
         foreach (var html in new[] { tema, papel })
             Assert.Contains("padding: 18px 20px; border-radius: 12px;", html);
+    }
+
+    [Fact]
+    public void Folha_usa_o_fundo_externo_do_email()
+    {
+        var claro = EmailDocumentBuilder.Build(Body(html: "<html><body bgcolor=\"#f4f4f4\"><p>oi</p></body></html>"), false, Dark, EmailFonts.Default).Html;
+        Assert.Contains(".mail { background: #f4f4f4; color: #141A33;", claro);
+        Assert.Contains("border: 1px solid #f4f4f4;", claro); // a borda some no fundo do email
+
+        // Email feito para fundo escuro: texto claro, mesmo com o app no tema claro.
+        var escuro = EmailDocumentBuilder.Build(Body(html: "<html><body style=\"background-color:#101828\"><p>oi</p></body></html>"), false, Light, EmailFonts.Default).Html;
+        Assert.Contains(".mail { background: #101828; color: #EDEFF7;", escuro);
     }
 
     [Fact]

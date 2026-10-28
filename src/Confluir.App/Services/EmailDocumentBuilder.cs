@@ -24,12 +24,15 @@ public static partial class EmailDocumentBuilder
     private const string PaperBackground = "#FFFFFF";
     private const string PaperText = "#141A33";
     private const string PaperLink = "#2F5BEA";
+    private const string PaperTextOnDark = "#EDEFF7";
+    private const string PaperLinkOnDark = "#8FA8FF";
 
     public static EmailDocument Build(MessageBody body, bool allowRemoteImages, ThemePalette palette, EmailFonts fonts)
     {
         string content;
         var blocked = 0;
         var ownBackground = false;
+        string? emailBackground = null;
 
         if (!string.IsNullOrWhiteSpace(body.HtmlBody))
         {
@@ -38,6 +41,7 @@ public static partial class EmailDocumentBuilder
             blocked = sanitized.BlockedRemoteImages;
             // Fundo próprio, ou texto escuro fixado pelo email no tema escuro: vai para o "papel" claro.
             ownBackground = sanitized.HasOwnBackground || (palette.IsDark && sanitized.HasDarkText);
+            emailBackground = sanitized.HasOwnBackground ? sanitized.OuterBackground : null;
         }
         else
         {
@@ -50,9 +54,14 @@ public static partial class EmailDocumentBuilder
                   "form-action 'none'; frame-src 'none'; base-uri 'none'";
 
         // Emails com cores próprias foram desenhados para fundo claro: ficam num "papel" branco, também no tema escuro.
-        var text = ownBackground ? PaperText : palette.TextPrimary;
-        var link = ownBackground ? PaperLink : palette.Accent;
-        var paper = ownBackground ? PaperBackground : palette.Surface;
+        // A folha continua o fundo externo do próprio email quando dá para saber qual é (sem moldura branca em volta);
+        // texto e links seguem o contraste com esse fundo. Sem cor conhecida, papel claro.
+        var paper = ownBackground ? emailBackground ?? PaperBackground : palette.Surface;
+        var paperIsDark = ownBackground && EmailHtmlSanitizer.Luminance(paper) is < 0.35;
+        var text = !ownBackground ? palette.TextPrimary : paperIsDark ? PaperTextOnDark : PaperText;
+        var link = !ownBackground ? palette.Accent : paperIsDark ? PaperLinkOnDark : PaperLink;
+        var sheetBorder = !ownBackground ? palette.Border : emailBackground ?? "#E3E6EF";
+        var quoteText = !ownBackground ? palette.TextSecondary : paperIsDark ? "#B9C0DA" : "#5B6385";
 
         var html = $$"""
             <!doctype html>
@@ -60,7 +69,7 @@ public static partial class EmailDocumentBuilder
             <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Security-Policy" content="{{csp}}">
-            <meta name="color-scheme" content="{{(palette.IsDark && !ownBackground ? "dark" : "light")}}">
+            <meta name="color-scheme" content="{{((palette.IsDark && !ownBackground) || paperIsDark ? "dark" : "light")}}">
             <style>
               {{fonts.FontFaces}}
               html, body { margin: 0; padding: 0; background: {{palette.Surface}}; }
@@ -69,12 +78,12 @@ public static partial class EmailDocumentBuilder
                      overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
               /* Todo email na mesma folha (margem, raio e borda iguais); só o fundo muda: o do tema ou o papel claro. */
               .mail { background: {{paper}}; color: {{text}}; padding: 18px 20px; border-radius: 12px;
-                      border: 1px solid {{(ownBackground ? "#E3E6EF" : palette.Border)}}; overflow-wrap: anywhere; }
+                      border: 1px solid {{sheetBorder}}; overflow-wrap: anywhere; }
               a { color: {{link}}; }
               img { max-width: 100%; height: auto; }
               table { max-width: 100%; }
               blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid {{palette.Border}};
-                           color: {{(ownBackground ? "#5B6385" : palette.TextSecondary)}}; }
+                           color: {{quoteText}}; }
               .plain { white-space: pre-wrap; }
               pre, code { font-family: {{fonts.MonoFamily}}; font-size: 0.87em; }
               ::selection { background: {{palette.Accent}}33; }
