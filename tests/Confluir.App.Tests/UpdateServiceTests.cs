@@ -66,6 +66,29 @@ public sealed class UpdateServiceTests
         Assert.Null(UpdateService.ParseRelease(Release.Replace("\"prerelease\": false", "\"prerelease\": true"), "confluir_amd64.deb"));
 
     [Fact]
+    public void Script_do_Windows_espera_o_app_e_e_valido()
+    {
+        var script = UpdateService.WindowsInstallScript(4321, @"C:\Users\o'neil\Temp\Confluir-Setup-x64.exe");
+        Assert.Contains("Get-Process -Id 4321", script);
+        Assert.Contains("WaitForExit(30000)", script);
+        Assert.Contains(@"-FilePath 'C:\Users\o''neil\Temp\Confluir-Setup-x64.exe'", script);
+        Assert.Contains("/RELAUNCH=1", script);
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        // O próprio PowerShell confere a sintaxe (sem executar).
+        var check = "$e = $null; [void][System.Management.Automation.Language.Parser]::ParseInput(" +
+                    "[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('" +
+                    Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script)) +
+                    "')), [ref]$null, [ref]$e); $e.Count";
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("powershell.exe",
+            ["-NoProfile", "-NonInteractive", "-Command", check]) { RedirectStandardOutput = true, UseShellExecute = false })!;
+        var output = process.StandardOutput.ReadToEnd().Trim();
+        process.WaitForExit();
+        Assert.Equal("0", output);
+    }
+
+    [Fact]
     public void Hash_do_arquivo_na_lista_do_sha256sum()
     {
         const string sums = "aaa111  Confluir-Setup-x64.exe\nbbb222 *confluir_amd64.deb\n";

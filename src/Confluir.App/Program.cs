@@ -12,8 +12,10 @@ internal static class Program
     {
         // O idioma (e a cultura de datas e números) é aplicado pelo LocalizationService ao iniciar o App.
         // --dados-falsos: interface com contas e mensagens de exemplo, sem tocar em servidores.
+        // --pasta-dados=<pasta>: outra pasta de dados (testes), em vez de <AppData>/Confluir.
         var useFakeData = args.Contains("--dados-falsos");
-        using var host = AppHost.Build(useFakeData: useFakeData);
+        var dataDirectory = args.FirstOrDefault(a => a.StartsWith("--pasta-dados=", StringComparison.Ordinal))?["--pasta-dados=".Length..];
+        var host = AppHost.Build(dataDirectory, useFakeData);
         var logger = host.Services.GetRequiredService<ILogger<App>>();
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             logger.LogCritical(e.ExceptionObject as Exception, "Exceção não tratada");
@@ -24,15 +26,50 @@ internal static class Program
         };
 
         host.Start();
+        var exitCode = 0;
         try
         {
             logger.LogInformation("Confluir iniciado");
-            return BuildAvaloniaApp(host.Services).StartWithClassicDesktopLifetime(args);
+            exitCode = BuildAvaloniaApp(host.Services).StartWithClassicDesktopLifetime(args);
         }
         finally
         {
-            host.StopAsync().GetAwaiter().GetResult();
+            Shutdown(host, logger);
         }
+        // Garante o fim do processo: sem isso, algo preso (conexão, thread) deixava o Confluir rodando sem
+        // janela, e o instalador da atualização não conseguia fechá-lo.
+        Environment.Exit(exitCode);
+        return exitCode;
+    }
+
+    private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Para os serviços (sincronização, IMAP) e grava o log, fora da thread da interface: o laço dela já terminou,
+    /// e uma continuação que tentasse voltar para ela esperaria para sempre. Com prazo, para nunca travar a saída.
+    /// </summary>
+    private static void Shutdown(IHost host, ILogger logger)
+    {
+        var done = Task.Run(async () =>
+        {
+            using var cts = new CancellationTokenSource(StopTimeout);
+            try
+            {
+                await host.StopAsync(cts.Token);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Falha ao parar os serviços");
+            }
+            logger.LogInformation("Confluir encerrado");
+            // Por último: descarta o provedor, que grava e fecha o log.
+            if (host is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            else
+                host.Dispose();
+        }).Wait(StopTimeout + TimeSpan.FromSeconds(3));
+        if (!done)
+            System.Diagnostics.Trace.WriteLine("Confluir: encerramento passou do prazo; saindo assim mesmo");
     }
 
     public static AppBuilder BuildAvaloniaApp(IServiceProvider services) =>

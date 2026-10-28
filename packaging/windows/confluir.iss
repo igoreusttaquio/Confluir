@@ -39,7 +39,7 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 ; Fecha o Confluir aberto antes de atualizar os arquivos.
-CloseApplications=yes
+CloseApplications=force
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -67,4 +67,15 @@ Filename: "{app}\Confluir.exe"; Flags: nowait; Check: ShouldRelaunch
 function ShouldRelaunch: Boolean;
 begin
   Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;
+
+// Atualização pelo app: um Confluir que tenha ficado aberto (por exemplo só na bandeja) impediria trocar os
+// arquivos; fecha à força antes de instalar.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  if ExpandConstant('{param:RELAUNCH|0}') = '1' then
+    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /T /IM Confluir.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Result := '';
 end;

@@ -302,12 +302,18 @@ public sealed partial class UpdateService : ObservableObject
     {
         if (OperatingSystem.IsWindows())
         {
-            // Silencioso, com barra de progresso; /RELAUNCH faz o instalador reabrir o Confluir no fim.
-            Process.Start(new ProcessStartInfo(file, "/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1")
+            // O instalador só começa depois que este processo terminar (senão os arquivos estão em uso): um
+            // PowerShell oculto espera o Confluir sair (até 30 s, depois força) e roda o instalador em modo
+            // silencioso, com barra de progresso; /RELAUNCH faz o instalador reabrir o Confluir no fim.
+            var script = WindowsInstallScript(Environment.ProcessId, file);
+            Process.Start(new ProcessStartInfo("powershell.exe",
+                ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden",
+                 "-EncodedCommand", Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script))])
             {
-                UseShellExecute = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
             });
-            _desktop.Exit();
+            ExitForUpdate();
             return true;
         }
         if (OperatingSystem.IsLinux())
@@ -331,7 +337,7 @@ public sealed partial class UpdateService : ObservableObject
                     if (process.ExitCode == 0)
                     {
                         Process.Start(new ProcessStartInfo("/opt/confluir/Confluir") { UseShellExecute = false });
-                        _desktop.Exit();
+                        ExitForUpdate();
                         return true;
                     }
                     _logger.LogInformation("pkexec dpkg terminou com código {Code}", process.ExitCode);
@@ -382,7 +388,7 @@ public sealed partial class UpdateService : ObservableObject
             open {{Quote(bundle)}}
             """.Replace("\r\n", "\n"));
         Process.Start(new ProcessStartInfo("/bin/sh", [script]) { UseShellExecute = false });
-        _desktop.Exit();
+        ExitForUpdate();
         return true;
     }
 
@@ -392,6 +398,29 @@ public sealed partial class UpdateService : ObservableObject
         if (window is not null)
             await window.Launcher.LaunchFileInfoAsync(new FileInfo(path));
     }
+
+    /// <summary>
+    /// Fecha o app para o instalador poder trocar os arquivos. Se em alguns segundos o processo ainda estiver de pé,
+    /// força o fim (o instalador espera por isso).
+    /// </summary>
+    private void ExitForUpdate()
+    {
+        _logger.LogInformation("Fechando para atualizar");
+        _ = Task.Delay(TimeSpan.FromSeconds(12)).ContinueWith(_ => Environment.Exit(0), TaskScheduler.Default);
+        _desktop.Exit();
+    }
+
+    /// <summary>
+    /// Script do PowerShell que espera o processo <paramref name="processId"/> sair (até 30 s; depois força) e roda
+    /// o instalador em modo silencioso.
+    /// </summary>
+    public static string WindowsInstallScript(int processId, string installer) => $"""
+        $p = Get-Process -Id {processId} -ErrorAction SilentlyContinue
+        if ($p) {"{"} if (-not $p.WaitForExit(30000)) {"{"} Stop-Process -Id {processId} -Force -ErrorAction SilentlyContinue {"}"} {"}"}
+        Start-Process -FilePath {PowerShellQuote(installer)} -ArgumentList '/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1'
+        """;
+
+    private static string PowerShellQuote(string text) => "'" + text.Replace("'", "''") + "'";
 
     private static string Quote(string path) => "'" + path.Replace("'", "'\\''") + "'";
 
