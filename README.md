@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="site/screenshots/caixa-de-entrada.png" alt="Caixa de entrada unificada do Confluir" width="900">
+  <img src="docs/screenshots/caixa-de-entrada.png" alt="Caixa de entrada unificada do Confluir" width="900">
 </p>
 
 > As imagens usam os **dados de exemplo** do app (`--dados-falsos`): nenhuma conta ou mensagem real.
@@ -37,40 +37,40 @@
 
 <table>
   <tr>
-    <td><img src="site/screenshots/caixa-de-entrada-escuro.png" alt="Tema escuro"></td>
-    <td><img src="site/screenshots/responder.png" alt="Responder uma mensagem"></td>
+    <td><img src="docs/screenshots/caixa-de-entrada-escuro.png" alt="Tema escuro"></td>
+    <td><img src="docs/screenshots/responder.png" alt="Responder uma mensagem"></td>
   </tr>
   <tr>
     <td align="center">Tema escuro</td>
     <td align="center">Responder, com citação e sugestões</td>
   </tr>
   <tr>
-    <td><img src="site/screenshots/editor-de-regra.png" alt="Editor de regras"></td>
-    <td><img src="site/screenshots/regras.png" alt="Lista de regras"></td>
+    <td><img src="docs/screenshots/editor-de-regra.png" alt="Editor de regras"></td>
+    <td><img src="docs/screenshots/regras.png" alt="Lista de regras"></td>
   </tr>
   <tr>
     <td align="center">Regra criada a partir de uma mensagem</td>
     <td align="center">Regras em Configurações</td>
   </tr>
   <tr>
-    <td><img src="site/screenshots/busca.png" alt="Busca com filtro avançado"></td>
-    <td><img src="site/screenshots/selecao-multipla.png" alt="Várias mensagens selecionadas"></td>
+    <td><img src="docs/screenshots/busca.png" alt="Busca com filtro avançado"></td>
+    <td><img src="docs/screenshots/selecao-multipla.png" alt="Várias mensagens selecionadas"></td>
   </tr>
   <tr>
     <td align="center">Busca com filtro avançado</td>
     <td align="center">Ações em várias mensagens</td>
   </tr>
   <tr>
-    <td><img src="site/screenshots/aviso-desfazer.png" alt="Aviso com desfazer"></td>
-    <td><img src="site/screenshots/notificacoes.png" alt="Configurações de notificações"></td>
+    <td><img src="docs/screenshots/aviso-desfazer.png" alt="Aviso com desfazer"></td>
+    <td><img src="docs/screenshots/notificacoes.png" alt="Configurações de notificações"></td>
   </tr>
   <tr>
     <td align="center">Aviso após cada ação, com Desfazer</td>
     <td align="center">Notificações, bandeja e início com o sistema</td>
   </tr>
   <tr>
-    <td><img src="site/screenshots/fontes.png" alt="Configurações de fontes"></td>
-    <td><img src="site/screenshots/adicionar-conta.png" alt="Adicionar conta"></td>
+    <td><img src="docs/screenshots/fontes.png" alt="Configurações de fontes"></td>
+    <td><img src="docs/screenshots/adicionar-conta.png" alt="Adicionar conta"></td>
   </tr>
   <tr>
     <td align="center">Fontes com pré-visualização</td>
@@ -156,7 +156,7 @@ Para compilar localmente com o login, defina a variável de ambiente `CONFLUIR_M
 | Arquivo | O que faz |
 |---|---|
 | `.github/workflows/release.yml` | Ao enviar uma tag `v*` (ex.: `git tag v0.1.0 && git push origin v0.1.0`): roda os testes, gera o instalador do Windows (Inno Setup, `packaging/windows/confluir.iss`), o `.deb` (`packaging/linux/build-deb.sh`) e os `.dmg` do macOS para Apple Silicon e Intel (`packaging/macos/build-dmg.sh`), e publica um lançamento com eles e as somas SHA-256. Também pode ser rodado à mão em **Actions → Instaladores**, gerando só os artefatos. |
-| `.github/workflows/pages.yml` | Publica a pasta `site/` no GitHub Pages a cada mudança nela. Uma vez só: **Settings → Pages → Source: GitHub Actions**. |
+| `docs/` | Site (landing page) publicado pelo GitHub Pages a partir da pasta `/docs` do branch `main` (**Settings → Pages → Deploy from a branch → main / docs**). |
 
 Os instaladores são *self-contained* (não precisam do .NET instalado) e compilados com ReadyToRun (inicialização mais rápida). Os `.dmg` têm só assinatura ad hoc: para abrir sem o aviso do Gatekeeper seria preciso um certificado Developer ID e notarização da Apple.
 
@@ -171,7 +171,7 @@ src/Confluir.Data   SQLite: cache, fila de operações, rascunhos
 tests/              xUnit v3 (Core, Mail, Data, App)
 tools/              Snapshot e IconGen
 packaging/          Inno Setup, .deb e .app/.dmg
-site/               Site do GitHub Pages
+docs/               Site do GitHub Pages (index.html, imagens, capturas) e documentos
 ```
 
 ## Decisões técnicas
