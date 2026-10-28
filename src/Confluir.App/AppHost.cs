@@ -95,6 +95,8 @@ public static class AppHost
         builder.Services.AddSingleton<Services.Desktop.AutostartService>();
         builder.Services.AddSingleton<RuleService>();
         builder.Services.AddSingleton<ShortcutService>();
+        // Com dados falsos (capturas de tela, testes) não procura atualizações na internet.
+        builder.Services.AddSingleton(sp => ActivatorUtilities.CreateInstance<UpdateService>(sp, !useFakeData));
         builder.Services.AddSingleton<RuleEditorServices>();
         builder.Services.AddSingleton<SettingsServices>();
 

@@ -51,14 +51,20 @@ public interface IMailboxService
     /// <summary>Move para a Lixeira; se já estiver nela, exclui definitivamente.</summary>
     Task DeleteAsync(Guid messageId, CancellationToken ct = default);
 
-    /// <summary>Move para outra pasta da mesma conta (nome completo no servidor).</summary>
     /// <summary>
     /// Desfaz arquivar/excluir se ainda não foi ao servidor (janela de alguns segundos): a mensagem volta ao lugar.
     /// Falso se já foi enviado.
     /// </summary>
     Task<bool> UndoRemoveAsync(MessageSummary message, CancellationToken ct = default);
 
+    /// <summary>Move para outra pasta da mesma conta (nome completo no servidor).</summary>
     Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cria uma pasta no servidor (precisa de conexão). "Clientes/Acme" cria a subpasta, e a pasta-mãe se faltar.
+    /// Devolve a pasta já no cache.
+    /// </summary>
+    Task<MailFolder?> CreateFolderAsync(Guid accountId, string name, CancellationToken ct = default);
 
     /// <summary>Aplica uma regra às mensagens que já estão na caixa de entrada; retorna quantas foram afetadas.</summary>
     Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default);

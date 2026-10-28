@@ -96,6 +96,10 @@
       </StackPanel>
 
       <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,6,0,10" HorizontalAlignment="Center">
+        <Button Classes="icon" IsVisible="{Binding Updates.IsAvailable}" Command="{Binding Updates.InstallCommand}"
+                ToolTip.Tip="{Binding Updates.StatusText}" AutomationProperties.Name="{l:Tr Update_Button}">
+          <LucideIcon Kind="CircleArrowDown" Foreground="{DynamicResource Accent}" />
+        </Button>
         <Button Classes="icon" ToolTip.Tip="{l:Tr Account_Add}" AutomationProperties.Name="{l:Tr Account_Add}" Command="{Binding AddAccountCommand}">
           <LucideIcon Kind="UserPlus" />
         </Button>
@@ -163,6 +167,16 @@
           <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" Command="{Binding OpenSettingsCommand}">
             <LucideIcon Kind="Settings" />
           </Button>
+          <!-- Versão nova no GitHub -->
+          <Button Classes="accent" Margin="6,0,0,0" Padding="10,4" VerticalAlignment="Center"
+                  IsVisible="{Binding Updates.IsAvailable}" Command="{Binding Updates.InstallCommand}"
+                  ToolTip.Tip="{Binding Updates.StatusText}" AutomationProperties.Name="{l:Tr Update_Button}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="CircleArrowDown" Size="14" />
+              <TextBlock Text="{l:Tr Update_Button}" FontSize="12" IsVisible="{Binding !Updates.IsDownloading}" />
+              <TextBlock Text="{Binding Updates.Progress, StringFormat={}{0:0}%}" FontSize="12" IsVisible="{Binding Updates.IsDownloading}" />
+            </StackPanel>
+          </Button>
         </StackPanel>
       </Border>
 
@@ -193,6 +207,11 @@
                     <MenuItem Header="{l:Tr Account_Edit}" Command="{Binding EditCommand}">
                       <MenuItem.Icon>
                         <LucideIcon Kind="Settings" Size="16" />
+                      </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="{l:Tr Folder_Create}" Command="{Binding AskCreateFolderCommand}">
+                      <MenuItem.Icon>
+                        <LucideIcon Kind="FolderPlus" Size="16" />
                       </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">
@@ -234,6 +253,31 @@
                             Padding="10,4" FontSize="12" />
                     <Button Classes="danger" Content="{l:Tr Account_Remove}"
                             Command="{Binding ConfirmRemoveCommand}" Padding="10,4" FontSize="12" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+              <!-- Nova pasta (inline) -->
+              <Border Margin="10,0,10,8" Padding="10" CornerRadius="8" Background="{DynamicResource Surface}"
+                      BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                      IsVisible="{Binding IsCreatingFolder}">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="{l:Tr Folder_Create}" FontSize="12" FontWeight="SemiBold"
+                             Foreground="{DynamicResource TextPrimary}" />
+                  <TextBox Text="{Binding NewFolderName}" PlaceholderText="{l:Tr Folder_Create_Placeholder}" FontSize="12"
+                           AttachedToVisualTree="OnNewFolderBoxAttached" DetachedFromVisualTree="OnNewFolderBoxDetached">
+                    <TextBox.KeyBindings>
+                      <KeyBinding Gesture="Enter" Command="{Binding ConfirmCreateFolderCommand}" />
+                      <KeyBinding Gesture="Escape" Command="{Binding CancelCreateFolderCommand}" />
+                    </TextBox.KeyBindings>
+                  </TextBox>
+                  <TextBlock Text="{l:Tr Folder_Create_Hint}" Classes="caption" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding FolderError}" IsVisible="{Binding HasFolderError}" TextWrapping="Wrap"
+                             FontSize="12" Foreground="{DynamicResource Danger}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                    <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelCreateFolderCommand}"
+                            Padding="10,4" FontSize="12" />
+                    <Button Classes="accent" Content="{l:Tr Folder_Create_Confirm}"
+                            Command="{Binding ConfirmCreateFolderCommand}" Padding="10,4" FontSize="12" />
                   </StackPanel>
                 </StackPanel>
               </Border>

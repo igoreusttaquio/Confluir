@@ -58,5 +58,13 @@ Name: "{autodesktop}\Confluir"; Filename: "{app}\Confluir.exe"; Tasks: desktopic
 
 [Run]
 Filename: "{app}\Confluir.exe"; Description: "{cm:LaunchProgram,Confluir}"; Flags: nowait postinstall skipifsilent
+; Atualização pelo próprio app (/SILENT /RELAUNCH=1): reabre o Confluir no fim.
+Filename: "{app}\Confluir.exe"; Flags: nowait; Check: ShouldRelaunch
 
 ; Os dados do usuário (contas, cache, configurações) ficam em %APPDATA%\Confluir e não são apagados ao desinstalar.
+
+[Code]
+function ShouldRelaunch: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;

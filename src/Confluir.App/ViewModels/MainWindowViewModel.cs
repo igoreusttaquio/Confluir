@@ -382,6 +382,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     public AppearanceViewModel Appearance { get; }
 
+    /// <summary>Versão nova no GitHub (botão "Atualizar" na barra lateral).</summary>
+    public UpdateService Updates => _settingsServices.Updates;
+
     public NavigationService Navigation { get; }
 
     public ObservableCollection<SidebarNode> SidebarNodes { get; } = [];
@@ -432,6 +435,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         await ReloadAsync();
         // Rascunhos que ficaram só no aparelho (ex.: app fechado sem conexão) vão para o servidor.
         _ = _compose.Drafts.UploadPendingAsync(_accounts.Keys.ToList());
+        Updates.StartAutoCheck();
     }
 
     /// <summary>Recarrega contas e pastas (ao iniciar e quando contas são adicionadas ou removidas).</summary>
@@ -529,6 +533,30 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         var editor = _accountEditor();
         editor.Load(node.Account);
         Navigation.NavigateTo(editor);
+    }
+
+    public async Task<string?> CreateFolderAsync(AccountNode node, string name)
+    {
+        var path = string.Join("/", name.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        if (path.Length == 0)
+            return Strings.Folder_Create_Empty;
+        if (node.Folders.Any(f => string.Equals(f.Folder.Name.Replace(" / ", "/"), path, StringComparison.CurrentCultureIgnoreCase) ||
+                                  string.Equals(f.Title, path, StringComparison.CurrentCultureIgnoreCase)))
+            return Strings.Folder_Create_Exists;
+        try
+        {
+            var folder = await _mailbox.CreateFolderAsync(node.Account.Id, path);
+            await ReloadFoldersAsync(node);
+            if (folder is not null && _folderNodes.TryGetValue(folder.Id, out var created))
+                SelectedNode = created;
+            ShowStatus(string.Format(Strings.Folder_Created, path));
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao criar pasta na conta {AccountId}", node.Account.Id);
+            return node.IsOffline ? Strings.Folder_Create_Offline : Strings.Folder_Create_Failed;
+        }
     }
 
     public void OnToggled(AccountNode account)

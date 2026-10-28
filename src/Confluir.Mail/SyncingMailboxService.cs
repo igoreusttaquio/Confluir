@@ -136,6 +136,15 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         Wake(location.AccountId);
     }
 
+    public async Task<MailFolder?> CreateFolderAsync(Guid accountId, string name, CancellationToken ct = default)
+    {
+        var account = _accounts.Accounts.First(a => a.Id == accountId);
+        var fullName = await _engine.CreateFolderAsync(account, name, ct);
+        var folders = await _engine.SyncFolderListAsync(account, ct);
+        RaiseChanged(accountId, foldersChanged: true);
+        return folders.FirstOrDefault(f => f.FullName == fullName);
+    }
+
     // Busca -----------------------------------------------------------------------------------------
 
     public Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default) =>

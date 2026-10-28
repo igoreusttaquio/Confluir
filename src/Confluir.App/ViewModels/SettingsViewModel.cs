@@ -34,6 +34,7 @@ public sealed record SettingsServices(
     RuleService Rules,
     RuleEditorServices RuleEditor,
     ShortcutService Shortcuts,
+    UpdateService Updates,
     Services.Desktop.DesktopIntegration Desktop,
     Services.Desktop.AutostartService Autostart,
     ILogger<SettingsViewModel> Logger);
@@ -403,6 +404,8 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     }
 
     // Avançado --------------------------------------------------------------------------------------
+
+    public UpdateService Updates => _services.Updates;
 
     public string DataDirectory => _services.Paths.DataDirectory;
 

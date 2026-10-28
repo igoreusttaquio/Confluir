@@ -111,7 +111,8 @@ public sealed class DesktopIntegration(
         _window.Activate();
     }
 
-    private void Exit()
+    /// <summary>Fecha o app de vez (mesmo com "fechar para a bandeja" ligado).</summary>
+    public void Exit()
     {
         _exiting = true;
         _lifetime?.Shutdown();

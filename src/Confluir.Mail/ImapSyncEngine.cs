@@ -67,6 +67,41 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
     }
 
     /// <summary>
+    /// Cria a pasta no servidor (cada trecho de "Mãe/Filha" que ainda não existir) e a assina. Devolve o nome completo.
+    /// </summary>
+    public Task<string> CreateFolderAsync(MailAccount account, string name, CancellationToken ct) =>
+        pool.RunAsync(account.Id, async (client, token) =>
+        {
+            var ns = client.PersonalNamespaces.FirstOrDefault() ?? new FolderNamespace('/', "");
+            IMailFolder current = client.GetFolder(ns)
+                ?? throw new InvalidOperationException("O servidor não informou a pasta raiz das pastas pessoais.");
+            var separators = new[] { '/', ns.DirectorySeparator }.Where(c => c != '\0').Distinct().ToArray();
+            foreach (var part in name.Split(separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                IMailFolder? existing = null;
+                try
+                {
+                    existing = await current.GetSubfolderAsync(part, token);
+                }
+                catch (FolderNotFoundException)
+                {
+                }
+                current = existing ?? await current.CreateAsync(part, isMessageFolder: true, token)
+                    ?? throw new InvalidOperationException("O servidor não devolveu a pasta criada.");
+                try
+                {
+                    await current.SubscribeAsync(token);
+                }
+                catch (ImapCommandException ex)
+                {
+                    logger.LogDebug(ex, "Servidor recusou assinar a pasta {Folder}", current.FullName);
+                }
+            }
+            logger.LogInformation("Pasta criada na conta {AccountId}", account.Id);
+            return current.FullName;
+        }, ct);
+
+    /// <summary>
     /// Sincroniza uma pasta: novas mensagens e preenchimento das antigas (do mais novo para o mais antigo, em lotes),
     /// remoções e flags. <paramref name="onProgress"/> é chamado a cada lote gravado, para a interface atualizar.
     /// </summary>

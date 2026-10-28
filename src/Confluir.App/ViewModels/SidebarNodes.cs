@@ -29,6 +29,9 @@ public interface IAccountNodeHost
     void RetryAccount(AccountNode node);
     Task RemoveAccountAsync(AccountNode node);
     void EditAccount(AccountNode node);
+
+    /// <summary>Cria a pasta; devolve o erro para mostrar (nulo = criada).</summary>
+    Task<string?> CreateFolderAsync(AccountNode node, string name);
 }
 
 public sealed partial class AccountNode(MailAccount account, IAccountNodeHost host) : SidebarNode
@@ -85,6 +88,50 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
 
     [RelayCommand]
     private Task ConfirmRemove() => host.RemoveAccountAsync(this);
+    // Nova pasta: campo sob o cabeçalho da conta (sem diálogo).
+
+    [ObservableProperty]
+    public partial bool IsCreatingFolder { get; set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConfirmCreateFolderCommand))]
+    public partial string NewFolderName { get; set; } = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFolderError))]
+    public partial string? FolderError { get; set; }
+
+    public bool HasFolderError => FolderError is not null;
+
+    [RelayCommand]
+    private void AskCreateFolder()
+    {
+        NewFolderName = "";
+        FolderError = null;
+        if (!IsExpanded)
+            Toggle();
+        IsCreatingFolder = true;
+    }
+
+    [RelayCommand]
+    private void CancelCreateFolder()
+    {
+        IsCreatingFolder = false;
+        FolderError = null;
+    }
+
+    private bool CanConfirmCreateFolder() => !string.IsNullOrWhiteSpace(NewFolderName);
+
+    [RelayCommand(CanExecute = nameof(CanConfirmCreateFolder))]
+    private async Task ConfirmCreateFolderAsync()
+    {
+        FolderError = null;
+        var error = await host.CreateFolderAsync(this, NewFolderName.Trim());
+        if (error is null)
+            IsCreatingFolder = false;
+        else
+            FolderError = error;
+    }
 }
 
 public sealed partial class FolderNode(MailFolder folder, MailAccount account) : SidebarNode

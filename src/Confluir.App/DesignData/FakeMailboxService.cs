@@ -144,6 +144,15 @@ public sealed class FakeMailboxService : IMailboxService
 
     public Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default) => Remove(messageId);
 
+    public Task<MailFolder?> CreateFolderAsync(Guid accountId, string name, CancellationToken ct = default)
+    {
+        var fullName = string.Join("/", name.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        var folder = new MailFolder(Guid.NewGuid(), accountId, fullName.Replace("/", " / "), fullName, SpecialFolderKind.None, 0);
+        _folders[accountId].Add(folder);
+        _messages[folder.Id] = [];
+        return Task.FromResult<MailFolder?>(folder);
+    }
+
     // Busca simples (sem índice): o bastante para a interface com dados de exemplo.
     public Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default)
     {

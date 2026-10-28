@@ -23,6 +23,7 @@ public sealed class AppSettings
 
     public NotificationSettings Notifications { get; set; } = new();
     public DesktopSettings Desktop { get; set; } = new();
+    public UpdateSettings Updates { get; set; } = new();
 }
 
 public sealed class NotificationSettings
@@ -35,6 +36,12 @@ public sealed class NotificationSettings
 
     /// <summary>Contas que não notificam.</summary>
     public List<Guid> MutedAccounts { get; set; } = [];
+}
+
+public sealed class UpdateSettings
+{
+    /// <summary>Procurar versões novas no GitHub ao abrir e a cada 12 horas.</summary>
+    public bool AutoCheck { get; set; } = true;
 }
 
 public sealed class DesktopSettings

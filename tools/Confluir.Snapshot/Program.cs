@@ -308,7 +308,33 @@ Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000
     }
     ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Notifications;
     Save(window, "settings-notifications.png");
+    {
+        // Atualização disponível: botão na barra lateral e cartão em Avançado.
+        var updates = services.GetRequiredService<UpdateService>();
+        updates.ShowPreview(new UpdateInfo(new Version(9, 9, 0), "v9.9.0", "https://example.com", "x.exe", "https://example.com/x.exe", null));
+        ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Advanced;
+        Save(window, "settings-updates.png");
+        Console.WriteLine($"atualização: \"{updates.StatusText}\", botão visível: {updates.IsAvailable}, pode instalar: {updates.CanInstall}");
+    }
     vm.GoBackCommand.Execute(null);
+
+    // Nova pasta pelo menu da conta: campo inline, cria "Clientes/Acme", seleciona; repetir o nome avisa.
+    Pump(() => vm.Navigation.IsAtRoot);
+    var folderAccount = vm.SidebarNodes.OfType<AccountNode>().First();
+    folderAccount.AskCreateFolderCommand.Execute(null);
+    folderAccount.NewFolderName = "Clientes/Acme";
+    Pump(() => true);
+    Save(window, "new-folder.png");
+    var create = folderAccount.ConfirmCreateFolderCommand.ExecuteAsync(null);
+    Pump(() => create.IsCompleted);
+    var createdNode = vm.SidebarNodes.OfType<FolderNode>().FirstOrDefault(f => f.Folder.FullName == "Clientes/Acme");
+    Console.WriteLine($"nova pasta: na barra lateral {createdNode is not null}, selecionada {vm.SelectedNode == createdNode}, campo fechou {!folderAccount.IsCreatingFolder}, aviso \"{vm.StatusMessage}\"");
+    folderAccount.AskCreateFolderCommand.Execute(null);
+    folderAccount.NewFolderName = "clientes / acme";
+    create = folderAccount.ConfirmCreateFolderCommand.ExecuteAsync(null);
+    Pump(() => create.IsCompleted);
+    Console.WriteLine($"pasta repetida: \"{folderAccount.FolderError}\"");
+    folderAccount.CancelCreateFolderCommand.Execute(null);
 }
 
 // Domínio desconhecido, tema escuro, com resultado de teste.
