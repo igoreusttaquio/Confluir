@@ -58,6 +58,12 @@ public interface IMailCache
 
     Task<IReadOnlyList<uint>> GetUidsAsync(Guid folderId, CancellationToken ct = default);
 
+    /// <summary>Mensagens ainda sem destinatários no cache (gravadas antes de eles serem guardados), mais novas primeiro.</summary>
+    Task<IReadOnlyList<uint>> GetUidsWithoutRecipientsAsync(Guid folderId, int limit, CancellationToken ct = default);
+
+    /// <summary>Grava os destinatários buscados no servidor (nulo = a mensagem não tem nenhum).</summary>
+    Task SetRecipientsAsync(Guid folderId, IReadOnlyList<(uint Uid, string? Recipients)> items, CancellationToken ct = default);
+
     Task DeleteMessagesAsync(Guid folderId, IReadOnlyCollection<uint> uids, CancellationToken ct = default);
 
     /// <summary>Apaga todas as mensagens da pasta (ex.: UIDVALIDITY mudou).</summary>

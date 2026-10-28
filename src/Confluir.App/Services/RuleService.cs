@@ -31,6 +31,18 @@ public sealed class RuleService(ISettingsStore settings, IMailboxService mailbox
 
     public void Delete(Guid id) => Store(Rules.Where(r => r.Id != id).ToList());
 
+    /// <summary>Sobe (-1) ou desce (+1) a regra: elas rodam na ordem da lista.</summary>
+    public void Move(Guid id, int delta)
+    {
+        var list = Rules.ToList();
+        var index = list.FindIndex(r => r.Id == id);
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= list.Count)
+            return;
+        (list[index], list[target]) = (list[target], list[index]);
+        Store(list);
+    }
+
     public void SetEnabled(Guid id, bool enabled) =>
         Store(Rules.Select(r => r.Id == id ? r with { Enabled = enabled } : r).ToList());
 

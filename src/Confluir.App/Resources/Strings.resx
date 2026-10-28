@@ -378,6 +378,8 @@
   <data name="Feedback_Unread_One"><value>Mensagem marcada como não lida</value></data>
   <data name="Feedback_Unread_Other"><value>{0:N0} mensagens marcadas como não lidas</value></data>
   <data name="Undo_TooLate"><value>Algumas mensagens já tinham sido enviadas ao servidor e não voltaram.</value></data>
+  <data name="Rule_MoveUp"><value>Subir (roda antes)</value></data>
+  <data name="Rule_MoveDown"><value>Descer (roda depois)</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

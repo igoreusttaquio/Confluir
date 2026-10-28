@@ -136,6 +136,9 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
             }
         }
 
+        if (!plan.Reset)
+            changed |= await BackfillRecipientsAsync(account, folder, uidValidity, ct);
+
         await cache.SetSyncStateAsync(folder.Id,
             new FolderSyncState(uidValidity, condStore ? highestModSeq : 0, DateTimeOffset.UtcNow), ct);
         if (plan.FetchCount > 0 || plan.Remove.Count > 0 || plan.Reset)
@@ -143,6 +146,30 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
                 folder.Id, plan.FetchCount, plan.Remove.Count);
         return changed;
     }
+
+    /// <summary>
+    /// Mensagens gravadas antes de o cache guardar destinatários: busca só o envelope (Para/Cc), em lotes, para
+    /// regras por "Para" e a busca <c>para:</c> valerem também para o histórico.
+    /// </summary>
+    private async Task<bool> BackfillRecipientsAsync(MailAccount account, MailFolder folder, uint uidValidity, CancellationToken ct)
+    {
+        var missing = await cache.GetUidsWithoutRecipientsAsync(folder.Id, RecipientBackfillBatch, ct);
+        if (missing.Count == 0)
+            return false;
+        var found = await pool.RunAsync(account.Id, async (client, token) =>
+        {
+            var f = await OpenAsync(client, folder.FullName, FolderAccess.ReadOnly, token);
+            var summaries = await f.FetchAsync(missing.Select(u => new UniqueId(uidValidity, u)).ToList(),
+                new FetchRequest(MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope), token);
+            return summaries.Select(s => (s.UniqueId.Id, MessageConverter.RecipientsOf(s.Envelope))).ToList();
+        }, ct);
+        // As que o servidor não devolveu (apagadas) também são marcadas, para não serem pedidas de novo.
+        var byUid = found.ToDictionary(f => f.Item1, f => f.Item2);
+        await cache.SetRecipientsAsync(folder.Id, missing.Select(u => (u, byUid.GetValueOrDefault(u))).ToList(), ct);
+        return true;
+    }
+
+    private const int RecipientBackfillBatch = 500;
 
     /// <summary>
     /// Busca no servidor e grava no cache as mensagens encontradas que ainda não estavam nele

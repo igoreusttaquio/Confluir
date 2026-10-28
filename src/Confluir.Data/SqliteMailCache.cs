@@ -134,8 +134,33 @@ public sealed class SqliteMailCache(Database db) : IMailCache
                     read = s.IsRead,
                     flagged = s.IsFlagged,
                     attachments = s.HasAttachments,
-                    recipients = s.Recipients ?? "",
+                    // " " = sabidamente sem destinatários; "" (gravadas antes da v7) = ainda não buscados.
+                    recipients = s.Recipients ?? NoRecipients,
                 }, tx, cancellationToken: ct));
+            }
+        }, ct);
+
+    private const string NoRecipients = " ";
+
+    public async Task<IReadOnlyList<uint>> GetUidsWithoutRecipientsAsync(Guid folderId, int limit, CancellationToken ct = default)
+    {
+        await ThreadPoolSwitch.Instance;
+        await using var c = await db.OpenAsync(ct);
+        var uids = await c.QueryAsync<long>(new CommandDefinition(
+            "SELECT uid FROM messages WHERE folder_id = @f AND recipients = '' ORDER BY uid DESC LIMIT @limit",
+            new { f = folderId.ToString(), limit }, cancellationToken: ct));
+        return uids.Select(u => (uint)u).ToList();
+    }
+
+    public Task SetRecipientsAsync(Guid folderId, IReadOnlyList<(uint Uid, string? Recipients)> items, CancellationToken ct = default) =>
+        items.Count == 0 ? Task.CompletedTask : WriteAsync(async (c, tx) =>
+        {
+            foreach (var (uid, recipients) in items)
+            {
+                await c.ExecuteAsync(new CommandDefinition(
+                    "UPDATE messages SET recipients = @r WHERE folder_id = @f AND uid = @uid",
+                    new { r = string.IsNullOrWhiteSpace(recipients) ? NoRecipients : recipients, f = folderId.ToString(), uid = (long)uid },
+                    tx, cancellationToken: ct));
             }
         }, ct);
 
@@ -435,7 +460,7 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
         var date = DateTimeOffset.FromUnixTimeMilliseconds(r.DateUtcMs).ToOffset(offset);
         return new MessageSummary(Guid.Parse(r.Id), Guid.Parse(r.AccountId), Guid.Parse(r.FolderId),
             r.FromName, r.FromAddress, r.Subject, r.Preview, date, r.IsRead, r.IsFlagged, r.HasAttachments,
-            string.IsNullOrEmpty(r.Recipients) ? null : r.Recipients);
+            string.IsNullOrWhiteSpace(r.Recipients) ? null : r.Recipients);
     }
 
     // Linhas lidas pelo Dapper (Guid é guardado como texto).

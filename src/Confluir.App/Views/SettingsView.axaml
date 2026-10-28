@@ -252,6 +252,17 @@
                         <TextBlock Text="{Binding Description}" Classes="hint" />
                       </StackPanel>
                       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <!-- Ordem: as regras rodam de cima para baixo -->
+                        <StackPanel Orientation="Horizontal" Spacing="0">
+                          <Button Classes="icon" Command="{Binding MoveUpCommand}" IsEnabled="{Binding CanMoveUp}"
+                                  ToolTip.Tip="{l:Tr Rule_MoveUp}" AutomationProperties.Name="{l:Tr Rule_MoveUp}">
+                            <LucideIcon Kind="ArrowUp" Size="15" />
+                          </Button>
+                          <Button Classes="icon" Command="{Binding MoveDownCommand}" IsEnabled="{Binding CanMoveDown}"
+                                  ToolTip.Tip="{l:Tr Rule_MoveDown}" AutomationProperties.Name="{l:Tr Rule_MoveDown}">
+                            <LucideIcon Kind="ArrowDown" Size="15" />
+                          </Button>
+                        </StackPanel>
                         <Button Command="{Binding ApplyNowCommand}" IsEnabled="{Binding !IsApplying}"
                                 ToolTip.Tip="{l:Tr Rule_ApplyNowHint}">
                           <StackPanel Orientation="Horizontal" Spacing="6">

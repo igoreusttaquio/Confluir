@@ -63,9 +63,11 @@ public sealed partial class RuleItemViewModel : ViewModelBase
     private readonly SettingsViewModel _owner;
     private bool _loading;
 
-    public RuleItemViewModel(MailRule rule, SettingsViewModel owner)
+    public RuleItemViewModel(MailRule rule, SettingsViewModel owner, bool isFirst = false, bool isLast = false)
     {
         Rule = rule;
+        CanMoveUp = !isFirst;
+        CanMoveDown = !isLast;
         _owner = owner;
         _loading = true;
         IsEnabled = rule.Enabled;
@@ -73,6 +75,15 @@ public sealed partial class RuleItemViewModel : ViewModelBase
     }
 
     public MailRule Rule { get; }
+
+    public bool CanMoveUp { get; }
+    public bool CanMoveDown { get; }
+
+    [RelayCommand]
+    private void MoveUp() => _owner.MoveRule(this, -1);
+
+    [RelayCommand]
+    private void MoveDown() => _owner.MoveRule(this, +1);
 
     public string Name => Rule.Name;
 
@@ -209,8 +220,9 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     private void ReloadRules()
     {
         Rules.Clear();
-        foreach (var rule in _services.Rules.Rules)
-            Rules.Add(new RuleItemViewModel(rule, this));
+        var all = _services.Rules.Rules;
+        for (var i = 0; i < all.Count; i++)
+            Rules.Add(new RuleItemViewModel(all[i], this, isFirst: i == 0, isLast: i == all.Count - 1));
         OnPropertyChanged(nameof(HasRules));
     }
 
@@ -229,6 +241,8 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
         _services.Navigation.NavigateTo(new RuleEditorViewModel(_services.RuleEditor, AccountList, _main.ShowStatus, item.Rule));
 
     public void DeleteRule(RuleItemViewModel item) => _services.Rules.Delete(item.Rule.Id);
+
+    public void MoveRule(RuleItemViewModel item, int delta) => _services.Rules.Move(item.Rule.Id, delta);
 
     public void SetRuleEnabled(RuleItemViewModel item, bool enabled) => _services.Rules.SetEnabled(item.Rule.Id, enabled);
 

@@ -252,6 +252,31 @@ public sealed class SqliteMailCacheTests : IDisposable
     }
 
     [Fact]
+    public async Task Destinatarios_faltando_sao_listados_ate_serem_preenchidos()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        await _cache.UpsertMessagesAsync(inbox.Id, [Message(inbox, 1), Message(inbox, 2), Message(inbox, 3)], _ct);
+        // Como se fossem de antes da v7: destinatários ainda não buscados.
+        await using (var c = new SqliteConnection($"Data Source={Path.Combine(_dir, "confluir.db")}"))
+        {
+            await c.OpenAsync(_ct);
+            await using var cmd = c.CreateCommand();
+            cmd.CommandText = "UPDATE messages SET recipients = ''";
+            await cmd.ExecuteNonQueryAsync(_ct);
+        }
+
+        Assert.Equal([3u, 2u, 1u], await _cache.GetUidsWithoutRecipientsAsync(inbox.Id, 10, _ct));
+
+        await _cache.SetRecipientsAsync(inbox.Id, [(3u, "ana@x.com"), (2u, null)], _ct);
+
+        Assert.Equal([1u], await _cache.GetUidsWithoutRecipientsAsync(inbox.Id, 10, _ct)); // a sem destinatário não volta
+        var messages = await _cache.GetMessagesAsync(inbox.Id, _ct);
+        Assert.Equal("ana@x.com", messages.Single(m => m.Subject == "Assunto 3").Recipients);
+        Assert.Null(messages.Single(m => m.Subject == "Assunto 2").Recipients);
+    }
+
+    [Fact]
     public async Task Desfazer_cancela_a_remocao_pendente_e_devolve_o_local()
     {
         var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
