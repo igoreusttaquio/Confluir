@@ -13,6 +13,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Confluir.App.ViewModels;
 
+public enum ListFilter
+{
+    All,
+    Unread,
+    Flagged,
+    Attachments,
+}
+
 public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost, IMessageActions
 {
     private readonly LocalizationService _loc;
@@ -60,6 +68,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         _settingsServices = settingsServices;
         // Fontes, escala e altura de linha também entram no HTML do email.
         settingsServices.Fonts.Changed += (_, _) => Dispatcher.UIThread.Post(() => Detail?.RebuildDocument());
+        // Regra aplicada às mensagens existentes: lista e contadores refletem na hora.
+        settingsServices.Rules.Applied += (_, _) => Dispatcher.UIThread.Post(RefreshList);
         // O HTML do email usa as cores do tema: remonta ao trocar de tema ou de cor de destaque.
         reading.Theme.PaletteChanged += (_, _) => Dispatcher.UIThread.Post(() => Detail?.RebuildDocument());
         _loc = localization;
@@ -220,6 +230,20 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         if (Navigation.CurrentPage is MessagePageViewModel)
             Navigation.GoBack();
         Navigation.NavigateTo(compose);
+    }
+
+    /// <summary>"Criar regra a partir desta mensagem": editor com o remetente já preenchido.</summary>
+    public void CreateRule(MessageDetailViewModel message) =>
+        Navigation.NavigateTo(RuleEditorViewModel.FromMessage(_settingsServices.RuleEditor, _accounts.Values.ToList(),
+            ShowStatus, message.Row.Summary));
+
+    /// <summary>Recarrega a lista atual e os contadores a partir do cache.</summary>
+    public void RefreshList()
+    {
+        foreach (var node in SidebarNodes.OfType<AccountNode>().ToList())
+            _ = ReloadFoldersAsync(node);
+        if (SelectedNode is { IsSelectable: true } selected)
+            _ = LoadListAsync(selected, keepSelection: true);
     }
 
     private bool IsDraftFolder(Guid folderId) =>
@@ -629,7 +653,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
                     return;
             }
 
-            var rows = await Task.Run(() => BuildRows(messages), cts.Token);
+            var filter = Filter;
+            var keepId = (SelectedRow as MessageRow)?.Summary.Id;
+            var rows = await Task.Run(() => MessageListBuilder.Build(ApplyFilter(messages, filter, keepId),
+                _accounts, _locallyRead, _time.GetLocalNow(), _loc.FormatCulture), cts.Token);
             if (cts.IsCancellationRequested)
                 return;
 
@@ -778,8 +805,41 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         _ => ListTitle,
     };
 
-    private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages) =>
-        MessageListBuilder.Build(messages, _accounts, _locallyRead, _time.GetLocalNow(), _loc.FormatCulture);
+private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages) =>
+        MessageListBuilder.Build(ApplyFilter(messages, Filter, (SelectedRow as MessageRow)?.Summary.Id),
+            _accounts, _locallyRead, _time.GetLocalNow(), _loc.FormatCulture);
+
+    // Filtros rápidos ---------------------------------------------------------------------------------
+
+    /// <summary>Filtro da lista (vale em qualquer pasta). Aplicado sobre o que já está carregado: troca na hora.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFilterAll), nameof(IsFilterUnread), nameof(IsFilterFlagged),
+        nameof(IsFilterAttachments), nameof(ListEmptyText))]
+    public partial ListFilter Filter { get; set; }
+
+    public bool IsFilterAll { get => Filter == ListFilter.All; set { if (value) Filter = ListFilter.All; } }
+    public bool IsFilterUnread { get => Filter == ListFilter.Unread; set { if (value) Filter = ListFilter.Unread; } }
+    public bool IsFilterFlagged { get => Filter == ListFilter.Flagged; set { if (value) Filter = ListFilter.Flagged; } }
+    public bool IsFilterAttachments { get => Filter == ListFilter.Attachments; set { if (value) Filter = ListFilter.Attachments; } }
+
+    public string ListEmptyText => Filter == ListFilter.All ? Strings.MessageList_Empty : Strings.Filter_Empty;
+
+    partial void OnFilterChanged(ListFilter value)
+    {
+        ReplaceRowsKeepingSelection(BuildRows(_listMessages));
+        if (SelectedNode is { } node)
+            UpdateSubtitle(node);
+    }
+
+    /// <param name="keepId">Mensagem aberta: continua na lista mesmo que deixe de bater (ex.: ficou lida).</param>
+    private IReadOnlyList<MessageSummary> ApplyFilter(IReadOnlyList<MessageSummary> messages, ListFilter filter, Guid? keepId) =>
+        filter switch
+        {
+            ListFilter.Unread => messages.Where(m => m.Id == keepId || (!m.IsRead && !_locallyRead.Contains(m.Id))).ToList(),
+            ListFilter.Flagged => messages.Where(m => m.Id == keepId || m.IsFlagged).ToList(),
+            ListFilter.Attachments => messages.Where(m => m.Id == keepId || m.HasAttachments).ToList(),
+            _ => messages,
+        };
 
     /// <summary>Recalcula os textos derivados no novo idioma, sem buscar nada no servidor.</summary>
     public override void OnLanguageChanged()

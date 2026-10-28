@@ -322,8 +322,21 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         var token = (text ?? "").Split(',', ';').Last().Trim();
         if (token.Length < 2)
             return [];
-        var found = await _services.Mailbox.SearchAddressesAsync(token, 8, ct);
-        return found.Select(a => (object)a.ToString());
+        try
+        {
+            var found = await _services.Mailbox.SearchAddressesAsync(token, 8, ct);
+            return found.Select(a => (object)a.ToString());
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal: o usuário digitou mais uma letra e a busca anterior foi cancelada.
+            return [];
+        }
+        catch (Exception ex)
+        {
+            _services.Logger.LogDebug(ex, "Falha ao sugerir destinatários");
+            return [];
+        }
     }
 
     // Envio -----------------------------------------------------------------------------------------

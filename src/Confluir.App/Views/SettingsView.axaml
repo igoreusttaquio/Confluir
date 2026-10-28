@@ -102,10 +102,10 @@
             <TextBlock Text="{l:Tr Settings_Accounts}" VerticalAlignment="Center" />
           </StackPanel>
         </RadioButton>
-        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsAppearance}">
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsRules}">
           <StackPanel Orientation="Horizontal" Spacing="10">
-            <LucideIcon Kind="Palette" Size="17" />
-            <TextBlock Text="{l:Tr Appearance}" VerticalAlignment="Center" />
+            <LucideIcon Kind="ListFilter" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Rules}" VerticalAlignment="Center" />
           </StackPanel>
         </RadioButton>
         <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsFonts}">
@@ -201,12 +201,80 @@
           </Button>
         </StackPanel>
 
-        <!-- Aparência -->
-        <StackPanel Classes="page" IsVisible="{Binding IsAppearance}">
-          <TextBlock Classes="sectionTitle" Text="{l:Tr Appearance}" />
-          <Border Classes="card">
-            <views:AppearanceView DataContext="{Binding Appearance}" MaxWidth="460" HorizontalAlignment="Left" />
+        <!-- Regras -->
+        <StackPanel Classes="page" IsVisible="{Binding IsRules}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Rules}" />
+          <TextBlock Classes="hint" Text="{l:Tr Rules_Hint}" />
+          <Button Classes="accent" Command="{Binding NewRuleCommand}" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <LucideIcon Kind="Plus" Size="16" Foreground="{DynamicResource OnAccent}" />
+              <TextBlock Text="{l:Tr Rule_New}" />
+            </StackPanel>
+          </Button>
+          <Border Classes="card" IsVisible="{Binding !HasRules}">
+            <StackPanel Spacing="6" HorizontalAlignment="Center">
+              <LucideIcon Kind="ListFilter" Size="28" Foreground="{DynamicResource TextSecondary}" />
+              <TextBlock Classes="hint" Text="{l:Tr Rules_Empty}" TextAlignment="Center" MaxWidth="420" />
+            </StackPanel>
           </Border>
+          <ItemsControl ItemsSource="{Binding Rules}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="10" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:RuleItemViewModel">
+                <Border Classes="card" Padding="16,12">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                      <ToggleSwitch IsChecked="{Binding IsEnabled}" OnContent="" OffContent="" MinWidth="0"
+                                    VerticalAlignment="Center" ToolTip.Tip="{l:Tr Rule_Enabled}" />
+                      <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                          <Border Background="{DynamicResource SurfaceAlt}" CornerRadius="6" Padding="6,1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Scope}" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                          </Border>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Description}" Classes="hint" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Button Command="{Binding ApplyNowCommand}" IsEnabled="{Binding !IsApplying}"
+                                ToolTip.Tip="{l:Tr Rule_ApplyNowHint}">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsApplying}" />
+                            <LucideIcon Kind="Play" Size="14" IsVisible="{Binding !IsApplying}" />
+                            <TextBlock Text="{l:Tr Rule_ApplyNow}" />
+                          </StackPanel>
+                        </Button>
+                        <Button Classes="icon" Command="{Binding EditCommand}"
+                                ToolTip.Tip="{l:Tr Rule_Edit}" AutomationProperties.Name="{l:Tr Rule_Edit}">
+                          <LucideIcon Kind="Pencil" Size="16" />
+                        </Button>
+                        <Button Classes="icon" Command="{Binding AskDeleteCommand}"
+                                ToolTip.Tip="{l:Tr Rule_Delete}" AutomationProperties.Name="{l:Tr Rule_Delete}">
+                          <LucideIcon Kind="Trash" Size="16" />
+                        </Button>
+                      </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding ApplyResult}" IsVisible="{Binding HasApplyResult}" Classes="hint" />
+                    <Border IsVisible="{Binding IsConfirmingDelete}" Background="{DynamicResource SurfaceAlt}"
+                            CornerRadius="8" Padding="12,10">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{l:Tr Rule_DeleteConfirm}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                   FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0">
+                          <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelDeleteCommand}" />
+                          <Button Classes="danger" Content="{l:Tr Rule_Delete}" Command="{Binding ConfirmDeleteCommand}" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
 
         <!-- Fontes -->

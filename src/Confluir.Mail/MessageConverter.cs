@@ -27,7 +27,21 @@ public static partial class MessageConverter
             Date: BestDate(m.Envelope?.Date, m.InternalDate),
             IsRead: m.Flags?.HasFlag(MessageFlags.Seen) ?? false,
             IsFlagged: m.Flags?.HasFlag(MessageFlags.Flagged) ?? false,
-            HasAttachments: m.Body is not null && m.Attachments.Any());
+            HasAttachments: m.Body is not null && m.Attachments.Any(),
+            Recipients: RecipientsOf(m.Envelope));
+    }
+
+    /// <summary>Endereços de Para e Cc em minúsculas, separados por espaço.</summary>
+    public static string? RecipientsOf(Envelope? envelope)
+    {
+        if (envelope is null)
+            return null;
+        var all = envelope.To.Mailboxes.Concat(envelope.Cc.Mailboxes)
+            .Select(a => a.Address?.Trim().ToLowerInvariant())
+            .Where(a => !string.IsNullOrEmpty(a))
+            .Distinct();
+        var text = string.Join(' ', all);
+        return text.Length == 0 ? null : text;
     }
 
     /// <summary>

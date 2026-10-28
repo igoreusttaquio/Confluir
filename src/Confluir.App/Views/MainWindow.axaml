@@ -82,6 +82,9 @@
           <DataTemplate DataType="vm:MessagePageViewModel">
             <views:MessagePageView />
           </DataTemplate>
+          <DataTemplate DataType="vm:RuleEditorViewModel">
+            <views:RuleEditorView />
+          </DataTemplate>
           <DataTemplate DataType="vm:SettingsViewModel">
             <views:SettingsView />
           </DataTemplate>

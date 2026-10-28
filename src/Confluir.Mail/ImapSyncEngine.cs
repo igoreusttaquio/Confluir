@@ -70,8 +70,11 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
     /// Sincroniza uma pasta: novas mensagens e preenchimento das antigas (do mais novo para o mais antigo, em lotes),
     /// remoções e flags. <paramref name="onProgress"/> é chamado a cada lote gravado, para a interface atualizar.
     /// </summary>
+    /// <param name="arrived">Recebe as mensagens que chegaram desde a última sincronização (não as da primeira carga
+    /// nem as antigas do preenchimento), para as regras.</param>
     /// <returns>Verdadeiro se algo mudou no cache.</returns>
-    public async Task<bool> SyncFolderAsync(MailAccount account, MailFolder folder, Action onProgress, CancellationToken ct)
+    public async Task<bool> SyncFolderAsync(MailAccount account, MailFolder folder, Action onProgress, CancellationToken ct,
+        List<Core.Models.MessageSummary>? arrived = null)
     {
         var state = await cache.GetSyncStateAsync(folder.Id, ct);
         var cachedUids = await cache.GetUidsAsync(folder.Id, ct);
@@ -86,6 +89,8 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
 
         var plan = SyncPlanner.Plan(state?.UidValidity, uidValidity, serverUids, cachedUids);
         var changed = false;
+        // Novas de verdade: UID acima do maior já visto, numa pasta que já tinha sido sincronizada.
+        var newerThan = state is not null && !plan.Reset && cachedUids.Count > 0 ? cachedUids.Max() : (uint?)null;
 
         if (plan.Reset)
         {
@@ -112,6 +117,8 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
                     s.UniqueId.Id)).ToList();
             }, ct);
             await cache.UpsertMessagesAsync(folder.Id, messages, ct);
+            if (arrived is not null && newerThan is { } max)
+                arrived.AddRange(messages.Where(m => m.Uid > max).Select(m => m.Summary));
             changed = true;
             onProgress();
         }
@@ -186,7 +193,9 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
         }, ct);
 
     /// <param name="folders">Pastas da conta, para achar Arquivo e Lixeira.</param>
-    public Task ApplyAsync(OperationKind kind, MessageLocation location, IReadOnlyList<MailFolder> folders, CancellationToken ct) =>
+    /// <param name="targetFolder">Destino de <see cref="OperationKind.Move"/>.</param>
+    public Task ApplyAsync(OperationKind kind, MessageLocation location, IReadOnlyList<MailFolder> folders, CancellationToken ct,
+        string? targetFolder = null) =>
         pool.RunAsync(location.AccountId, async (client, token) =>
         {
             var f = await OpenAsync(client, location.FolderFullName, FolderAccess.ReadWrite, token);
@@ -204,6 +213,12 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
                         ?? throw new InvalidOperationException("A conta não tem pasta de arquivo.");
                     if (archive.FullName != location.FolderFullName)
                         await f.MoveToAsync(uid, await client.GetFolderAsync(archive.FullName, token), token);
+                    break;
+                case OperationKind.Move:
+                    if (string.IsNullOrEmpty(targetFolder))
+                        throw new InvalidOperationException("Pasta de destino não informada.");
+                    if (targetFolder != location.FolderFullName)
+                        await f.MoveToAsync(uid, await client.GetFolderAsync(targetFolder, token), token);
                     break;
                 case OperationKind.Delete:
                     var trash = folders.FirstOrDefault(x => x.Kind == SpecialFolderKind.Trash);

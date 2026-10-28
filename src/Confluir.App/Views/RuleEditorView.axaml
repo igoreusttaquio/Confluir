@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             x:Class="Confluir.App.Views.RuleEditorView"
+             x:DataType="vm:RuleEditorViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.groupTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="20" />
+    </Style>
+    <Style Selector="RadioButton.option">
+      <Setter Property="Theme" Value="{StaticResource {x:Type ToggleButton}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Background="{DynamicResource Background}">
+    <!-- Barra superior -->
+    <Border DockPanel.Dock="Top" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1" Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Classes="icon" Command="{Binding CancelCommand}"
+                  ToolTip.Tip="{l:Tr Action_Back}" AutomationProperties.Name="{l:Tr Action_Back}">
+            <LucideIcon Kind="ArrowLeft" />
+          </Button>
+          <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextPrimary}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelCommand}" />
+          <Button Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <LucideIcon Kind="LoaderCircle" Size="16" Classes="spin" IsVisible="{Binding IsSaving}"
+                          Foreground="{DynamicResource OnAccent}" />
+              <TextBlock Text="{l:Tr Rule_Save}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left" Margin="40,28,40,40">
+        <Border Background="{DynamicResource SurfaceAlt}" CornerRadius="8" Padding="14,10" IsVisible="{Binding HasError}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="CircleAlert" Size="16" Foreground="{DynamicResource Danger}" />
+            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}" />
+          </StackPanel>
+        </Border>
+
+        <!-- Nome e conta -->
+        <Border Classes="card">
+          <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto" RowSpacing="14">
+            <TextBlock Text="{l:Tr Rule_Name}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+            <TextBox Grid.Column="1" Text="{Binding Name}" PlaceholderText="{l:Tr Rule_NamePlaceholder}" />
+            <TextBlock Grid.Row="1" Text="{l:Tr Rule_Account}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AccountOptions}" SelectedItem="{Binding SelectedAccount}"
+                      HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:RuleAccountOption">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </Grid>
+        </Border>
+
+        <!-- Condições -->
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="groupTitle" Text="{l:Tr Rule_When}" />
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <RadioButton GroupName="ruleMatch" IsChecked="{Binding MatchAll}" Content="{l:Tr Rule_MatchAll}" />
+              <RadioButton GroupName="ruleMatch" IsChecked="{Binding MatchAny}" Content="{l:Tr Rule_MatchAny}" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Conditions}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Spacing="8" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:RuleConditionViewModel">
+                  <Grid ColumnDefinitions="170,150,*,Auto" ColumnSpacing="8">
+                    <ComboBox ItemsSource="{x:Static vm:RuleConditionViewModel.Fields}" SelectedItem="{Binding SelectedField}"
+                              HorizontalAlignment="Stretch">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="vm:RuleFieldOption">
+                          <TextBlock Text="{Binding Label}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:RuleConditionViewModel.Operators}"
+                              SelectedItem="{Binding SelectedOperator}" HorizontalAlignment="Stretch"
+                              IsVisible="{Binding NeedsValue}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="vm:RuleOperatorOption">
+                          <TextBlock Text="{Binding Label}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBox Grid.Column="2" Text="{Binding Value}" IsVisible="{Binding NeedsValue}"
+                             PlaceholderText="{l:Tr Rule_ValuePlaceholder}" />
+                    <Button Grid.Column="3" Classes="icon" Command="{Binding RemoveCommand}"
+                            ToolTip.Tip="{l:Tr Rule_RemoveCondition}" AutomationProperties.Name="{l:Tr Rule_RemoveCondition}">
+                      <LucideIcon Kind="X" Size="15" />
+                    </Button>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Command="{Binding AddConditionCommand}" HorizontalAlignment="Left">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <LucideIcon Kind="Plus" Size="15" />
+                <TextBlock Text="{l:Tr Rule_AddCondition}" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Border>
+
+        <!-- Ações -->
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="groupTitle" Text="{l:Tr Rule_Then}" />
+            <StackPanel Orientation="Horizontal" Spacing="20">
+              <CheckBox IsChecked="{Binding MarkRead}" Content="{l:Tr Rule_Action_MarkRead}" />
+              <CheckBox IsChecked="{Binding Flag}" Content="{l:Tr Rule_Action_Flag}" />
+            </StackPanel>
+            <TextBlock Classes="hint" Text="{l:Tr Rule_DestinationHint}" />
+            <UniformGrid Columns="4" ColumnSpacing="6">
+              <RadioButton Classes="option" GroupName="ruleDestination" IsChecked="{Binding IsDestinationNone}"
+                           Content="{l:Tr Rule_Destination_Keep}" />
+              <RadioButton Classes="option" GroupName="ruleDestination" IsChecked="{Binding IsDestinationArchive}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <LucideIcon Kind="Archive" Size="15" />
+                  <TextBlock Text="{l:Tr Rule_Action_Archive}" />
+                </StackPanel>
+              </RadioButton>
+              <RadioButton Classes="option" GroupName="ruleDestination" IsChecked="{Binding IsDestinationDelete}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <LucideIcon Kind="Trash" Size="15" />
+                  <TextBlock Text="{l:Tr Rule_Action_Delete}" />
+                </StackPanel>
+              </RadioButton>
+              <RadioButton Classes="option" GroupName="ruleDestination" IsChecked="{Binding IsDestinationMove}"
+                           IsEnabled="{Binding CanMove}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <LucideIcon Kind="FolderInput" Size="15" />
+                  <TextBlock Text="{l:Tr Rule_Destination_Move}" />
+                </StackPanel>
+              </RadioButton>
+            </UniformGrid>
+            <TextBlock Classes="hint" Text="{l:Tr Rule_MoveNeedsAccount}" IsVisible="{Binding !CanMove}" />
+            <ComboBox ItemsSource="{Binding FolderOptions}" SelectedItem="{Binding SelectedFolder}"
+                      IsVisible="{Binding IsDestinationMove}" HorizontalAlignment="Stretch"
+                      PlaceholderText="{l:Tr Rule_ChooseFolder}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:RuleFolderOption">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+        </Border>
+
+        <CheckBox IsChecked="{Binding ApplyToExisting}" Content="{l:Tr Rule_ApplyToExisting}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

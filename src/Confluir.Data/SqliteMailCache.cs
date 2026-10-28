@@ -76,7 +76,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
     private const string MessageColumns = """
         id AS Id, account_id AS AccountId, folder_id AS FolderId, from_name AS FromName, from_address AS FromAddress,
         subject AS Subject, preview AS Preview, date_utc_ms AS DateUtcMs, date_offset_min AS DateOffsetMin,
-        is_read AS IsRead, is_flagged AS IsFlagged, has_attachments AS HasAttachments
+        is_read AS IsRead, is_flagged AS IsFlagged, has_attachments AS HasAttachments, recipients AS Recipients
         """;
 
     public async Task<IReadOnlyList<MessageSummary>> GetMessagesAsync(Guid folderId, CancellationToken ct = default)
@@ -109,14 +109,15 @@ public sealed class SqliteMailCache(Database db) : IMailCache
                 var s = m.Summary;
                 await c.ExecuteAsync(new CommandDefinition("""
                     INSERT INTO messages (id, account_id, folder_id, uid, from_name, from_address, subject, preview,
-                                          date_utc_ms, date_offset_min, is_read, is_flagged, has_attachments)
+                                          date_utc_ms, date_offset_min, is_read, is_flagged, has_attachments, recipients)
                     VALUES (@id, @account, @folder, @uid, @fromName, @fromAddress, @subject, @preview,
-                            @dateMs, @offset, @read, @flagged, @attachments)
+                            @dateMs, @offset, @read, @flagged, @attachments, @recipients)
                     ON CONFLICT (folder_id, uid) DO UPDATE SET
                         id = excluded.id, from_name = excluded.from_name, from_address = excluded.from_address,
                         subject = excluded.subject, preview = excluded.preview, date_utc_ms = excluded.date_utc_ms,
                         date_offset_min = excluded.date_offset_min, is_read = excluded.is_read,
-                        is_flagged = excluded.is_flagged, has_attachments = excluded.has_attachments
+                        is_flagged = excluded.is_flagged, has_attachments = excluded.has_attachments,
+                        recipients = excluded.recipients
                     """, new
                 {
                     id = s.Id.ToString(),
@@ -132,6 +133,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
                     read = s.IsRead,
                     flagged = s.IsFlagged,
                     attachments = s.HasAttachments,
+                    recipients = s.Recipients ?? "",
                 }, tx, cancellationToken: ct));
             }
         }, ct);
@@ -198,14 +200,14 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         await ThreadPoolSwitch.Instance;
         if (string.IsNullOrWhiteSpace(text))
             return [];
+        if (ct.IsCancellationRequested)
+            return [];
         await using var c = await db.OpenAsync(ct);
-        // O nome mais recente de cada endereço, os mais frequentes primeiro.
+        // Uma passada só: com MAX(), o SQLite devolve as colunas "soltas" (endereço e nome) da linha mais recente
+        // de cada grupo — o nome mais atual de cada endereço, sem subconsulta por grupo. Mais frequentes primeiro.
         var rows = await c.QueryAsync<AddressRow>(new CommandDefinition("""
-            SELECT from_address AS Address,
-                   (SELECT m2.from_name FROM messages m2 WHERE lower(m2.from_address) = lower(m.from_address)
-                    ORDER BY m2.date_utc_ms DESC LIMIT 1) AS Name,
-                   COUNT(*) AS Uses
-            FROM messages m
+            SELECT from_address AS Address, from_name AS Name, MAX(date_utc_ms) AS LastSeen, COUNT(*) AS Uses
+            FROM messages
             WHERE from_address <> '' AND (from_address LIKE @p ESCAPE '\' OR from_name LIKE @p ESCAPE '\')
             GROUP BY lower(from_address)
             ORDER BY Uses DESC
@@ -220,6 +222,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
     {
         public string Address { get; set; } = "";
         public string? Name { get; set; }
+        public long LastSeen { get; set; }
         public long Uses { get; set; }
     }
 
@@ -267,7 +270,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
     // Fila --------------------------------------------------------------------------------------
 
     public Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null,
-        CancellationToken ct = default) =>
+        string? targetFolder = null, CancellationToken ct = default) =>
         WriteAsync(async (c, tx) =>
         {
             // Lida/não lida e sinalizada/não sinalizada: só a última intenção importa.
@@ -284,8 +287,8 @@ public sealed class SqliteMailCache(Database db) : IMailCache
                     new { m = messageId.ToString(), kinds = opposites }, tx, cancellationToken: ct));
             }
             await c.ExecuteAsync(new CommandDefinition("""
-                INSERT INTO pending_ops (account_id, message_id, kind, created_at, folder_name, folder_id, uid)
-                VALUES (@a, @m, @k, @t, @folderName, @folderId, @uid)
+                INSERT INTO pending_ops (account_id, message_id, kind, created_at, folder_name, folder_id, uid, target_folder)
+                VALUES (@a, @m, @k, @t, @folderName, @folderId, @uid, @target)
                 """,
                 new
                 {
@@ -296,6 +299,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
                     folderName = location?.FolderFullName,
                     folderId = location?.FolderId.ToString(),
                     uid = location is null ? (long?)null : location.Uid,
+                    target = targetFolder,
                 }, tx, cancellationToken: ct));
         }, ct);
 
@@ -305,7 +309,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<PendingRow>(new CommandDefinition("""
             SELECT id AS Id, account_id AS AccountId, message_id AS MessageId, kind AS Kind, attempts AS Attempts,
-                   folder_name AS FolderName, folder_id AS FolderId, uid AS Uid
+                   folder_name AS FolderName, folder_id AS FolderId, uid AS Uid, target_folder AS TargetFolder
             FROM pending_ops WHERE account_id = @a ORDER BY id
             """, new { a = accountId.ToString() }, cancellationToken: ct));
         return rows.Select(r =>
@@ -315,7 +319,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
             var location = r.FolderName is not null && r.FolderId is not null && r.Uid is { } uid
                 ? new MessageLocation(message, account, Guid.Parse(r.FolderId), r.FolderName, (uint)uid)
                 : null;
-            return new PendingOperation(r.Id, account, message, (OperationKind)r.Kind, (int)r.Attempts, location);
+            return new PendingOperation(r.Id, account, message, (OperationKind)r.Kind, (int)r.Attempts, location, r.TargetFolder);
         }).ToList();
     }
     public Task CompleteAsync(long operationId, CancellationToken ct = default) =>
@@ -360,7 +364,8 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         var offset = TimeSpan.FromMinutes(r.DateOffsetMin);
         var date = DateTimeOffset.FromUnixTimeMilliseconds(r.DateUtcMs).ToOffset(offset);
         return new MessageSummary(Guid.Parse(r.Id), Guid.Parse(r.AccountId), Guid.Parse(r.FolderId),
-            r.FromName, r.FromAddress, r.Subject, r.Preview, date, r.IsRead, r.IsFlagged, r.HasAttachments);
+            r.FromName, r.FromAddress, r.Subject, r.Preview, date, r.IsRead, r.IsFlagged, r.HasAttachments,
+            string.IsNullOrEmpty(r.Recipients) ? null : r.Recipients);
     }
 
     // Linhas lidas pelo Dapper (Guid é guardado como texto).
@@ -395,6 +400,7 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         public bool IsRead { get; set; }
         public bool IsFlagged { get; set; }
         public bool HasAttachments { get; set; }
+        public string? Recipients { get; set; }
     }
 
     private sealed class LocationRow
@@ -415,5 +421,6 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         public string? FolderName { get; set; }
         public string? FolderId { get; set; }
         public long? Uid { get; set; }
+        public string? TargetFolder { get; set; }
     }
 }

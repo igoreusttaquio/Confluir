@@ -1,4 +1,5 @@
 using Confluir.Core.Models;
+using Confluir.Core.Rules;
 
 namespace Confluir.Core.Services;
 
@@ -45,6 +46,12 @@ public interface IMailboxService
 
     /// <summary>Move para a Lixeira; se já estiver nela, exclui definitivamente.</summary>
     Task DeleteAsync(Guid messageId, CancellationToken ct = default);
+
+    /// <summary>Move para outra pasta da mesma conta (nome completo no servidor).</summary>
+    Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default);
+
+    /// <summary>Aplica uma regra às mensagens que já estão na caixa de entrada; retorna quantas foram afetadas.</summary>
+    Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default);
 
     /// <summary>Endereços já vistos (remetentes), para autocompletar destinatários; os mais frequentes primeiro.</summary>
     Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit = 8, CancellationToken ct = default);

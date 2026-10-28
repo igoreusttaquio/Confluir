@@ -43,6 +43,22 @@
     <Style Selector="Grid.compactRow TextBlock.from, Grid.compactRow TextBlock.subject">
       <Setter Property="FontSize" Value="{DynamicResource ListSubjectFontSize}" />
     </Style>
+    <!-- Filtros: pílulas pequenas; a escolhida fica na cor de destaque -->
+    <Style Selector="RadioButton.chip">
+      <Setter Property="Theme" Value="{StaticResource {x:Type ToggleButton}}" />
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="RadioButton.chip:checked /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSubtle}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+    </Style>
     <Style Selector="TextBlock.date">
       <Setter Property="FontSize" Value="{DynamicResource ListMetaFontSize}" />
     </Style>
@@ -68,11 +84,28 @@
           </StackPanel>
         </Grid>
       </Border>
+      <!-- Filtros rápidos -->
+      <Border DockPanel.Dock="Top" Padding="14,8,12,8" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+              IsVisible="{Binding HasAccounts}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <RadioButton Classes="chip" GroupName="listFilter" IsChecked="{Binding IsFilterAll}" Content="{l:Tr Filter_All}" />
+          <RadioButton Classes="chip" GroupName="listFilter" IsChecked="{Binding IsFilterUnread}" Content="{l:Tr Filter_Unread}" />
+          <!-- Só ícone: cabe mesmo com a lista estreita -->
+          <RadioButton Classes="chip" GroupName="listFilter" IsChecked="{Binding IsFilterFlagged}"
+                       ToolTip.Tip="{l:Tr Filter_Flagged}" AutomationProperties.Name="{l:Tr Filter_Flagged}">
+            <LucideIcon Kind="Flag" Size="13" />
+          </RadioButton>
+          <RadioButton Classes="chip" GroupName="listFilter" IsChecked="{Binding IsFilterAttachments}"
+                       ToolTip.Tip="{l:Tr Filter_Attachments}" AutomationProperties.Name="{l:Tr Filter_Attachments}">
+            <LucideIcon Kind="Paperclip" Size="13" />
+          </RadioButton>
+        </StackPanel>
+      </Border>
       <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsListLoading}"
                    MinHeight="2" Height="2" Margin="0,-2,0,0" />
 
       <Grid>
-        <TextBlock Text="{l:Tr MessageList_Empty}" Classes="secondary"
+        <TextBlock Text="{Binding ListEmptyText}" Classes="secondary"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    IsVisible="{Binding IsListEmpty}" />
 

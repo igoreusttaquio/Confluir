@@ -30,6 +30,7 @@ public sealed record Draft(
     bool NeedsUpload = true)
 {
     /// <summary>Sem destinatários, assunto, texto nem anexos: não vale a pena guardar.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty =>
         string.IsNullOrWhiteSpace(To) && string.IsNullOrWhiteSpace(Cc) && string.IsNullOrWhiteSpace(Bcc) &&
         string.IsNullOrWhiteSpace(Subject) && string.IsNullOrWhiteSpace(Text) && Attachments.Count == 0;

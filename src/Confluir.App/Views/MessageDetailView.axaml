@@ -54,6 +54,10 @@
                 ToolTip.Tip="{Binding ReadTooltip}" AutomationProperties.Name="{l:Tr Action_MarkUnread}">
           <LucideIcon Kind="MailOpen" />
         </Button>
+        <Button Classes="icon" Command="{Binding CreateRuleCommand}" IsVisible="{Binding IsNotDraft}"
+                ToolTip.Tip="{l:Tr Rule_FromMessage}" AutomationProperties.Name="{l:Tr Rule_FromMessage}">
+          <LucideIcon Kind="ListFilter" />
+        </Button>
       </StackPanel>
       <Button Grid.Column="1" Classes="icon" Command="{Binding OpenInPageCommand}" VerticalAlignment="Center"
               IsVisible="{Binding $parent[views:MessageDetailView].ShowOpenInPage}"

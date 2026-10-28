@@ -14,6 +14,9 @@ public sealed class AppSettings
     public ReadingSettings Reading { get; set; } = new();
     public ComposeSettings Compose { get; set; } = new();
     public FontSettings Fonts { get; set; } = new();
+
+    /// <summary>Regras aplicadas às mensagens novas, na ordem da lista.</summary>
+    public List<Rules.MailRule> Rules { get; set; } = [];
 }
 
 public sealed class ComposeSettings

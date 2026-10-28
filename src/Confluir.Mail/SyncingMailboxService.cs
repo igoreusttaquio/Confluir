@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
 using Confluir.Core.Models;
+using Confluir.Core.Rules;
 using Confluir.Core.Services;
+using Confluir.Core.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MailFolder = Confluir.Core.Models.MailFolder;
@@ -24,6 +26,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     private readonly IMailCache _cache;
     private readonly ImapSyncEngine _engine;
     private readonly MailAuthenticator _authenticator;
+    private readonly ISettingsStore _settings;
     private readonly ILogger<SyncingMailboxService> _logger;
     private readonly ConcurrentDictionary<Guid, AccountRunner> _runners = new();
     private bool _started;
@@ -33,8 +36,10 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         IMailCache cache,
         ImapSyncEngine engine,
         MailAuthenticator authenticator,
+        ISettingsStore settings,
         ILogger<SyncingMailboxService> logger)
     {
+        _settings = settings;
         _accounts = accounts;
         _cache = cache;
         _engine = engine;
@@ -100,8 +105,89 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     public Task ArchiveAsync(Guid messageId, CancellationToken ct = default) =>
         EnqueueAsync(messageId, OperationKind.Archive, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct);
 
-    public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
+public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
         EnqueueAsync(messageId, OperationKind.Delete, () => _cache.DeleteMessageAsync(messageId, ct), keepLocation: true, ct);
+
+    public async Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default)
+    {
+        var location = await _cache.GetLocationAsync(messageId, ct);
+        if (location is null || location.FolderFullName == folderFullName)
+            return;
+        await _cache.DeleteMessageAsync(messageId, ct);
+        await _cache.EnqueueAsync(location.AccountId, messageId, OperationKind.Move, location, folderFullName, ct);
+        Wake(location.AccountId);
+    }
+
+    // Regras ----------------------------------------------------------------------------------------
+
+    /// <summary>"Aplicar agora": roda a regra nas mensagens que já estão na caixa de entrada.</summary>
+    public async Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default)
+    {
+        var total = 0;
+        foreach (var account in _accounts.Accounts.Where(a => rule.AccountId is null || rule.AccountId == a.Id))
+        {
+            var inbox = (await _cache.GetFoldersAsync(account.Id, ct)).FirstOrDefault(f => f.Kind == SpecialFolderKind.Inbox);
+            if (inbox is null)
+                continue;
+            var messages = await _cache.GetMessagesAsync(inbox.Id, ct);
+            total += await ExecuteRulesAsync(account, [rule with { Enabled = true }], messages, ct);
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// Executa o resultado das regras. Cada ação vai para a fila com o local da mensagem guardado,
+    /// porque mover/arquivar tira a mensagem do cache antes de a fila marcar como lida ou sinalizar.
+    /// </summary>
+    private async Task<int> ExecuteRulesAsync(MailAccount account, IReadOnlyList<MailRule> rules,
+        IReadOnlyList<MessageSummary> messages, CancellationToken ct)
+    {
+        var outcomes = RuleEngine.Evaluate(rules, account.Id, messages);
+        foreach (var outcome in outcomes)
+        {
+            var id = outcome.Message.Id;
+            var location = await _cache.GetLocationAsync(id, ct);
+            if (location is null)
+                continue;
+            var actions = outcome.Actions;
+            if (actions.MarkRead)
+            {
+                await _cache.SetReadAsync(id, true, ct);
+                await _cache.EnqueueAsync(account.Id, id, OperationKind.MarkRead, location, ct: ct);
+            }
+            if (actions.Flag)
+            {
+                await _cache.SetFlaggedAsync(id, true, ct);
+                await _cache.EnqueueAsync(account.Id, id, OperationKind.Flag, location, ct: ct);
+            }
+            OperationKind? kind = actions.Destination switch
+            {
+                RuleDestination.Archive => OperationKind.Archive,
+                RuleDestination.Delete => OperationKind.Delete,
+                RuleDestination.MoveToFolder => OperationKind.Move,
+                _ => null,
+            };
+            var target = kind == OperationKind.Move ? actions.MoveToFolder : null;
+            if (kind is { } destination && (destination != OperationKind.Move || target != location.FolderFullName))
+            {
+                await _cache.DeleteMessageAsync(id, ct);
+                await _cache.EnqueueAsync(account.Id, id, destination, location, target, ct);
+            }
+        }
+        if (outcomes.Count > 0)
+        {
+            _logger.LogInformation("Regras aplicadas a {Count} mensagens (conta {AccountId})", outcomes.Count, account.Id);
+            Wake(account.Id);
+            RaiseChanged(account.Id, foldersChanged: false);
+        }
+        return outcomes.Count;
+    }
+
+    private void Wake(Guid accountId)
+    {
+        if (_runners.TryGetValue(accountId, out var runner))
+            runner.Wake(queue: true);
+    }
 
     /// <param name="keepLocation">A ação tira a mensagem do cache: a fila guarda onde ela estava no servidor.</param>
     private async Task EnqueueAsync(Guid messageId, OperationKind kind, Func<Task> applyLocally, bool keepLocation,
@@ -111,7 +197,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         if (location is null)
             return;
         await applyLocally();
-        await _cache.EnqueueAsync(location.AccountId, messageId, kind, keepLocation ? location : null, ct);
+        await _cache.EnqueueAsync(location.AccountId, messageId, kind, keepLocation ? location : null, ct: ct);
         if (_runners.TryGetValue(location.AccountId, out var runner))
             runner.Wake(queue: true);
     }
@@ -263,6 +349,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     private async Task SyncFolderAsync(MailAccount account, MailFolder folder, CancellationToken ct)
     {
         var lastRaise = DateTimeOffset.MinValue;
+        var arrived = folder.Kind == SpecialFolderKind.Inbox ? new List<MessageSummary>() : null;
         var changed = await _engine.SyncFolderAsync(account, folder, () =>
         {
             // Lotes do preenchimento inicial: atualiza a interface sem inundá-la de eventos.
@@ -270,9 +357,22 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
                 return;
             lastRaise = DateTimeOffset.UtcNow;
             RaiseChanged(account.Id, foldersChanged: false);
-        }, ct);
+        }, ct, arrived);
         if (changed)
             RaiseChanged(account.Id, foldersChanged: false);
+
+        // Regras só nas que acabaram de chegar; as ações vão para a fila e são enviadas na próxima volta do laço.
+        if (arrived is { Count: > 0 } && _settings.Current.Rules is { Count: > 0 } rules)
+        {
+            try
+            {
+                await ExecuteRulesAsync(account, rules.ToList(), arrived, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "Falha ao aplicar regras (conta {AccountId})", account.Id);
+            }
+        }
     }
 
     private async Task ProcessQueueAsync(MailAccount account, CancellationToken ct)
@@ -294,7 +394,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
 
             try
             {
-                await _engine.ApplyAsync(op.Kind, location, folders, ct);
+                await _engine.ApplyAsync(op.Kind, location, folders, ct, op.TargetFolder);
                 await _cache.CompleteAsync(op.Id, ct);
             }
             catch (Exception ex) when (IsPermanent(ex, account))

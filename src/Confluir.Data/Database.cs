@@ -101,6 +101,12 @@ public sealed class Database
             data        TEXT NOT NULL
         );
         """,
+
+        // v7: destinatários no cache (regras por "Para") e pasta de destino na fila (mover por regra).
+        """
+        ALTER TABLE messages ADD COLUMN recipients TEXT NOT NULL DEFAULT '';
+        ALTER TABLE pending_ops ADD COLUMN target_folder TEXT;
+        """,
     ];
 
     private readonly string _connectionString;

@@ -35,8 +35,7 @@
         <RadioButton Classes="themeOption" GroupName="theme" IsChecked="{Binding IsSystem}">
           <StackPanel Spacing="4">
             <LucideIcon Kind="Monitor" Size="18" HorizontalAlignment="Center" />
-            <TextBlock Text="{l:Tr Theme_System}" FontSize="12" HorizontalAlignment="Center"
-                       TextWrapping="Wrap" TextAlignment="Center" />
+            <TextBlock Text="{l:Tr Theme_System}" FontSize="12" HorizontalAlignment="Center" />
           </StackPanel>
         </RadioButton>
       </UniformGrid>

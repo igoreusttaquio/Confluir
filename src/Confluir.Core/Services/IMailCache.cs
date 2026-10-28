@@ -24,10 +24,14 @@ public enum OperationKind
     Archive,
     /// <summary>Mover para a Lixeira; já na Lixeira, excluir definitivamente.</summary>
     Delete,
+    /// <summary>Mover para outra pasta (<see cref="PendingOperation.TargetFolder"/>), ex.: por uma regra.</summary>
+    Move,
 }
 
 /// <param name="Location">Onde a mensagem estava ao enfileirar (necessário para mover/excluir, que a tiram do cache na hora).</param>
-public sealed record PendingOperation(long Id, Guid AccountId, Guid MessageId, OperationKind Kind, int Attempts, MessageLocation? Location = null);
+/// <param name="TargetFolder">Pasta de destino (nome completo no servidor) de <see cref="OperationKind.Move"/>.</param>
+public sealed record PendingOperation(long Id, Guid AccountId, Guid MessageId, OperationKind Kind, int Attempts,
+    MessageLocation? Location = null, string? TargetFolder = null);
 
 /// <summary>Cache local (offline) de pastas, cabeçalhos, corpos e operações pendentes.</summary>
 public interface IMailCache
@@ -80,7 +84,8 @@ public interface IMailCache
     Task ClearBodiesAsync(CancellationToken ct = default);
 
     // Fila de operações
-    Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null, CancellationToken ct = default);
+    Task EnqueueAsync(Guid accountId, Guid messageId, OperationKind kind, MessageLocation? location = null,
+        string? targetFolder = null, CancellationToken ct = default);
 
     Task<IReadOnlyList<PendingOperation>> GetPendingAsync(Guid accountId, CancellationToken ct = default);
 

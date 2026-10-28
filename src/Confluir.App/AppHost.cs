@@ -88,6 +88,8 @@ public static class AppHost
         builder.Services.AddSingleton<ReadingServices>();
         builder.Services.AddSingleton<DraftService>();
         builder.Services.AddSingleton<ComposeServices>();
+        builder.Services.AddSingleton<RuleService>();
+        builder.Services.AddSingleton<RuleEditorServices>();
         builder.Services.AddSingleton<SettingsServices>();
 
         builder.Services.AddSingleton<AppearanceViewModel>();

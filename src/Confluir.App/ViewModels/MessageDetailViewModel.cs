@@ -33,6 +33,7 @@ public interface IMessageActions
     Task ToggleReadAsync(MessageDetailViewModel message);
     Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode);
     Task EditDraftAsync(MessageDetailViewModel message);
+    void CreateRule(MessageDetailViewModel message);
 }
 
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
@@ -153,6 +154,9 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private Task EditDraft() => Actions?.EditDraftAsync(this) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private void CreateRule() => Actions?.CreateRule(this);
 
     public string FlagTooltip => Row.IsFlagged ? Strings.Action_Unflag : Strings.Action_Flag;
     public string ReadTooltip => Row.IsRead ? Strings.Action_MarkUnread : Strings.Action_MarkRead;

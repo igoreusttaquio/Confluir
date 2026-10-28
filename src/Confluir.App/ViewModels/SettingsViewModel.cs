@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Resources;
 using Confluir.App.Services;
 using Confluir.Core;
+using Confluir.Core.Rules;
 using Confluir.Core.Services;
 using Confluir.Core.Settings;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ namespace Confluir.App.ViewModels;
 public enum SettingsSection
 {
     Accounts,
-    Appearance,
+    Rules,
     Fonts,
     Reading,
     Compose,
@@ -23,12 +24,13 @@ public enum SettingsSection
 
 /// <summary>Serviços da tela de configurações.</summary>
 public sealed record SettingsServices(
-    AppearanceViewModel Appearance,
     FontService Fonts,
     ISettingsStore Settings,
     AppPaths Paths,
     IMailCache Cache,
     NavigationService Navigation,
+    RuleService Rules,
+    RuleEditorServices RuleEditor,
     ILogger<SettingsViewModel> Logger);
 
 public sealed partial class TrustedSenderViewModel(string address, SettingsViewModel owner) : ViewModelBase
@@ -41,8 +43,85 @@ public sealed partial class TrustedSenderViewModel(string address, SettingsViewM
 
 public sealed record MarkReadOption(int Seconds, string LabelKey);
 
+public sealed partial class RuleItemViewModel : ViewModelBase
+{
+    private readonly SettingsViewModel _owner;
+    private bool _loading;
+
+    public RuleItemViewModel(MailRule rule, SettingsViewModel owner)
+    {
+        Rule = rule;
+        _owner = owner;
+        _loading = true;
+        IsEnabled = rule.Enabled;
+        _loading = false;
+    }
+
+    public MailRule Rule { get; }
+
+    public string Name => Rule.Name;
+
+    // Pastas aparecem pelo último trecho do nome ("[Gmail]/Promoções" → "Promoções").
+    public string Description => RuleText.Describe(Rule, folder => folder.Split('/', '.').Last());
+
+    public string Scope => _owner.AccountLabel(Rule.AccountId);
+
+    [ObservableProperty]
+    public partial bool IsEnabled { get; set; }
+
+    partial void OnIsEnabledChanged(bool value)
+    {
+        if (!_loading)
+            _owner.SetRuleEnabled(this, value);
+    }
+
+    [ObservableProperty]
+    public partial bool IsConfirmingDelete { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsApplying { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasApplyResult))]
+    public partial string? ApplyResult { get; private set; }
+
+    public bool HasApplyResult => ApplyResult is not null;
+
+    [RelayCommand]
+    private void Edit() => _owner.EditRule(this);
+
+    [RelayCommand]
+    private void AskDelete() => IsConfirmingDelete = true;
+
+    [RelayCommand]
+    private void CancelDelete() => IsConfirmingDelete = false;
+
+    [RelayCommand]
+    private void ConfirmDelete() => _owner.DeleteRule(this);
+
+    [RelayCommand]
+    private async Task ApplyNowAsync()
+    {
+        IsApplying = true;
+        ApplyResult = null;
+        try
+        {
+            var count = await _owner.ApplyRuleAsync(Rule);
+            ApplyResult = string.Format(Strings.Rule_AppliedCount, count);
+        }
+        catch (Exception)
+        {
+            ApplyResult = Strings.Rule_ApplyFailed;
+        }
+        finally
+        {
+            IsApplying = false;
+        }
+    }
+}
+
 /// <summary>
-/// Configurações, em tela própria: contas, aparência, fontes, leitura, escrita e avançado.
+/// Configurações, em tela própria: contas, fontes, leitura, escrita e avançado (a aparência tem botão próprio).
 /// Tudo vale na hora (exceto fontes, que têm pré-visualização e botão de aplicar).
 /// </summary>
 public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
@@ -66,6 +145,8 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
         SelectedMarkRead = MarkReadOptions.FirstOrDefault(o => o.Seconds == delay) ?? MarkReadOptions[0];
         foreach (var sender in services.Settings.Current.Reading.TrustedImageSenders.Order())
             TrustedSenders.Add(new TrustedSenderViewModel(sender, this));
+        ReloadRules();
+        services.Rules.Changed += (_, _) => ReloadRules();
         _main.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(MainWindowViewModel.AccountNodes) or "")
@@ -74,12 +155,12 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsAccounts), nameof(IsAppearance), nameof(IsFonts), nameof(IsReading),
+    [NotifyPropertyChangedFor(nameof(IsAccounts), nameof(IsRules), nameof(IsFonts), nameof(IsReading),
         nameof(IsCompose), nameof(IsAdvanced))]
     public partial SettingsSection Section { get; set; }
 
     public bool IsAccounts { get => Section == SettingsSection.Accounts; set { if (value) Section = SettingsSection.Accounts; } }
-    public bool IsAppearance { get => Section == SettingsSection.Appearance; set { if (value) Section = SettingsSection.Appearance; } }
+    public bool IsRules { get => Section == SettingsSection.Rules; set { if (value) Section = SettingsSection.Rules; } }
     public bool IsFonts { get => Section == SettingsSection.Fonts; set { if (value) Section = SettingsSection.Fonts; } }
     public bool IsReading { get => Section == SettingsSection.Reading; set { if (value) Section = SettingsSection.Reading; } }
     public bool IsCompose { get => Section == SettingsSection.Compose; set { if (value) Section = SettingsSection.Compose; } }
@@ -102,9 +183,44 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     [RelayCommand]
     private void AddAccount() => _main.AddAccountCommand.Execute(null);
 
-    // Aparência e fontes ----------------------------------------------------------------------------
+// Regras ----------------------------------------------------------------------------------------
 
-    public AppearanceViewModel Appearance => _services.Appearance;
+    public ObservableCollection<RuleItemViewModel> Rules { get; } = [];
+
+    public bool HasRules => Rules.Count > 0;
+
+    private void ReloadRules()
+    {
+        Rules.Clear();
+        foreach (var rule in _services.Rules.Rules)
+            Rules.Add(new RuleItemViewModel(rule, this));
+        OnPropertyChanged(nameof(HasRules));
+    }
+
+    private IReadOnlyList<Core.Models.MailAccount> AccountList => _main.AccountNodes.Select(n => n.Account).ToList();
+
+    public string AccountLabel(Guid? accountId) =>
+        accountId is { } id && AccountList.FirstOrDefault(a => a.Id == id) is { } account
+            ? account.DisplayName
+            : Strings.Rule_AllAccounts;
+
+    [RelayCommand]
+    private void NewRule() =>
+        _services.Navigation.NavigateTo(new RuleEditorViewModel(_services.RuleEditor, AccountList, _main.ShowStatus));
+
+    public void EditRule(RuleItemViewModel item) =>
+        _services.Navigation.NavigateTo(new RuleEditorViewModel(_services.RuleEditor, AccountList, _main.ShowStatus, item.Rule));
+
+    public void DeleteRule(RuleItemViewModel item) => _services.Rules.Delete(item.Rule.Id);
+
+    public void SetRuleEnabled(RuleItemViewModel item, bool enabled) => _services.Rules.SetEnabled(item.Rule.Id, enabled);
+
+    public async Task<int> ApplyRuleAsync(MailRule rule)
+    {
+        return await _services.Rules.ApplyNowAsync(rule);
+    }
+
+    // Fontes ----------------------------------------------------------------------------------------
 
     public FontSettingsViewModel Fonts { get; }
 

@@ -1,4 +1,5 @@
 using Confluir.Core.Models;
+using Confluir.Core.Rules;
 using Confluir.Core.Providers;
 using Confluir.Core.Services;
 
@@ -139,6 +140,36 @@ public sealed class FakeMailboxService : IMailboxService
     public Task ArchiveAsync(Guid messageId, CancellationToken ct = default) => Remove(messageId);
 
     public Task DeleteAsync(Guid messageId, CancellationToken ct = default) => Remove(messageId);
+
+    public Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default) => Remove(messageId);
+
+    public Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default)
+    {
+        var count = 0;
+        foreach (var account in _accounts.Where(a => rule.AccountId is null || rule.AccountId == a.Id))
+        {
+            if (_folders[account.Id].FirstOrDefault(f => f.Kind == SpecialFolderKind.Inbox) is not { } inbox)
+                continue;
+            var list = _messages[inbox.Id];
+            foreach (var outcome in RuleEngine.Evaluate([rule with { Enabled = true }], account.Id, list.ToList()))
+            {
+                count++;
+                if (outcome.Actions.Destination != RuleDestination.None)
+                {
+                    Remove(outcome.Message.Id);
+                    continue;
+                }
+                var updated = outcome.Message with
+                {
+                    IsRead = outcome.Message.IsRead || outcome.Actions.MarkRead,
+                    IsFlagged = outcome.Message.IsFlagged || outcome.Actions.Flag,
+                };
+                list[list.IndexOf(outcome.Message)] = updated;
+                _byId[updated.Id] = updated;
+            }
+        }
+        return Task.FromResult(count);
+    }
 
     private Task Remove(Guid messageId)
     {

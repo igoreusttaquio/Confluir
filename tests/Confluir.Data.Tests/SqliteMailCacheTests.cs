@@ -84,6 +84,8 @@ public sealed class SqliteMailCacheTests : IDisposable
                 ALTER TABLE pending_ops DROP COLUMN folder_name;
                 ALTER TABLE pending_ops DROP COLUMN folder_id;
                 ALTER TABLE pending_ops DROP COLUMN uid;
+                ALTER TABLE pending_ops DROP COLUMN target_folder;
+                ALTER TABLE messages DROP COLUMN recipients;
                 PRAGMA user_version = 1;
                 """;
             await cmd.ExecuteNonQueryAsync(_ct);
@@ -217,12 +219,54 @@ public sealed class SqliteMailCacheTests : IDisposable
         var location = await _cache.GetLocationAsync(message.Summary.Id, _ct);
 
         await _cache.DeleteMessageAsync(message.Summary.Id, _ct);
-        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Archive, location, _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Archive, location, ct: _ct);
 
         Assert.Empty(await _cache.GetMessagesAsync(inbox.Id, _ct));
         var op = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
         Assert.Equal(OperationKind.Archive, op.Kind);
         Assert.Equal(location, op.Location);
+    }
+
+    [Fact]
+    public async Task Destinatarios_sao_guardados_e_mover_guarda_a_pasta_de_destino()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        var message = Message(inbox, 9);
+        message = message with { Summary = message.Summary with { Recipients = "eu@exemplo.com ana@exemplo.com" } };
+        await _cache.UpsertMessagesAsync(inbox.Id, [message], _ct);
+
+        Assert.Equal("eu@exemplo.com ana@exemplo.com", Assert.Single(await _cache.GetMessagesAsync(inbox.Id, _ct)).Recipients);
+
+        var location = await _cache.GetLocationAsync(message.Summary.Id, _ct);
+        await _cache.EnqueueAsync(_account, message.Summary.Id, OperationKind.Move, location, "Promoções", _ct);
+        var op = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
+        Assert.Equal(OperationKind.Move, op.Kind);
+        Assert.Equal("Promoções", op.TargetFolder);
+    }
+
+    [Fact]
+    public async Task Sugestao_de_endereco_usa_o_nome_mais_recente_e_ordena_por_frequencia()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        CachedMessage From(uint uid, string name, string address) => Message(inbox, uid) with
+        {
+            Summary = Message(inbox, uid).Summary with { FromName = name, FromAddress = address },
+        };
+        await _cache.UpsertMessagesAsync(inbox.Id,
+        [
+            From(1, "Ana antiga", "ana@exemplo.com"),
+            From(5, "Ana Souza", "ANA@exemplo.com"),
+            From(3, "Ana", "ana@exemplo.com"),
+            From(2, "Anabela", "anabela@exemplo.com"),
+        ], _ct);
+
+        var found = await _cache.SearchAddressesAsync("ana", 8, _ct);
+
+        Assert.Equal(2, found.Count);
+        Assert.Equal("Ana Souza", found[0].Name); // 3 usos; nome da mensagem mais recente (uid 5)
+        Assert.Equal("anabela@exemplo.com", found[1].Address);
     }
 
     [Fact]
