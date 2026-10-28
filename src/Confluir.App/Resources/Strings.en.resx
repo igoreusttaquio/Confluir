@@ -343,6 +343,11 @@
   <data name="Search_ServerFailed"><value>The server search failed.</value></data>
   <data name="Selection_Count"><value>{0} messages selected</value></data>
   <data name="Selection_Clear"><value>Clear selection</value></data>
+  <data name="Settings_Shortcuts"><value>Shortcuts</value></data>
+  <data name="Shortcuts_Hint"><value>Keyboard shortcuts for the main window. Shortcuts that act on messages are ignored while you type in a text field; Esc always goes back.</value></data>
+  <data name="Shortcut_Search"><value>Search</value></data>
+  <data name="Shortcut_ToggleRead"><value>Mark as read / unread</value></data>
+  <data name="Shortcut_ToggleFlag"><value>Flag / unflag</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>

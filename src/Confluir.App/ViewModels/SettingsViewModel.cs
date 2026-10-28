@@ -19,6 +19,7 @@ public enum SettingsSection
     Fonts,
     Reading,
     Compose,
+    Shortcuts,
     Advanced,
 }
 
@@ -156,7 +157,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsAccounts), nameof(IsRules), nameof(IsFonts), nameof(IsReading),
-        nameof(IsCompose), nameof(IsAdvanced))]
+        nameof(IsCompose), nameof(IsShortcuts), nameof(IsAdvanced))]
     public partial SettingsSection Section { get; set; }
 
     public bool IsAccounts { get => Section == SettingsSection.Accounts; set { if (value) Section = SettingsSection.Accounts; } }
@@ -164,6 +165,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     public bool IsFonts { get => Section == SettingsSection.Fonts; set { if (value) Section = SettingsSection.Fonts; } }
     public bool IsReading { get => Section == SettingsSection.Reading; set { if (value) Section = SettingsSection.Reading; } }
     public bool IsCompose { get => Section == SettingsSection.Compose; set { if (value) Section = SettingsSection.Compose; } }
+    public bool IsShortcuts { get => Section == SettingsSection.Shortcuts; set { if (value) Section = SettingsSection.Shortcuts; } }
     public bool IsAdvanced { get => Section == SettingsSection.Advanced; set { if (value) Section = SettingsSection.Advanced; } }
 
     /// <summary>Página na frente (INavigationPage).</summary>
@@ -284,6 +286,10 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     }
 
     public bool IsRichTextAvailable => WebViewSupport.IsAvailable;
+
+    // Atalhos ---------------------------------------------------------------------------------------
+
+    public IReadOnlyList<ShortcutInfo> Shortcuts => ShortcutInfo.All;
 
     // Avançado --------------------------------------------------------------------------------------
 

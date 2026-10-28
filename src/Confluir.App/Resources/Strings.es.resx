@@ -343,6 +343,11 @@
   <data name="Search_ServerFailed"><value>No se pudo buscar en el servidor.</value></data>
   <data name="Selection_Count"><value>{0} mensajes seleccionados</value></data>
   <data name="Selection_Clear"><value>Borrar selección</value></data>
+  <data name="Settings_Shortcuts"><value>Atajos</value></data>
+  <data name="Shortcuts_Hint"><value>Atajos de teclado de la ventana principal. Los que actúan sobre mensajes no funcionan mientras escribes en un campo de texto; Esc siempre vuelve.</value></data>
+  <data name="Shortcut_Search"><value>Buscar</value></data>
+  <data name="Shortcut_ToggleRead"><value>Marcar como leído / no leído</value></data>
+  <data name="Shortcut_ToggleFlag"><value>Marcar / desmarcar</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

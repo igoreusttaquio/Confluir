@@ -1,5 +1,8 @@
 using System.ComponentModel;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.VisualTree;
 using Avalonia.Media;
 using Confluir.App.Services;
 using Confluir.App.ViewModels;
@@ -30,6 +33,7 @@ public partial class MainWindow : Window
 
         ApplyLayout();
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        viewModel.FocusSearchRequested += (_, _) => this.FindDescendantOfType<MessageListView>()?.FocusSearch();
         Opened += async (_, _) => await viewModel.InitializeAsync();
     }
 
@@ -118,6 +122,49 @@ public partial class MainWindow : Window
         if (columns[2].Width.IsAbsolute && columns[2].ActualWidth > 0)
             _settings.Current.Layout.MessageListWidth = columns[2].ActualWidth;
     }
+
+    /// <summary>
+    /// Atalhos (tabela em <see cref="ShortcutInfo.All"/>). Chegam aqui depois do controle com foco: o que ele já
+    /// tratou (ex.: Delete num campo de texto) não vira atalho, e ações sobre mensagens não valem enquanto se digita.
+    /// </summary>
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Handled || _vm is null || ShortcutFor(e) is not { } action)
+            return;
+        if (ShortcutInfo.ActsOnMessages(action) && IsTyping())
+            return;
+        e.Handled = _vm.RunShortcut(action);
+    }
+
+    private static ShortcutAction? ShortcutFor(KeyEventArgs e)
+    {
+        // No macOS o modificador dos atalhos é ⌘ (Meta).
+        var mod = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
+        var m = e.KeyModifiers;
+        var plain = m == KeyModifiers.None;
+        var withMod = m == mod;
+        var withModShift = m == (mod | KeyModifiers.Shift);
+        return e.Key switch
+        {
+            Key.N when withMod => ShortcutAction.NewMessage,
+            Key.F when withMod => ShortcutAction.Search,
+            Key.R when withMod => ShortcutAction.Reply,
+            Key.R when withModShift => ShortcutAction.ReplyAll,
+            Key.F when withModShift => ShortcutAction.Forward,
+            Key.E when withMod => ShortcutAction.Archive,
+            Key.Delete when plain => ShortcutAction.Delete,
+            Key.Q when withMod => ShortcutAction.ToggleRead,
+            Key.S when withModShift => ShortcutAction.ToggleFlag,
+            Key.F5 when plain => ShortcutAction.Sync,
+            Key.OemComma when withMod => ShortcutAction.Settings,
+            _ => null,
+        };
+    }
+
+    private bool IsTyping() =>
+        FocusManager?.GetFocusedElement() is Visual focused &&
+        (focused is TextBox || focused.FindAncestorOfType<TextBox>() is not null || focused.FindAncestorOfType<AutoCompleteBox>() is not null);
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {

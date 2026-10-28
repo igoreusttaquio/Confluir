@@ -343,6 +343,11 @@
   <data name="Search_ServerFailed"><value>Não foi possível buscar no servidor.</value></data>
   <data name="Selection_Count"><value>{0} mensagens selecionadas</value></data>
   <data name="Selection_Clear"><value>Limpar seleção</value></data>
+  <data name="Settings_Shortcuts"><value>Atalhos</value></data>
+  <data name="Shortcuts_Hint"><value>Atalhos de teclado da janela principal. Os que agem sobre mensagens não valem enquanto você digita num campo de texto; Esc sempre volta.</value></data>
+  <data name="Shortcut_Search"><value>Buscar</value></data>
+  <data name="Shortcut_ToggleRead"><value>Marcar como lida / não lida</value></data>
+  <data name="Shortcut_ToggleFlag"><value>Sinalizar / tirar sinalização</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

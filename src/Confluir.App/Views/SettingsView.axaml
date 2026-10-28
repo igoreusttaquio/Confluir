@@ -126,6 +126,12 @@
             <TextBlock Text="{l:Tr Settings_Compose}" VerticalAlignment="Center" />
           </StackPanel>
         </RadioButton>
+        <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsShortcuts}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <LucideIcon Kind="Keyboard" Size="17" />
+            <TextBlock Text="{l:Tr Settings_Shortcuts}" VerticalAlignment="Center" />
+          </StackPanel>
+        </RadioButton>
         <RadioButton Classes="section" GroupName="settingsSection" IsChecked="{Binding IsAdvanced}">
           <StackPanel Orientation="Horizontal" Spacing="10">
             <LucideIcon Kind="Wrench" Size="17" />
@@ -477,6 +483,35 @@
                 </RadioButton>
               </UniformGrid>
             </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Atalhos -->
+        <StackPanel Classes="page" IsVisible="{Binding IsShortcuts}">
+          <TextBlock Classes="sectionTitle" Text="{l:Tr Settings_Shortcuts}" />
+          <TextBlock Classes="hint" Text="{l:Tr Shortcuts_Hint}" />
+          <Border Classes="card" Padding="8">
+            <ItemsControl ItemsSource="{Binding Shortcuts}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:ShortcutInfo">
+                  <Grid ColumnDefinitions="*,Auto" Margin="12,8">
+                    <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}">
+                      <TextBlock.Text>
+                        <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                          <Binding Path="LabelKey" />
+                          <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                        </MultiBinding>
+                      </TextBlock.Text>
+                    </TextBlock>
+                    <Border Grid.Column="1" Background="{DynamicResource SurfaceAlt}" BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1" CornerRadius="6" Padding="8,2">
+                      <TextBlock Text="{Binding Keys}" FontFamily="{DynamicResource MonoFontFamily}" FontSize="12"
+                                 Foreground="{DynamicResource TextPrimary}" />
+                    </Border>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </Border>
         </StackPanel>
 

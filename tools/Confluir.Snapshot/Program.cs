@@ -211,6 +211,29 @@ vm.GoBackCommand.Execute(null);
 
 }
 
+// Atalhos de teclado (teclas de verdade na janela): Ctrl+Q, Ctrl+Shift+S; Delete digitando na busca não apaga.
+{
+    var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
+    var row = vm.Rows.OfType<MessageRow>().Skip(5).First();
+    list.SelectedItem = row;
+    list.Focus();
+    Pump(() => vm.SelectedRow == row);
+    var (read, flagged) = (row.IsRead, row.IsFlagged);
+    window.KeyPress(Key.Q, RawInputModifiers.Control, PhysicalKey.Q, "q");
+    window.KeyPress(Key.S, RawInputModifiers.Control | RawInputModifiers.Shift, PhysicalKey.S, "S");
+    Pump(() => row.IsRead != read && row.IsFlagged != flagged, 1500);
+    Console.WriteLine($"atalhos: Ctrl+Q alternou lida: {row.IsRead != read}; Ctrl+Shift+S alternou sinalizada: {row.IsFlagged != flagged}");
+    window.GetVisualDescendants().OfType<MessageListView>().First().FocusSearch();
+    Pump(() => true);
+    window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, null);
+    Pump(() => true);
+    Console.WriteLine($"atalhos: Delete com foco na busca manteve a mensagem: {vm.Rows.OfType<MessageRow>().Contains(row)}");
+    vm.OpenSettingsCommand.Execute(null);
+    ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Shortcuts;
+    Save(window, "settings-shortcuts.png");
+    vm.GoBackCommand.Execute(null);
+}
+
 // Domínio desconhecido, tema escuro, com resultado de teste.
 theme.SetTheme(ThemeMode.Dark);
 vm.AddAccountCommand.Execute(null);
