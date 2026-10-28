@@ -16,7 +16,10 @@ public sealed class AppSettings
     public FontSettings Fonts { get; set; } = new();
 
     /// <summary>Regras aplicadas às mensagens novas, na ordem da lista.</summary>
-public List<Rules.MailRule> Rules { get; set; } = [];
+    public List<Rules.MailRule> Rules { get; set; } = [];
+
+    /// <summary>Atalhos trocados pelo usuário (ação → combinação, ex.: "Ctrl+Shift+A"); os demais seguem o padrão.</summary>
+    public Dictionary<string, string> Shortcuts { get; set; } = [];
 
     public NotificationSettings Notifications { get; set; } = new();
     public DesktopSettings Desktop { get; set; } = new();

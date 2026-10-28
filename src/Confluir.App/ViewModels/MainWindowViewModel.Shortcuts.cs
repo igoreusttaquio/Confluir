@@ -18,31 +18,31 @@ public enum ShortcutAction
     Settings,
 }
 
-/// <param name="Keys">Combinação como aparece na lista (ex.: "Ctrl+Shift+R"; no macOS "⌘" no lugar de Ctrl).</param>
-public sealed record ShortcutInfo(ShortcutAction Action, string Keys, string LabelKey)
+/// <summary>Uma ação com atalho (as teclas ficam no <see cref="Services.ShortcutService"/>).</summary>
+public sealed record ShortcutInfo(ShortcutAction Action, string LabelKey)
 {
     /// <summary>Atalhos que agem sobre mensagens: não valem com o foco num campo de texto.</summary>
     public static bool ActsOnMessages(ShortcutAction action) =>
         action is ShortcutAction.Reply or ShortcutAction.ReplyAll or ShortcutAction.Forward or ShortcutAction.Archive
             or ShortcutAction.Delete or ShortcutAction.ToggleRead or ShortcutAction.ToggleFlag;
 
-    private static string Mod => OperatingSystem.IsMacOS() ? "⌘" : "Ctrl";
-
-    /// <summary>A lista mostrada em Configurações → Atalhos (a janela usa a mesma tabela).</summary>
+    /// <summary>A lista mostrada em Configurações → Atalhos, nesta ordem.</summary>
     public static IReadOnlyList<ShortcutInfo> All { get; } =
     [
-        new(ShortcutAction.NewMessage, $"{Mod}+N", nameof(Strings.Action_NewMessage)),
-        new(ShortcutAction.Search, $"{Mod}+F", nameof(Strings.Shortcut_Search)),
-        new(ShortcutAction.Reply, $"{Mod}+R", nameof(Strings.Action_Reply)),
-        new(ShortcutAction.ReplyAll, $"{Mod}+Shift+R", nameof(Strings.Action_ReplyAll)),
-        new(ShortcutAction.Forward, $"{Mod}+Shift+F", nameof(Strings.Action_Forward)),
-        new(ShortcutAction.Archive, $"{Mod}+E", nameof(Strings.Action_Archive)),
-        new(ShortcutAction.Delete, "Delete", nameof(Strings.Action_Delete)),
-        new(ShortcutAction.ToggleRead, $"{Mod}+Q", nameof(Strings.Shortcut_ToggleRead)),
-        new(ShortcutAction.ToggleFlag, $"{Mod}+Shift+S", nameof(Strings.Shortcut_ToggleFlag)),
-        new(ShortcutAction.Sync, "F5", nameof(Strings.Action_Sync)),
-        new(ShortcutAction.Settings, $"{Mod}+,", nameof(Strings.Settings)),
+        new(ShortcutAction.NewMessage, nameof(Strings.Action_NewMessage)),
+        new(ShortcutAction.Search, nameof(Strings.Shortcut_Search)),
+        new(ShortcutAction.Reply, nameof(Strings.Action_Reply)),
+        new(ShortcutAction.ReplyAll, nameof(Strings.Action_ReplyAll)),
+        new(ShortcutAction.Forward, nameof(Strings.Action_Forward)),
+        new(ShortcutAction.Archive, nameof(Strings.Action_Archive)),
+        new(ShortcutAction.Delete, nameof(Strings.Action_Delete)),
+        new(ShortcutAction.ToggleRead, nameof(Strings.Shortcut_ToggleRead)),
+        new(ShortcutAction.ToggleFlag, nameof(Strings.Shortcut_ToggleFlag)),
+        new(ShortcutAction.Sync, nameof(Strings.Action_Sync)),
+        new(ShortcutAction.Settings, nameof(Strings.Settings)),
     ];
+
+    public static ShortcutInfo For(ShortcutAction action) => All.First(s => s.Action == action);
 }
 
 /// <summary>Atalhos de teclado da janela principal.</summary>

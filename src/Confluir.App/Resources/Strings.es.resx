@@ -344,7 +344,7 @@
   <data name="Selection_Count"><value>{0} mensajes seleccionados</value></data>
   <data name="Selection_Clear"><value>Borrar selección</value></data>
   <data name="Settings_Shortcuts"><value>Atajos</value></data>
-  <data name="Shortcuts_Hint"><value>Atajos de teclado de la ventana principal. Los que actúan sobre mensajes no funcionan mientras escribes en un campo de texto; Esc siempre vuelve.</value></data>
+  <data name="Shortcuts_Hint"><value>Atajos de teclado de la ventana principal. Haz clic en “Cambiar” y pulsa la nueva combinación (Esc cancela). Los que actúan sobre mensajes no funcionan mientras escribes en un campo de texto; Esc siempre vuelve.</value></data>
   <data name="Shortcut_Search"><value>Buscar</value></data>
   <data name="Shortcut_ToggleRead"><value>Marcar como leído / no leído</value></data>
   <data name="Shortcut_ToggleFlag"><value>Marcar / desmarcar</value></data>
@@ -392,4 +392,12 @@
   <data name="Color_Pink"><value>Rosa</value></data>
   <data name="Color_Green"><value>Verde</value></data>
   <data name="Color_Cyan"><value>Cian</value></data>
+  <data name="Shortcut_Change"><value>Cambiar</value></data>
+  <data name="Shortcut_Press"><value>Pulsa la combinación…</value></data>
+  <data name="Shortcut_NeedsModifier"><value>Usa Ctrl, Alt o ⌘ con otra tecla, o una tecla de función (F1–F12) o Supr.</value></data>
+  <data name="Shortcut_Conflict"><value>{0} ya se usa en “{1}”.</value></data>
+  <data name="Shortcut_Swap"><value>Intercambiar</value></data>
+  <data name="Shortcut_Reset"><value>Restaurar predeterminado</value></data>
+  <data name="Shortcut_ResetAll"><value>Restaurar todos los predeterminados</value></data>
+  <data name="Shortcut_Custom"><value>Cambiado</value></data>
 </root>

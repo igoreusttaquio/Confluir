@@ -274,6 +274,38 @@ Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000
     vm.OpenSettingsCommand.Execute(null);
     ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Shortcuts;
     Save(window, "settings-shortcuts.png");
+    {
+        // Atalho editável: Alterar + teclas reais pela janela; depois um conflito e a troca.
+        var settingsVm = (SettingsViewModel)vm.Navigation.CurrentPage!;
+        var toggleRead = settingsVm.Shortcuts.First(s => s.Info.Action == ShortcutAction.ToggleRead);
+        toggleRead.ChangeCommand.Execute(null);
+        Pump(() => true);
+        window.KeyPress(Key.U, RawInputModifiers.Control, PhysicalKey.U, "u");
+        Pump(() => true);
+        Console.WriteLine($"atalho gravado: Marcar lida = {toggleRead.Keys}; ainda em Configurações: {vm.Navigation.CurrentPage is SettingsViewModel}");
+        var archive = settingsVm.Shortcuts.First(s => s.Info.Action == ShortcutAction.Archive);
+        archive.ChangeCommand.Execute(null);
+        window.KeyPress(Key.U, RawInputModifiers.Control, PhysicalKey.U, "u");
+        Pump(() => true);
+        Console.WriteLine($"conflito: \"{archive.Message}\" troca: {archive.CanSwap}");
+        Save(window, "settings-shortcuts-conflict.png");
+        archive.CancelCommand.Execute(null);
+        vm.GoBackCommand.Execute(null);
+        Pump(() => vm.Navigation.IsAtRoot);
+        var current = vm.Rows.OfType<MessageRow>().First(r => r.Summary.Id == row.Summary.Id);
+        vm.SelectedRow = current;
+        var freshList = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
+        Pump(() => freshList.ContainerFromItem(current) is not null);
+        freshList.ContainerFromItem(current)?.Focus();
+        Pump(() => vm.SelectedRow == current);
+        var readBefore = current.IsRead;
+        window.KeyPress(Key.U, RawInputModifiers.Control, PhysicalKey.U, "u");
+        Pump(() => vm.Rows.OfType<MessageRow>().First(r => r.Summary.Id == row.Summary.Id).IsRead != readBefore, 1500);
+        Console.WriteLine($"Ctrl+U (novo atalho) alternou lida: {vm.Rows.OfType<MessageRow>().First(r => r.Summary.Id == row.Summary.Id).IsRead != readBefore}");
+        vm.OpenSettingsCommand.Execute(null);
+        ((SettingsViewModel)vm.Navigation.CurrentPage!).ResetAllShortcutsCommand.Execute(null);
+        Console.WriteLine($"restaurar todos: Marcar lida = {toggleRead.Keys}");
+    }
     ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Notifications;
     Save(window, "settings-notifications.png");
     vm.GoBackCommand.Execute(null);

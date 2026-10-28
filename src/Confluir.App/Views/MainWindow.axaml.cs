@@ -17,13 +17,15 @@ public partial class MainWindow : Window
 
     private readonly ISettingsStore? _settings;
     private readonly MainWindowViewModel? _vm;
+    private readonly ShortcutService? _shortcuts;
 
     // Usado pelo previewer do XAML.
     public MainWindow() => InitializeComponent();
 
-    public MainWindow(MainWindowViewModel viewModel, ISettingsStore settings, FontService fonts) : this()
+    public MainWindow(MainWindowViewModel viewModel, ISettingsStore settings, FontService fonts, ShortcutService shortcuts) : this()
     {
         _settings = settings;
+        _shortcuts = shortcuts;
         _vm = viewModel;
         DataContext = viewModel;
 
@@ -125,42 +127,17 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Atalhos (tabela em <see cref="ShortcutInfo.All"/>). Chegam aqui depois do controle com foco: o que ele já
-    /// tratou (ex.: Delete num campo de texto) não vira atalho, e ações sobre mensagens não valem enquanto se digita.
+    /// Atalhos (<see cref="ShortcutService"/>, editáveis em Configurações). Chegam aqui depois do controle com foco: o
+    /// que ele já tratou (ex.: Delete num campo de texto) não vira atalho, e ações sobre mensagens não valem enquanto se digita.
     /// </summary>
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.Handled || _vm is null || ShortcutFor(e) is not { } action)
+        if (e.Handled || _vm is null || _shortcuts?.Find(e) is not { } action)
             return;
         if (ShortcutInfo.ActsOnMessages(action) && IsTyping())
             return;
         e.Handled = _vm.RunShortcut(action);
-    }
-
-    private static ShortcutAction? ShortcutFor(KeyEventArgs e)
-    {
-        // No macOS o modificador dos atalhos é ⌘ (Meta).
-        var mod = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
-        var m = e.KeyModifiers;
-        var plain = m == KeyModifiers.None;
-        var withMod = m == mod;
-        var withModShift = m == (mod | KeyModifiers.Shift);
-        return e.Key switch
-        {
-            Key.N when withMod => ShortcutAction.NewMessage,
-            Key.F when withMod => ShortcutAction.Search,
-            Key.R when withMod => ShortcutAction.Reply,
-            Key.R when withModShift => ShortcutAction.ReplyAll,
-            Key.F when withModShift => ShortcutAction.Forward,
-            Key.E when withMod => ShortcutAction.Archive,
-            Key.Delete when plain => ShortcutAction.Delete,
-            Key.Q when withMod => ShortcutAction.ToggleRead,
-            Key.S when withModShift => ShortcutAction.ToggleFlag,
-            Key.F5 when plain => ShortcutAction.Sync,
-            Key.OemComma when withMod => ShortcutAction.Settings,
-            _ => null,
-        };
     }
 
     private bool IsTyping() =>

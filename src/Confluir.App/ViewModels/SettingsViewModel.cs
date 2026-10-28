@@ -33,6 +33,7 @@ public sealed record SettingsServices(
     NavigationService Navigation,
     RuleService Rules,
     RuleEditorServices RuleEditor,
+    ShortcutService Shortcuts,
     Services.Desktop.DesktopIntegration Desktop,
     Services.Desktop.AutostartService Autostart,
     ILogger<SettingsViewModel> Logger);
@@ -173,6 +174,8 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
             TrustedSenders.Add(new TrustedSenderViewModel(sender, this));
         ReloadRules();
         services.Rules.Changed += (_, _) => ReloadRules();
+        Shortcuts = ShortcutInfo.All.Select(s => new ShortcutItemViewModel(s, services.Shortcuts, this)).ToList();
+        services.Shortcuts.Changed += (_, _) => RefreshShortcuts();
         _main.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(MainWindowViewModel.AccountNodes) or "")
@@ -376,7 +379,28 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
 
     // Atalhos ---------------------------------------------------------------------------------------
 
-    public IReadOnlyList<ShortcutInfo> Shortcuts => ShortcutInfo.All;
+    public IReadOnlyList<ShortcutItemViewModel> Shortcuts { get; }
+
+    public bool HasCustomShortcuts => ShortcutInfo.All.Any(s => _services.Shortcuts.IsCustom(s.Action));
+
+    /// <summary>Linha gravando a nova combinação (só uma por vez).</summary>
+    public ShortcutItemViewModel? RecordingShortcut => Shortcuts.FirstOrDefault(s => s.IsRecording);
+
+    public void StartRecording(ShortcutItemViewModel item)
+    {
+        foreach (var other in Shortcuts.Where(s => s != item))
+            other.Stop();
+    }
+
+    [RelayCommand]
+    private void ResetAllShortcuts() => _services.Shortcuts.ResetAll();
+
+    private void RefreshShortcuts()
+    {
+        foreach (var item in Shortcuts)
+            item.Refresh();
+        OnPropertyChanged(nameof(HasCustomShortcuts));
+    }
 
     // Avançado --------------------------------------------------------------------------------------
 

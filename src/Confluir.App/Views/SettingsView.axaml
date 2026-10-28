@@ -559,26 +559,54 @@
           <Border Classes="card" Padding="8">
             <ItemsControl ItemsSource="{Binding Shortcuts}">
               <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="vm:ShortcutInfo">
-                  <Grid ColumnDefinitions="*,Auto" Margin="12,8">
-                    <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}">
-                      <TextBlock.Text>
-                        <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
-                          <Binding Path="LabelKey" />
-                          <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
-                        </MultiBinding>
-                      </TextBlock.Text>
-                    </TextBlock>
-                    <Border Grid.Column="1" Background="{DynamicResource SurfaceAlt}" BorderBrush="{DynamicResource Border}"
-                            BorderThickness="1" CornerRadius="6" Padding="8,2">
-                      <TextBlock Text="{Binding Keys}" FontFamily="{DynamicResource MonoFontFamily}" FontSize="12"
-                                 Foreground="{DynamicResource TextPrimary}" />
-                    </Border>
-                  </Grid>
+                <DataTemplate DataType="vm:ShortcutItemViewModel">
+                  <StackPanel Margin="12,6" Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" MinHeight="32">
+                      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}">
+                          <TextBlock.Text>
+                            <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                              <Binding Path="LabelKey" />
+                              <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                            </MultiBinding>
+                          </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock Classes="hint" Text="{l:Tr Shortcut_Custom}" IsVisible="{Binding IsCustom}"
+                                   VerticalAlignment="Center" FontSize="12" />
+                      </StackPanel>
+                      <Border Grid.Column="1" Background="{DynamicResource SurfaceAlt}" BorderBrush="{DynamicResource Border}"
+                              BorderThickness="1" CornerRadius="6" Padding="8,2" VerticalAlignment="Center">
+                        <Panel>
+                          <TextBlock Text="{Binding Keys}" FontFamily="{DynamicResource MonoFontFamily}" FontSize="12"
+                                     Foreground="{DynamicResource TextPrimary}" IsVisible="{Binding IsIdle}" />
+                          <TextBlock Text="{l:Tr Shortcut_Press}" FontSize="12" Foreground="{DynamicResource Accent}"
+                                     IsVisible="{Binding IsRecording}" />
+                        </Panel>
+                      </Border>
+                      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button Content="{l:Tr Shortcut_Change}" Command="{Binding ChangeCommand}" IsVisible="{Binding IsIdle}" />
+                        <Button Content="{l:Tr Shortcut_Reset}" Command="{Binding ResetCommand}">
+                          <Button.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                              <Binding Path="IsCustom" />
+                              <Binding Path="IsIdle" />
+                            </MultiBinding>
+                          </Button.IsVisible>
+                        </Button>
+                        <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelCommand}" IsVisible="{Binding IsRecording}" />
+                      </StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasMessage}" HorizontalAlignment="Right">
+                      <TextBlock Classes="hint" Text="{Binding Message}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                      <Button Classes="accent" Content="{l:Tr Shortcut_Swap}" Command="{Binding SwapCommand}" IsVisible="{Binding CanSwap}" />
+                    </StackPanel>
+                  </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
           </Border>
+          <Button Content="{l:Tr Shortcut_ResetAll}" Command="{Binding ResetAllShortcutsCommand}"
+                  IsVisible="{Binding HasCustomShortcuts}" HorizontalAlignment="Left" />
         </StackPanel>
 
         <!-- Avançado -->

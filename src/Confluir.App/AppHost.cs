@@ -94,6 +94,7 @@ public static class AppHost
         builder.Services.AddSingleton<Services.Desktop.DesktopIntegration>();
         builder.Services.AddSingleton<Services.Desktop.AutostartService>();
         builder.Services.AddSingleton<RuleService>();
+        builder.Services.AddSingleton<ShortcutService>();
         builder.Services.AddSingleton<RuleEditorServices>();
         builder.Services.AddSingleton<SettingsServices>();
 

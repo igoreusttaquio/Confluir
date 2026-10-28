@@ -20,6 +20,29 @@ public partial class SettingsView : UserControl
                 e.Handled = true;
             }
         };
+
+        // Gravando um atalho: a tecla vai para a linha (e não dispara o atalho atual, nem Esc volta de tela). Escuta na
+        // janela, porque o foco pode não estar dentro desta tela.
+        AttachedToVisualTree += (_, _) =>
+        {
+            _keyHost = TopLevel.GetTopLevel(this);
+            _keyHost?.AddHandler(KeyDownEvent, OnRecordKeyDown, RoutingStrategies.Tunnel);
+        };
+        DetachedFromVisualTree += (_, _) =>
+        {
+            _keyHost?.RemoveHandler(KeyDownEvent, OnRecordKeyDown);
+            _keyHost = null;
+        };
+    }
+
+    private TopLevel? _keyHost;
+
+    private void OnRecordKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (!IsEffectivelyVisible || ViewModel?.RecordingShortcut is not { } item)
+            return;
+        item.Capture(e.Key, e.KeyModifiers);
+        e.Handled = true;
     }
 
     private SettingsViewModel? ViewModel => DataContext as SettingsViewModel;
