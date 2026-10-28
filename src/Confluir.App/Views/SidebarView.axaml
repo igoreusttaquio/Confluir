@@ -76,7 +76,8 @@
     <!-- As duas versões ficam sobrepostas e trocam por esmaecimento enquanto a coluna anima a largura. -->
     <Panel Classes="sidebarRoot" Classes.collapsed="{Binding IsSidebarCollapsed}">
     <!-- Barra recolhida: faixa de ícones (caixa unificada, uma bolinha por conta e o rodapé). -->
-    <DockPanel Classes="rail" Width="64" HorizontalAlignment="Left">
+    <!-- Largura interna do cartão com a barra recolhida (80 - 2×8 de margem - 2×1 de borda): ícones centralizados. -->
+    <DockPanel Classes="rail" Width="62" HorizontalAlignment="Left">
       <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,14,0,8" HorizontalAlignment="Center">
         <Button Classes="icon" Command="{Binding ToggleSidebarCommand}" HorizontalAlignment="Center"
                 ToolTip.Tip="{l:Tr Action_ExpandSidebar}" AutomationProperties.Name="{l:Tr Action_ExpandSidebar}">

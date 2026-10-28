@@ -178,7 +178,7 @@
     </StackPanel>
 
     <!-- Corpo -->
-    <views:MessageBodyView Margin="32,0,20,0" MaxWidth="980"
+    <views:MessageBodyView Margin="32,0,20,16" MaxWidth="980"
                            Document="{Binding Document}" Fallback="{Binding Body}"
                            IsWebAllowed="{Binding $parent[views:MessageDetailView].IsBodyActive}" />
   </DockPanel>

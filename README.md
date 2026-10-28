@@ -111,26 +111,11 @@ Use **Adicionar conta** (rodapé da barra lateral, ou Configurações → Contas
 </details>
 
 <details>
-<summary><b>Outlook/Hotmail — registrar o app no Entra ID</b></summary>
+<summary><b>Outlook/Hotmail</b></summary>
 
-O Outlook exige OAuth2 (XOAUTH2). É preciso um app registrado:
+Use **Entrar com a Microsoft** ao adicionar a conta: o navegador abre, você entra e autoriza, e o Confluir testa IMAP e SMTP sozinho. Não há senha de app nem nada para configurar. Os tokens ficam no cofre do sistema e são renovados sozinhos; se a sessão expirar, edite a conta e entre de novo.
 
-1. Em <https://entra.microsoft.com> → **Aplicativos** → **Registros de aplicativo** → **Novo registro**.
-2. Tipos de conta: **Contas em qualquer diretório organizacional e contas pessoais da Microsoft**.
-3. URI de redirecionamento: plataforma **Aplicativos móveis e da área de trabalho**, valor `http://localhost`.
-4. Em **Autenticação**, habilite **Permitir fluxos de cliente público**.
-5. Em **Permissões de API** → **Adicionar** → **APIs que minha organização usa** → *Office 365 Exchange Online* → permissões delegadas `IMAP.AccessAsUser.All` e `SMTP.Send` (além de `offline_access`).
-6. Copie o **ID do aplicativo (cliente)** e informe ao Confluir (nunca no código), de uma destas formas — a última que existir vale:
-   - `appsettings.json` ao lado do executável (já vem com o campo vazio);
-   - `appsettings.json` na pasta de dados do app (sobrevive a atualizações);
-   - variável de ambiente `CONFLUIR_Microsoft__ClientId`.
-
-   ```json
-   { "Microsoft": { "ClientId": "00000000-0000-0000-0000-000000000000", "Tenant": "common" } }
-   ```
-7. No Outlook.com, IMAP/POP precisa estar ativo: Configurações → Email → Encaminhamento e IMAP.
-
-Ao adicionar a conta, use **Entrar com a Microsoft**: o navegador abre, você entra e o Confluir testa IMAP e SMTP com o token. Os tokens ficam no cofre do sistema e são renovados sozinhos; se a sessão expirar, edite a conta e entre de novo. *Ainda não testado contra a Microsoft.*
+No Outlook.com, o IMAP precisa estar ativo: Configurações → Email → Encaminhamento e IMAP.
 </details>
 
 ## Compilar e rodar
@@ -152,6 +137,19 @@ No Linux, o leitor de HTML usa o WebKitGTK (`libwebkit2gtk-4.1-0`) e o cofre de 
 |---|---|
 | `tools/Confluir.Snapshot` | Renderiza as telas sem abrir janela (Avalonia Headless + Skia), com dados de exemplo numa pasta temporária, e salva PNGs. As capturas deste README e do site saem daqui. `dotnet run --project tools/Confluir.Snapshot -- <pasta>` |
 | `tools/Confluir.IconGen` | Gera `assets/icone/confluir.icns` e `assets/icone/png/*.png` a partir do SVG. `dotnet run --project tools/Confluir.IconGen -- assets/confluir-icone.svg assets/icone` |
+
+### Login da Microsoft (uma vez, para quem publica o app)
+
+O Outlook/Hotmail exige OAuth2, e o Confluir precisa de um app registrado no Entra ID. O ID desse app **não é segredo** (apps desktop são "clientes públicos", como o Thunderbird) e vai **embutido nos instaladores** — quem usa o Confluir só clica em "Entrar com a Microsoft". Sem ele, a opção aparece como indisponível e o resto funciona.
+
+1. Em <https://entra.microsoft.com> → **Aplicativos** → **Registros de aplicativo** → **Novo registro**.
+2. Tipos de conta: **Contas em qualquer diretório organizacional e contas pessoais da Microsoft**.
+3. URI de redirecionamento: plataforma **Aplicativos móveis e da área de trabalho**, valor `http://localhost`.
+4. Em **Autenticação**, habilite **Permitir fluxos de cliente público**.
+5. Em **Permissões de API** → **Adicionar** → **APIs que minha organização usa** → *Office 365 Exchange Online* → permissões delegadas `IMAP.AccessAsUser.All` e `SMTP.Send`.
+6. Copie o **ID do aplicativo (cliente)** e cadastre no GitHub em **Settings → Secrets and variables → Actions → Variables** com o nome `MICROSOFT_CLIENT_ID`. O workflow de instaladores passa a embuti-lo.
+
+Para compilar localmente com o login, defina a variável de ambiente `CONFLUIR_MICROSOFT_CLIENT_ID` antes do `dotnet build` (ou use `-p:ConfluirMicrosoftClientId=<id>`).
 
 ### Instaladores e site
 

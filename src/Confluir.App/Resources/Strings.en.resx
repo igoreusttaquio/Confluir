@@ -147,7 +147,7 @@
   <data name="OAuth_SignIn"><value>Sign in with Microsoft</value></data>
   <data name="OAuth_SignInHint"><value>Outlook/Hotmail uses Microsoft sign-in. A Microsoft page opens in your browser; after signing in, come back to Confluir.</value></data>
   <data name="OAuth_SignedInAs"><value>Signed in as {0}</value></data>
-  <data name="OAuth_NotConfigured"><value>Microsoft sign-in (required for Outlook/Hotmail) isn&apos;t configured in this installation. Set the Entra ID application ID in appsettings.json (Microsoft:ClientId) — see the README.</value></data>
+  <data name="OAuth_NotConfigured"><value>Signing in with Microsoft (required for Outlook and Hotmail) isn&apos;t available in this version of Confluir yet. Other accounts work normally.</value></data>
   <data name="OAuth_SignInFailed"><value>Couldn&apos;t sign in with Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Sign in with Microsoft to continue.</value></data>
   <data name="Error_ReauthenticationRequired"><value>Your Microsoft session expired. Edit the account and sign in again.</value></data>

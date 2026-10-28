@@ -67,7 +67,9 @@ public static partial class EmailDocumentBuilder
               body { font-family: {{fonts.Family}}; font-size: {{fonts.FontSize.ToString("0.#", CultureInfo.InvariantCulture)}}px;
                      line-height: {{fonts.LineHeight.ToString("0.##", CultureInfo.InvariantCulture)}}; color: {{palette.TextPrimary}};
                      overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
-              .mail { background: {{paper}}; color: {{text}}; {{(ownBackground ? "padding: 16px; border-radius: 10px;" : "")}} }
+              /* Todo email na mesma folha (margem, raio e borda iguais); só o fundo muda: o do tema ou o papel claro. */
+              .mail { background: {{paper}}; color: {{text}}; padding: 18px 20px; border-radius: 12px;
+                      border: 1px solid {{(ownBackground ? "#E3E6EF" : palette.Border)}}; overflow-wrap: anywhere; }
               a { color: {{link}}; }
               img { max-width: 100%; height: auto; }
               table { max-width: 100%; }

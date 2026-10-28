@@ -6,7 +6,8 @@ using Microsoft.Identity.Client.Extensions.Msal;
 
 namespace Confluir.Auth;
 
-/// <summary>Configuração do app registrado no Entra ID (seção "Microsoft" do appsettings.json).</summary>
+/// <summary>Configuração do app registrado no Entra ID. O ID vem embutido na compilação; a seção "Microsoft"
+/// do appsettings.json (ou variáveis CONFLUIR_*) só sobrescreve, para desenvolvimento.</summary>
 public sealed class MicrosoftAuthOptions
 {
     /// <summary>ID do aplicativo (cliente). Vazio desativa o login da Microsoft.</summary>
@@ -102,7 +103,7 @@ public sealed class MicrosoftOAuthProvider : IOAuthTokenProvider
     private Task<IPublicClientApplication> GetAppAsync() =>
         IsConfigured
             ? _app.Value
-            : throw new OAuthSignInException("O login da Microsoft não está configurado (Microsoft:ClientId).");
+            : throw new OAuthSignInException("Login da Microsoft indisponível nesta compilação (sem ID do app no Entra ID).");
 
     private async Task<IPublicClientApplication> CreateAppAsync()
     {

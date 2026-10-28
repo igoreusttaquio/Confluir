@@ -12,6 +12,9 @@ permissions:
   contents: read
 
 env:
+  # ID do app no Entra ID (login da Microsoft), embutido nos instaladores. Settings → Secrets and variables →
+  # Actions → Variables → MICROSOFT_CLIENT_ID. Sem ele, o Outlook/Hotmail aparece como indisponível.
+  CONFLUIR_MICROSOFT_CLIENT_ID: ${{ vars.MICROSOFT_CLIENT_ID }}
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   PROJECT: src/Confluir.App/Confluir.App.csproj

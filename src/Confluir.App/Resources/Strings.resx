@@ -147,7 +147,7 @@
   <data name="OAuth_SignIn"><value>Entrar com a Microsoft</value></data>
   <data name="OAuth_SignInHint"><value>O Outlook/Hotmail usa o login da Microsoft. Uma página da Microsoft abre no seu navegador; depois de entrar, volte para o Confluir.</value></data>
   <data name="OAuth_SignedInAs"><value>Conectado como {0}</value></data>
-  <data name="OAuth_NotConfigured"><value>O login da Microsoft (necessário para Outlook/Hotmail) não está configurado nesta instalação. Informe o ID do aplicativo registrado no Entra ID em appsettings.json (Microsoft:ClientId) — veja o README.</value></data>
+  <data name="OAuth_NotConfigured"><value>Entrar com a Microsoft (necessário para Outlook e Hotmail) ainda não está disponível nesta versão do Confluir. As outras contas funcionam normalmente.</value></data>
   <data name="OAuth_SignInFailed"><value>Não foi possível entrar com a Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Entre com a Microsoft para continuar.</value></data>
   <data name="Error_ReauthenticationRequired"><value>Sua sessão da Microsoft expirou. Edite a conta e entre novamente.</value></data>

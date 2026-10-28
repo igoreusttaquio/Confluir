@@ -147,7 +147,7 @@
   <data name="OAuth_SignIn"><value>Iniciar sesión con Microsoft</value></data>
   <data name="OAuth_SignInHint"><value>Outlook/Hotmail usa el inicio de sesión de Microsoft. Se abre una página de Microsoft en tu navegador; después de iniciar sesión, vuelve a Confluir.</value></data>
   <data name="OAuth_SignedInAs"><value>Conectado como {0}</value></data>
-  <data name="OAuth_NotConfigured"><value>El inicio de sesión de Microsoft (necesario para Outlook/Hotmail) no está configurado en esta instalación. Indica el ID de la aplicación registrada en Entra ID en appsettings.json (Microsoft:ClientId); consulta el README.</value></data>
+  <data name="OAuth_NotConfigured"><value>Iniciar sesión con Microsoft (necesario para Outlook y Hotmail) todavía no está disponible en esta versión de Confluir. Las demás cuentas funcionan normalmente.</value></data>
   <data name="OAuth_SignInFailed"><value>No se pudo iniciar sesión con Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Inicia sesión con Microsoft para continuar.</value></data>
   <data name="Error_ReauthenticationRequired"><value>Tu sesión de Microsoft caducó. Edita la cuenta e inicia sesión de nuevo.</value></data>

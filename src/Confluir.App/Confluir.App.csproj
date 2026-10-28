@@ -7,7 +7,15 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationIcon>Assets\confluir.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- ID do app registrado no Entra ID (login da Microsoft para Outlook/Hotmail). Não é segredo: apps desktop
+         são "clientes públicos" e o ID vai embutido, como no Thunderbird. Vem da variável de ambiente
+         CONFLUIR_MICROSOFT_CLIENT_ID (no GitHub, a variável de repositório MICROSOFT_CLIENT_ID) ou de
+         -p:ConfluirMicrosoftClientId=... Quem usa o app não configura nada. -->
+    <ConfluirMicrosoftClientId Condition="'$(ConfluirMicrosoftClientId)' == ''">$(CONFLUIR_MICROSOFT_CLIENT_ID)</ConfluirMicrosoftClientId>
   </PropertyGroup>
+  <ItemGroup Condition="'$(ConfluirMicrosoftClientId)' != ''">
+    <AssemblyMetadata Include="MicrosoftClientId" Value="$(ConfluirMicrosoftClientId)" />
+  </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
     <!-- Configuração editável (ex.: Microsoft:ClientId); sem segredos. -->

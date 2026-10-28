@@ -12,7 +12,8 @@ namespace Confluir.App.Views;
 
 public partial class MainWindow : Window
 {
-    private const double CollapsedSidebarWidth = 64;
+    // Faixa recolhida: 62px de conteúdo dentro do cartão (8px de margem de cada lado e 1px de borda).
+    private const double CollapsedSidebarWidth = 80;
 
     private readonly ISettingsStore? _settings;
     private readonly MainWindowViewModel? _vm;

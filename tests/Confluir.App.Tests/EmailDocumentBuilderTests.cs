@@ -76,6 +76,15 @@ public class EmailDocumentBuilderTests
     }
 
     [Fact]
+    public void Todo_email_tem_a_mesma_folha_so_o_fundo_muda()
+    {
+        var tema = EmailDocumentBuilder.Build(Body(html: "<p>oi</p>"), false, Dark, EmailFonts.Default).Html;
+        var papel = EmailDocumentBuilder.Build(Body(html: "<p style=\"color:#000\">oi</p>"), false, Dark, EmailFonts.Default).Html;
+        foreach (var html in new[] { tema, papel })
+            Assert.Contains("padding: 18px 20px; border-radius: 12px;", html);
+    }
+
+    [Fact]
     public void Texto_claro_fixado_continua_no_tema_escuro()
     {
         var doc = EmailDocumentBuilder.Build(Body(html: "<p style=\"color:#eeeeee\">oi</p>"), false, Dark, EmailFonts.Default);

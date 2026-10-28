@@ -44,6 +44,9 @@ public static class AppHost
             .AddJsonFile(Path.Combine(paths.DataDirectory, "appsettings.json"), optional: true)
             .AddEnvironmentVariables("CONFLUIR_");
         var microsoft = builder.Configuration.GetSection("Microsoft").Get<MicrosoftAuthOptions>() ?? new MicrosoftAuthOptions();
+        // Normal: o ID vem embutido na compilação; appsettings/variável de ambiente só sobrescrevem (desenvolvimento).
+        if (string.IsNullOrWhiteSpace(microsoft.ClientId))
+            microsoft.ClientId = BuiltInMicrosoftClientId();
         builder.Services.AddSingleton<IOAuthTokenProvider>(sp => new MicrosoftOAuthProvider(
             microsoft, paths.DataDirectory, sp.GetRequiredService<ILogger<MicrosoftOAuthProvider>>()));
         builder.Services.AddSingleton<MailAuthenticator>();
@@ -102,4 +105,10 @@ public static class AppHost
 
         return builder.Build();
     }
+
+    /// <summary>ID do app no Entra ID gravado na compilação (propriedade ConfluirMicrosoftClientId); nulo se não houver.</summary>
+    public static string? BuiltInMicrosoftClientId() =>
+        typeof(AppHost).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+            .OfType<System.Reflection.AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "MicrosoftClientId" && !string.IsNullOrWhiteSpace(a.Value))?.Value;
 }
