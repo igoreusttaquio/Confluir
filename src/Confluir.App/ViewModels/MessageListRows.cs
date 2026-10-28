@@ -36,14 +36,19 @@ public sealed partial class MessageRow(MessageSummary summary, MailAccount accou
     public string Preview => Summary.Preview;
     public string DateText { get; } = dateText;
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FlagActionText))]
     public partial bool IsFlagged { get; set; } = summary.IsFlagged;
     public bool HasAttachments => Summary.HasAttachments;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsUnread))]
+    [NotifyPropertyChangedFor(nameof(IsUnread), nameof(ReadActionText))]
     public partial bool IsRead { get; set; } = isRead;
 
     public bool IsUnread => !IsRead;
+
+    /// <summary>Rótulos do menu de contexto: o que a ação vai fazer com esta mensagem.</summary>
+    public string ReadActionText => IsRead ? Resources.Strings.Action_MarkUnread : Resources.Strings.Action_MarkRead;
+    public string FlagActionText => IsFlagged ? Resources.Strings.Action_Unflag : Resources.Strings.Action_Flag;
 }
 
 public static class MessageListBuilder

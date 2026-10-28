@@ -245,9 +245,31 @@
                  ItemContainerTheme="{StaticResource MessageItemTheme}"
                  Background="Transparent"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-          <!-- Botão direito: os itens são montados na hora para a mensagem clicada (code-behind). -->
+          <!-- Botão direito numa mensagem. Fica na lista (é ela que recebe o clique: os itens capturam o mouse) e tem
+               os itens fixos, como o menu das contas; recebe a mensagem clicada como DataContext (code-behind). -->
           <ListBox.ContextMenu>
-            <ContextMenu x:Name="RowMenu" />
+            <ContextMenu x:Name="RowMenu" x:DataType="vm:MessageRow" Opening="OnRowMenuOpening">
+              <MenuItem Header="{l:Tr Action_Reply}" Click="OnMenuReply" Classes="single">
+                <MenuItem.Icon><LucideIcon Kind="Reply" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+              <Separator Classes="single" />
+              <MenuItem Header="{l:Tr Action_Archive}" Click="OnMenuArchive">
+                <MenuItem.Icon><LucideIcon Kind="Archive" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="{l:Tr Action_Delete}" Click="OnMenuDelete">
+                <MenuItem.Icon><LucideIcon Kind="Trash" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="{Binding FlagActionText}" Click="OnMenuFlag">
+                <MenuItem.Icon><LucideIcon Kind="Flag" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="{Binding ReadActionText}" Click="OnMenuRead">
+                <MenuItem.Icon><LucideIcon Kind="MailOpen" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+              <Separator Classes="single" />
+              <MenuItem Header="{l:Tr Rule_FromMessage}" Click="OnMenuRule" Classes="single">
+                <MenuItem.Icon><LucideIcon Kind="ListFilter" Size="16" /></MenuItem.Icon>
+              </MenuItem>
+            </ContextMenu>
           </ListBox.ContextMenu>
           <ListBox.DataTemplates>
             <DataTemplate DataType="vm:DateHeaderRow">
@@ -256,7 +278,8 @@
             </DataTemplate>
 
             <DataTemplate DataType="vm:MessageRow">
-              <Grid ColumnDefinitions="Auto,*">
+              <!-- Fundo transparente: o botão direito vale em qualquer ponto da linha. -->
+              <Grid ColumnDefinitions="Auto,*" Background="Transparent">
                 <!-- Faixa com a cor da conta -->
                 <Border Classes="strip" Width="3" CornerRadius="2" Margin="8,8,0,8"
                         Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"

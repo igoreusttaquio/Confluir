@@ -204,10 +204,11 @@ vm.GoBackCommand.Execute(null);
     var point = container.TranslatePoint(new Point(40, 10), window)!.Value;
     window.MouseDown(point, MouseButton.Right);
     window.MouseUp(point, MouseButton.Right);
-    Pump(() => list.ContextMenu?.IsOpen == true, 2000);
-    var headers = list.ContextMenu?.Items.OfType<MenuItem>().Select(i => i.Header?.ToString()) ?? [];
-    Console.WriteLine($"menu de contexto aberto: {list.ContextMenu?.IsOpen == true}; itens: {string.Join(" | ", headers)}");
-    list.ContextMenu?.Close();
+    var rowMenu = list.ContextMenu;
+    Pump(() => rowMenu?.IsOpen == true, 2000);
+    var headers = rowMenu?.Items.OfType<MenuItem>().Where(i => i.IsVisible).Select(i => i.Header?.ToString()) ?? [];
+    Console.WriteLine($"menu de contexto aberto: {rowMenu?.IsOpen == true}; itens: {string.Join(" | ", headers)}");
+    rowMenu?.Close();
 
 }
 

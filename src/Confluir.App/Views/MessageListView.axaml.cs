@@ -1,18 +1,15 @@
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using Confluir.App.Resources;
 using Confluir.App.ViewModels;
-using Lucide.Avalonia;
 
 namespace Confluir.App.Views;
 
 public partial class MessageListView : UserControl
 {
     private MainWindowViewModel? _bound;
-    private MessageRow? _contextRow;
-    private bool _menuReady;
 
     public MessageListView()
     {
@@ -23,33 +20,17 @@ public partial class MessageListView : UserControl
         Messages.KeyDown += OnKeyDown;
         // Shift/Ctrl selecionam várias; a seleção vai para o ViewModel (ações em lote).
         Messages.SelectionChanged += (_, _) => ViewModel?.SetSelection(Messages.SelectedItems?.OfType<object>() ?? []);
-        // Menu do botão direito: os itens são montados ANTES de o menu abrir (no clique ou na tecla de menu).
-        // Montados durante a abertura, o popup já foi medido vazio e aparece com tamanho zero.
+        // O menu recebe a mensagem antes de abrir: a clicada com o botão direito, ou a selecionada pelo teclado.
         Messages.AddHandler(PointerPressedEvent, (_, e) =>
         {
-            if (!e.GetCurrentPoint(Messages).Properties.IsRightButtonPressed)
-                return;
-            _contextRow = (e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as MessageRow;
-            _menuReady = _contextRow is not null && FillContextMenu(RowMenu);
+            if (e.GetCurrentPoint(Messages).Properties.IsRightButtonPressed)
+                RowMenu.DataContext = (e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as MessageRow;
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
         Messages.AddHandler(KeyDownEvent, (_, e) =>
         {
             if (e.Key == Key.Apps || (e.Key == Key.F10 && e.KeyModifiers.HasFlag(KeyModifiers.Shift)))
-            {
-                _contextRow = null; // vale a selecionada
-                _menuReady = FillContextMenu(RowMenu);
-            }
+                RowMenu.DataContext = ViewModel?.SelectedRow as MessageRow;
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
-        RowMenu.Opening += (_, e) =>
-        {
-            if (!_menuReady)
-                e.Cancel = true;
-        };
-        RowMenu.Closed += (_, _) =>
-        {
-            _contextRow = null;
-            _menuReady = false;
-        };
 
         SearchBox.KeyDown += (_, e) =>
         {
@@ -110,53 +91,67 @@ public partial class MessageListView : UserControl
         }
     }
 
+    // Menu de contexto das mensagens ------------------------------------------------------------------------
+
     /// <summary>
-    /// Botão direito numa mensagem: arquivar, excluir, sinalizar, marcar como lida/não lida.
-    /// Se a mensagem faz parte de uma seleção, a ação vale para todas as selecionadas.
+    /// Ao abrir: a mensagem clicada passa a ser a selecionada, a menos que já faça parte de uma seleção
+    /// (aí o menu vale para todas). Responder e criar regra só aparecem para uma mensagem.
     /// </summary>
-    private bool FillContextMenu(ContextMenu menu)
+    private void OnRowMenuOpening(object? sender, CancelEventArgs e)
     {
-        // Pelo teclado (Shift+F10 / tecla de menu) vale a mensagem selecionada.
-        var row = _contextRow ?? ViewModel?.SelectedRow as MessageRow;
-        if (ViewModel is not { } vm || row is null)
-            return false;
+        if (sender is not ContextMenu { DataContext: MessageRow row } menu || ViewModel is not { } vm)
+        {
+            e.Cancel = true;
+            return;
+        }
         if (Messages.SelectedItems?.Contains(row) != true)
             Messages.SelectedItem = row;
-
-        var targets = vm.TargetsFor(row);
-        var suffix = targets.Count > 1 ? $" ({targets.Count})" : "";
-        var anyUnread = targets.Any(r => !r.IsRead);
-        var anyUnflagged = targets.Any(r => !r.IsFlagged);
-
-        var items = new List<Control>();
-        if (targets.Count == 1)
+        var several = vm.TargetsFor(row).Count > 1;
+        foreach (var control in menu.Items.OfType<Control>())
         {
-            items.Add(Item(Strings.Action_Reply, LucideIconKind.Reply, () => _ = vm.ReplyToRowAsync(row)));
-            items.Add(new Separator());
+            if (control.Classes.Contains("single"))
+                control.IsVisible = !several;
         }
-        if (targets.Any(vm.CanArchiveRow))
-            items.Add(Item(Strings.Action_Archive + suffix, LucideIconKind.Archive, () => _ = vm.ArchiveRowsAsync(targets)));
-        items.Add(Item(Strings.Action_Delete + suffix, LucideIconKind.Trash, () => _ = vm.DeleteRowsAsync(targets)));
-        items.Add(Item((anyUnflagged ? Strings.Action_Flag : Strings.Action_Unflag) + suffix, LucideIconKind.Flag,
-            () => _ = vm.ToggleFlagRowsAsync(targets)));
-        items.Add(Item((anyUnread ? Strings.Action_MarkRead : Strings.Action_MarkUnread) + suffix,
-            anyUnread ? LucideIconKind.MailOpen : LucideIconKind.Mail, () => _ = vm.ToggleReadRowsAsync(targets)));
-        if (targets.Count == 1)
-        {
-            items.Add(new Separator());
-            items.Add(Item(Strings.Rule_FromMessage, LucideIconKind.ListFilter, () => vm.CreateRuleForRow(row)));
-        }
-
-        menu.Items.Clear();
-        foreach (var control in items)
-            menu.Items.Add(control);
-        return true;
+        if (menu.Items.OfType<MenuItem>().FirstOrDefault(i => i.Icon is Lucide.Avalonia.LucideIcon { Kind: Lucide.Avalonia.LucideIconKind.Archive }) is { } archive)
+            archive.IsEnabled = vm.TargetsFor(row).Any(vm.CanArchiveRow);
     }
 
-    private static MenuItem Item(string header, LucideIconKind icon, Action action)
+    private (MainWindowViewModel Vm, IReadOnlyList<MessageRow> Targets, MessageRow Row)? Targets(object? sender) =>
+        sender is MenuItem { DataContext: MessageRow row } && ViewModel is { } vm ? (vm, vm.TargetsFor(row), row) : null;
+
+    private void OnMenuReply(object? sender, RoutedEventArgs e)
     {
-        var item = new MenuItem { Header = header, Icon = new LucideIcon { Kind = icon, Size = 16 } };
-        item.Click += (_, _) => action();
-        return item;
+        if (Targets(sender) is { } t)
+            _ = t.Vm.ReplyToRowAsync(t.Row);
+    }
+
+    private void OnMenuArchive(object? sender, RoutedEventArgs e)
+    {
+        if (Targets(sender) is { } t)
+            _ = t.Vm.ArchiveRowsAsync(t.Targets);
+    }
+
+    private void OnMenuDelete(object? sender, RoutedEventArgs e)
+    {
+        if (Targets(sender) is { } t)
+            _ = t.Vm.DeleteRowsAsync(t.Targets);
+    }
+
+    private void OnMenuFlag(object? sender, RoutedEventArgs e)
+    {
+        if (Targets(sender) is { } t)
+            _ = t.Vm.ToggleFlagRowsAsync(t.Targets);
+    }
+
+    private void OnMenuRead(object? sender, RoutedEventArgs e)
+    {
+        if (Targets(sender) is { } t)
+            _ = t.Vm.ToggleReadRowsAsync(t.Targets);
+    }
+
+    private void OnMenuRule(object? sender, RoutedEventArgs e)
+    {
+        if (Targets(sender) is { } t)
+            t.Vm.CreateRuleForRow(t.Row);
     }
 }
