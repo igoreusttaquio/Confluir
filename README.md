@@ -27,7 +27,11 @@
 - **Rápido e offline** — tudo é lido de um cache local (SQLite): abre na hora, funciona sem conexão e sincroniza em segundo plano (IMAP IDLE, CONDSTORE). Ações feitas offline vão para uma fila e são enviadas quando a rede volta.
 - **HTML seguro** — emails sanitizados num WebView nativo, sem scripts, com imagens remotas (rastreadores) bloqueadas até você permitir.
 - **Escrever** — responder, responder a todos e encaminhar, editor com formatação (ou texto simples), anexos por arrastar e soltar, sugestão de destinatários, rascunhos salvos sozinhos (no computador e no servidor) e envio em segundo plano.
+- **Busca** — texto completo (assunto, remetente, destinatários e corpo), sem acentos e por prefixo, com operadores (`de:`, `para:`, `assunto:`, `tem:anexo`, `não:lida`), filtro avançado e busca no servidor.
 - **Filtros e regras** — filtros rápidos (não lidas, sinalizadas, com anexo) e regras que arquivam, movem, excluem, sinalizam ou marcam como lida as mensagens que chegam.
+- **Várias de uma vez** — selecione com Shift/Ctrl e arquive, exclua, sinalize ou marque como lidas; menu do botão direito em cada mensagem; aviso com **Desfazer** após cada ação.
+- **Teclado** — atalhos para escrever, buscar, responder, arquivar, excluir, sinalizar e sincronizar.
+- **Notificações e bandeja** — aviso do sistema para mensagens novas (com não perturbe e escolha por conta), ícone na bandeja com as não lidas, iniciar com o sistema.
 - **Do seu jeito** — tema claro, escuro ou do sistema, cor de destaque, modo compacto, duas ou três colunas, tamanho do texto da lista, fontes do sistema, embutidas, de arquivo ou do Google Fonts, e escala da interface.
 - **Três idiomas** — Português (Brasil), English e Español, com troca instantânea.
 
@@ -47,6 +51,22 @@
   <tr>
     <td align="center">Regra criada a partir de uma mensagem</td>
     <td align="center">Regras em Configurações</td>
+  </tr>
+  <tr>
+    <td><img src="site/screenshots/busca.png" alt="Busca com filtro avançado"></td>
+    <td><img src="site/screenshots/selecao-multipla.png" alt="Várias mensagens selecionadas"></td>
+  </tr>
+  <tr>
+    <td align="center">Busca com filtro avançado</td>
+    <td align="center">Ações em várias mensagens</td>
+  </tr>
+  <tr>
+    <td><img src="site/screenshots/aviso-desfazer.png" alt="Aviso com desfazer"></td>
+    <td><img src="site/screenshots/notificacoes.png" alt="Configurações de notificações"></td>
+  </tr>
+  <tr>
+    <td align="center">Aviso após cada ação, com Desfazer</td>
+    <td align="center">Notificações, bandeja e início com o sistema</td>
   </tr>
   <tr>
     <td><img src="site/screenshots/fontes.png" alt="Configurações de fontes"></td>

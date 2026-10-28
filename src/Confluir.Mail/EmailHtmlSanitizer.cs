@@ -7,7 +7,8 @@ namespace Confluir.Mail;
 /// <param name="Html">Fragmento seguro para exibir (sem scripts, formulários, iframes nem handlers).</param>
 /// <param name="BlockedRemoteImages">Imagens remotas removidas (protege contra rastreamento).</param>
 /// <param name="HasOwnBackground">O email define cores de fundo próprias (não deve receber as cores do tema escuro).</param>
-public sealed record SanitizedHtml(string Html, int BlockedRemoteImages, bool HasOwnBackground);
+/// <param name="HasDarkText">O email fixa cores de texto escuras (ex.: Outlook com "windowtext"): ilegível sobre fundo escuro.</param>
+public sealed record SanitizedHtml(string Html, int BlockedRemoteImages, bool HasOwnBackground, bool HasDarkText = false);
 
 /// <summary>
 /// Sanitiza o HTML de emails antes de exibir. Remove tudo que executa código ou envia dados
@@ -64,9 +65,83 @@ public static partial class EmailHtmlSanitizer
             }
         };
 
-        var content = sanitizer.Sanitize(ExtractBody(html));
-        return new SanitizedHtml(content, blocked, OwnBackground().IsMatch(content));
+var content = sanitizer.Sanitize(ExtractBody(html));
+        return new SanitizedHtml(content, blocked, OwnBackground().IsMatch(content), HasDarkTextColor(content));
     }
+
+    /// <summary>
+    /// Alguma cor de texto declarada (CSS <c>color:</c> ou <c>&lt;font color&gt;</c>) é escura? Cores que não dá para
+    /// interpretar contam como escuras: na dúvida, o email vai para o "papel" claro e continua legível.
+    /// </summary>
+    public static bool HasDarkTextColor(string html)
+    {
+        foreach (Match m in TextColor().Matches(html))
+        {
+            var value = (m.Groups["css"].Success ? m.Groups["css"].Value : m.Groups["attr"].Value).Trim().Trim('"', '\'').ToLowerInvariant();
+            if (value is "inherit" or "initial" or "unset" or "currentcolor" or "transparent" or "")
+                continue;
+            if (Luminance(value) is not { } luminance || luminance < 0.5)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Luminância relativa (0 = preto, 1 = branco) de uma cor CSS simples; nulo se não reconhecida.</summary>
+    public static double? Luminance(string color)
+    {
+        static double Channel(int c)
+        {
+            var v = c / 255.0;
+            return v <= 0.03928 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4);
+        }
+        static double Of(int r, int g, int b) => 0.2126 * Channel(r) + 0.7152 * Channel(g) + 0.0722 * Channel(b);
+
+        if (NamedColors.TryGetValue(color, out var hex))
+            color = hex;
+        if (color.StartsWith('#'))
+        {
+            var h = color[1..];
+            if (h.Length is 3 or 4)
+                h = string.Concat(h.Take(3).Select(c => $"{c}{c}"));
+            if (h.Length >= 6 && int.TryParse(h[..6], System.Globalization.NumberStyles.HexNumber, null, out var rgb))
+                return Of((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+            return null;
+        }
+        var fn = RgbFunction().Match(color);
+        if (fn.Success)
+        {
+            static int Part(string p) => p.EndsWith('%')
+                ? (int)Math.Round(double.Parse(p.TrimEnd('%'), System.Globalization.CultureInfo.InvariantCulture) * 2.55)
+                : (int)Math.Round(double.Parse(p, System.Globalization.CultureInfo.InvariantCulture));
+            try
+            {
+                return Of(Math.Clamp(Part(fn.Groups[1].Value), 0, 255), Math.Clamp(Part(fn.Groups[2].Value), 0, 255),
+                    Math.Clamp(Part(fn.Groups[3].Value), 0, 255));
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // Nomes comuns em emails (o resto cai em "não reconhecida" e conta como escura).
+    private static readonly Dictionary<string, string> NamedColors = new()
+    {
+        ["black"] = "#000000", ["windowtext"] = "#000000", ["navy"] = "#000080", ["darkblue"] = "#00008b",
+        ["maroon"] = "#800000", ["darkred"] = "#8b0000", ["green"] = "#008000", ["darkgreen"] = "#006400",
+        ["purple"] = "#800080", ["gray"] = "#808080", ["grey"] = "#808080", ["dimgray"] = "#696969",
+        ["darkgray"] = "#a9a9a9", ["silver"] = "#c0c0c0", ["white"] = "#ffffff", ["red"] = "#ff0000",
+        ["blue"] = "#0000ff", ["teal"] = "#008080", ["olive"] = "#808000", ["yellow"] = "#ffff00",
+        ["orange"] = "#ffa500", ["lightgray"] = "#d3d3d3", ["lightgrey"] = "#d3d3d3", ["whitesmoke"] = "#f5f5f5",
+    };
+
+    [GeneratedRegex(@"(?<![\w-])color\s*:\s*(?<css>[^;""'}]+)|<font\b[^>]*\bcolor\s*=\s*(?<attr>""[^""]*""|'[^']*'|[^\s>]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex TextColor();
+
+    [GeneratedRegex(@"^rgba?\(\s*([\d.]+%?)\s*[, ]\s*([\d.]+%?)\s*[, ]\s*([\d.]+%?)", RegexOptions.IgnoreCase)]
+    private static partial Regex RgbFunction();
 
     private static bool IsRemote(string url)
     {

@@ -42,6 +42,12 @@
         </Transitions>
       </Setter>
     </Style>
+    <!-- O host de páginas já é um cartão: painéis dentro dele (ex.: mensagem maximizada) não repetem margem nem borda. -->
+    <Style Selector="Border#PageHost Border.panel">
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="0" />
+    </Style>
     <Style Selector="Grid#Columns.navigated > Border#PageHost">
       <Setter Property="Opacity" Value="1" />
       <Setter Property="IsHitTestVisible" Value="True" />

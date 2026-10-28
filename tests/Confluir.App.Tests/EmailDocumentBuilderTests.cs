@@ -66,4 +66,19 @@ public class EmailDocumentBuilderTests
         Assert.Contains(".mail { background: #FFFFFF; color: #141A33;", doc.Html);
         Assert.Contains("content=\"light\"", doc.Html);
     }
+
+    [Fact]
+    public void Email_com_texto_escuro_fixado_fica_em_papel_no_tema_escuro()
+    {
+        // Ex.: Outlook com "color:windowtext" e sem fundo: preto sobre o fundo escuro ficaria ilegível.
+        var doc = EmailDocumentBuilder.Build(Body(html: "<p class=\"MsoNormal\" style=\"color:windowtext\">oi</p>"), false, Dark, EmailFonts.Default);
+        Assert.Contains(".mail { background: #FFFFFF; color: #141A33;", doc.Html);
+    }
+
+    [Fact]
+    public void Texto_claro_fixado_continua_no_tema_escuro()
+    {
+        var doc = EmailDocumentBuilder.Build(Body(html: "<p style=\"color:#eeeeee\">oi</p>"), false, Dark, EmailFonts.Default);
+        Assert.Contains(".mail { background: #111833; color: #E8ECFF;", doc.Html);
+    }
 }

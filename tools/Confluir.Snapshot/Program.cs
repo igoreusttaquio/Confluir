@@ -197,12 +197,13 @@ vm.GoBackCommand.Execute(null);
 // Busca com o filtro avançado aberto.
 vm.SearchText = "orcamento";
 vm.IsAdvancedSearchOpen = true;
-await vm.SearchNowCommand.ExecuteAsync(null);
-Pump(() => !vm.IsListLoading && vm.Rows.Count > 0);
+// Sem await: a busca continua no laço da interface, que só roda dentro do Pump.
+var searching = vm.SearchNowCommand.ExecuteAsync(null);
+Pump(() => searching.IsCompleted && !vm.IsListLoading && vm.Rows.Count > 0, 8000);
 Save(window, "search.png");
 vm.IsAdvancedSearchOpen = false;
-await vm.ClearSearchCommand.ExecuteAsync(null);
-Pump(() => !vm.IsSearchActive && !vm.IsListLoading);
+var clearing = vm.ClearSearchCommand.ExecuteAsync(null);
+Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000);
 
 // Seleção de várias mensagens: barra e painel de ações em lote.
 {

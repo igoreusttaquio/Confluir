@@ -36,7 +36,8 @@ public static partial class EmailDocumentBuilder
             var sanitized = EmailHtmlSanitizer.Sanitize(body.HtmlBody, allowRemoteImages);
             content = sanitized.Html;
             blocked = sanitized.BlockedRemoteImages;
-            ownBackground = sanitized.HasOwnBackground;
+            // Fundo próprio, ou texto escuro fixado pelo email no tema escuro: vai para o "papel" claro.
+            ownBackground = sanitized.HasOwnBackground || (palette.IsDark && sanitized.HasDarkText);
         }
         else
         {
