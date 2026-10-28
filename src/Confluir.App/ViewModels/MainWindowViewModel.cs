@@ -89,6 +89,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
         // A sincronização roda em segundo plano; tudo que mexe na interface volta para a thread de UI.
         _mailbox.MailboxChanged += (_, e) => Dispatcher.UIThread.Post(() => ScheduleRefresh(e.AccountId));
+        ResetSearchFields();
         _mailbox.AccountStatusChanged += (_, e) => Dispatcher.UIThread.Post(() => OnAccountStatus(e));
         _mailbox.OperationFailed += (_, e) => Dispatcher.UIThread.Post(() => OnOperationFailed(e));
     }
@@ -124,7 +125,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
             FolderNode f => accounts.Contains(f.Account.Id),
             _ => false,
         };
-        if (affectsList && SelectedNode is { } selected)
+        // Na busca, a sincronização atualiza os resultados (e não troca a lista pela pasta).
+        if (IsSearchActive)
+            await RunSearchAsync(keepSelection: true);
+        else if (affectsList && SelectedNode is { } selected)
             await LoadListAsync(selected, keepSelection: true);
     }
 
@@ -182,12 +186,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Navigation.NavigateTo(new ComposeViewModel(_compose, _accounts.Values.ToList(), accountId, ShowStatus));
     }
 
-    public async Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode)
+    public Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode) =>
+        ComposeForRowAsync(message.Row, mode, message.LoadedBody);
+
+    /// <summary>Responder pelo menu de contexto (a mensagem pode não estar aberta).</summary>
+    public Task ReplyToRowAsync(MessageRow row) => ComposeForRowAsync(row, ComposeMode.Reply, null);
+
+    private async Task ComposeForRowAsync(MessageRow row, ComposeMode mode, MessageBody? body)
     {
-        var body = message.LoadedBody;
         try
         {
-            body ??= await _mailbox.GetMessageBodyAsync(message.Row.Summary.Id);
+            body ??= await _mailbox.GetMessageBodyAsync(row.Summary.Id);
         }
         catch (Exception ex)
         {
@@ -195,8 +204,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
             ShowStatus(Strings.Reading_NotAvailableOffline);
             return;
         }
-        var compose = new ComposeViewModel(_compose, _accounts.Values.ToList(), message.Row.Account.Id, ShowStatus);
-        compose.InitFrom(mode, message.Row.Summary, body, message.Row.Account);
+        var compose = new ComposeViewModel(_compose, _accounts.Values.ToList(), row.Account.Id, ShowStatus);
+        compose.InitFrom(mode, row.Summary, body, row.Account);
         Navigation.NavigateTo(compose);
     }
 
@@ -233,16 +242,20 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     }
 
     /// <summary>"Criar regra a partir desta mensagem": editor com o remetente já preenchido.</summary>
-    public void CreateRule(MessageDetailViewModel message) =>
+    public void CreateRule(MessageDetailViewModel message) => CreateRuleForRow(message.Row);
+
+    public void CreateRuleForRow(MessageRow row) =>
         Navigation.NavigateTo(RuleEditorViewModel.FromMessage(_settingsServices.RuleEditor, _accounts.Values.ToList(),
-            ShowStatus, message.Row.Summary));
+            ShowStatus, row.Summary));
 
     /// <summary>Recarrega a lista atual e os contadores a partir do cache.</summary>
     public void RefreshList()
     {
         foreach (var node in SidebarNodes.OfType<AccountNode>().ToList())
             _ = ReloadFoldersAsync(node);
-        if (SelectedNode is { IsSelectable: true } selected)
+        if (IsSearchActive)
+            _ = RunSearchAsync(keepSelection: true);
+        else if (SelectedNode is { IsSelectable: true } selected)
             _ = LoadListAsync(selected, keepSelection: true);
     }
 
@@ -288,25 +301,34 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     /// Arquivar/excluir: tira a mensagem da lista na hora, ajusta contadores, fecha a tela própria (se aberta)
     /// e seleciona a mensagem seguinte.
     /// </summary>
-    private async Task RemoveFromListAsync(MessageDetailViewModel message, Func<Guid, CancellationToken, Task> action)
+    private Task RemoveFromListAsync(MessageDetailViewModel message, Func<Guid, CancellationToken, Task> action) =>
+        RemoveRowsAsync([message.Row], action);
+
+    /// <summary>Arquivar/excluir várias de uma vez (seleção múltipla ou menu de contexto).</summary>
+    private async Task RemoveRowsAsync(IReadOnlyList<MessageRow> removed, Func<Guid, CancellationToken, Task> action)
     {
-        var row = message.Row;
+        if (removed.Count == 0)
+            return;
+        var ids = removed.Select(r => r.Summary.Id).ToHashSet();
         var messages = Rows.OfType<MessageRow>().ToList();
-        var index = messages.FindIndex(r => r.Summary.Id == row.Summary.Id);
-        var next = index >= 0 && index + 1 < messages.Count ? messages[index + 1]
-                 : index > 0 ? messages[index - 1]
-                 : null;
+        // A seguinte é a primeira depois da última removida (ou a anterior à primeira, se não houver).
+        var lastIndex = messages.FindLastIndex(r => ids.Contains(r.Summary.Id));
+        var firstIndex = messages.FindIndex(r => ids.Contains(r.Summary.Id));
+        var next = messages.Skip(lastIndex + 1).FirstOrDefault(r => !ids.Contains(r.Summary.Id))
+                   ?? (firstIndex > 0 ? messages[firstIndex - 1] : null);
 
-        await action(row.Summary.Id, CancellationToken.None);
-
-        if (!row.IsRead && _folderNodes.TryGetValue(row.Summary.FolderId, out var folder))
-            folder.UnreadCount = Math.Max(0, folder.UnreadCount - 1);
+        foreach (var row in removed)
+        {
+            await action(row.Summary.Id, CancellationToken.None);
+            if (!row.IsRead && _folderNodes.TryGetValue(row.Summary.FolderId, out var folder))
+                folder.UnreadCount = Math.Max(0, folder.UnreadCount - 1);
+        }
         RecountUnified();
 
-        if (Navigation.CurrentPage is MessagePageViewModel page && page.Detail == message)
+        if (Navigation.CurrentPage is MessagePageViewModel page && ids.Contains(page.Detail.Row.Summary.Id))
             Navigation.GoBack();
 
-        _listMessages = _listMessages.Where(m => m.Id != row.Summary.Id).ToList();
+        _listMessages = _listMessages.Where(m => !ids.Contains(m.Id)).ToList();
         var rows = BuildRows(_listMessages);
         _suppressSelection = true;
         try
@@ -516,8 +538,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     {
         if (value is not { IsSelectable: true })
             return;
-        // Escolher uma pasta na barra lateral sempre leva de volta à caixa de email.
+        // Escolher uma pasta na barra lateral sempre leva de volta à caixa de email (e encerra a busca).
         Navigation.GoToRoot();
+        EndSearchForNavigation();
+        OnPropertyChanged(nameof(CanSearchInFolder));
         _ = LoadListAsync(value);
     }
 
@@ -757,6 +781,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     private void UpdateSubtitle(SidebarNode node)
     {
+        if (IsSearchActive)
+        {
+            ListSubtitle = _loc.Plural("Search_ResultCount", Rows.Count(r => r is MessageRow));
+            return;
+        }
         if (!HasAccounts)
         {
             ListSubtitle = "";
@@ -822,7 +851,9 @@ private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages) =
     public bool IsFilterFlagged { get => Filter == ListFilter.Flagged; set { if (value) Filter = ListFilter.Flagged; } }
     public bool IsFilterAttachments { get => Filter == ListFilter.Attachments; set { if (value) Filter = ListFilter.Attachments; } }
 
-    public string ListEmptyText => Filter == ListFilter.All ? Strings.MessageList_Empty : Strings.Filter_Empty;
+    public string ListEmptyText => IsSearchActive ? Strings.Search_NoResults
+        : Filter == ListFilter.All ? Strings.MessageList_Empty
+        : Strings.Filter_Empty;
 
     partial void OnFilterChanged(ListFilter value)
     {

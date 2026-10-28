@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Confluir.Core.Models;
+using Confluir.Core.Search;
 using Confluir.Core.Services;
 using Dapper;
 
@@ -216,6 +217,36 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         return rows.Select(r => new MailAddress(r.Name ?? "", r.Address)).ToList();
     }
 
+public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSearch search, int limit, CancellationToken ct = default)
+    {
+        await ThreadPoolSwitch.Instance;
+        var q = search.Query;
+        if (q.IsEmpty || ct.IsCancellationRequested)
+            return [];
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<MessageRow>(new CommandDefinition($"""
+            SELECT {MessageColumns} FROM messages
+            WHERE (@fts IS NULL OR rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH @fts))
+              AND (@account IS NULL OR account_id = @account)
+              AND (@folder IS NULL OR folder_id = @folder)
+              AND (@attachments = 0 OR has_attachments = 1)
+              AND (@unread = 0 OR is_read = 0)
+              AND (@since IS NULL OR date_utc_ms >= @since)
+            ORDER BY date_utc_ms DESC
+            LIMIT @limit
+            """, new
+        {
+            fts = q.ToFtsMatch(),
+            account = search.AccountId?.ToString(),
+            folder = search.FolderId?.ToString(),
+            attachments = q.HasAttachment,
+            unread = q.Unread,
+            since = search.Since?.ToUnixTimeMilliseconds(),
+            limit,
+        }, cancellationToken: ct));
+        return rows.Select(ToSummary).ToList();
+    }
+
     private static string EscapeLike(string s) => s.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
 
     private sealed class AddressRow
@@ -253,7 +284,9 @@ public sealed class SqliteMailCache(Database db) : IMailCache
     }
 
     public Task SaveBodyAsync(MessageBody body, CancellationToken ct = default) =>
-        WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition("""
+        WriteAsync(async (c, tx) =>
+        {
+            await c.ExecuteAsync(new CommandDefinition("""
             INSERT INTO bodies (message_id, data, fetched_at)
             SELECT @id, @data, @at WHERE EXISTS (SELECT 1 FROM messages WHERE id = @id)
             ON CONFLICT (message_id) DO UPDATE SET data = excluded.data, fetched_at = excluded.fetched_at
@@ -262,10 +295,19 @@ public sealed class SqliteMailCache(Database db) : IMailCache
             id = body.MessageId.ToString(),
             data = JsonSerializer.Serialize(body, BodyJson),
             at = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-        }, tx, cancellationToken: ct)), ct);
+        }, tx, cancellationToken: ct));
+            await c.ExecuteAsync(new CommandDefinition(
+                "UPDATE messages_fts SET body = @text WHERE rowid = (SELECT rowid FROM messages WHERE id = @id)",
+                new { id = body.MessageId.ToString(), text = body.TextBody.Length > 20000 ? body.TextBody[..20000] : body.TextBody },
+                tx, cancellationToken: ct));
+        }, ct);
 
     public Task ClearBodiesAsync(CancellationToken ct = default) =>
-        WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition("DELETE FROM bodies", transaction: tx, cancellationToken: ct)), ct);
+        WriteAsync(async (c, tx) =>
+        {
+            await c.ExecuteAsync(new CommandDefinition("DELETE FROM bodies", transaction: tx, cancellationToken: ct));
+            await c.ExecuteAsync(new CommandDefinition("UPDATE messages_fts SET body = ''", transaction: tx, cancellationToken: ct));
+        }, ct);
 
     // Fila --------------------------------------------------------------------------------------
 

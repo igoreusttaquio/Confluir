@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
 using Confluir.Core.Models;
 using Confluir.Core.Rules;
+using Confluir.Core.Search;
 using Confluir.Core.Services;
 using Confluir.Core.Settings;
 using Microsoft.Extensions.Hosting;
@@ -116,6 +117,26 @@ public Task DeleteAsync(Guid messageId, CancellationToken ct = default) =>
         await _cache.DeleteMessageAsync(messageId, ct);
         await _cache.EnqueueAsync(location.AccountId, messageId, OperationKind.Move, location, folderFullName, ct);
         Wake(location.AccountId);
+    }
+
+    // Busca -----------------------------------------------------------------------------------------
+
+    public Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default) =>
+        _cache.SearchMessagesAsync(search, limit, ct);
+
+    public async Task<int> SearchServerAsync(Guid folderId, SearchQuery query, CancellationToken ct = default)
+    {
+        foreach (var account in _accounts.Accounts)
+        {
+            var folder = (await _cache.GetFoldersAsync(account.Id, ct)).FirstOrDefault(f => f.Id == folderId);
+            if (folder is null)
+                continue;
+            var count = await _engine.SearchServerAsync(account, folder, query, ct);
+            if (count > 0)
+                RaiseChanged(account.Id, foldersChanged: false);
+            return count;
+        }
+        return 0;
     }
 
     // Regras ----------------------------------------------------------------------------------------

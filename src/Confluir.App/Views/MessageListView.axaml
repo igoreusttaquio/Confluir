@@ -84,6 +84,96 @@
           </StackPanel>
         </Grid>
       </Border>
+      <!-- Busca (Ctrl+F) e filtro avançado -->
+      <StackPanel DockPanel.Dock="Top" IsVisible="{Binding HasAccounts}">
+        <Grid ColumnDefinitions="*,Auto" Margin="12,10,12,0">
+          <TextBox x:Name="SearchBox" Text="{Binding SearchText}" PlaceholderText="{l:Tr Search_Placeholder}"
+                   AutomationProperties.Name="{l:Tr Search_Placeholder}" Padding="6,6,6,6">
+            <TextBox.InnerLeftContent>
+              <LucideIcon Kind="Search" Size="15" Margin="10,0,2,0" Foreground="{DynamicResource TextSecondary}" />
+            </TextBox.InnerLeftContent>
+            <TextBox.InnerRightContent>
+              <Button Classes="icon" Padding="6" Command="{Binding ClearSearchCommand}" IsVisible="{Binding IsSearchActive}"
+                      ToolTip.Tip="{l:Tr Search_Clear}" AutomationProperties.Name="{l:Tr Search_Clear}">
+                <LucideIcon Kind="X" Size="14" />
+              </Button>
+            </TextBox.InnerRightContent>
+          </TextBox>
+          <ToggleButton Grid.Column="1" IsChecked="{Binding IsAdvancedSearchOpen}" Margin="6,0,0,0" Padding="8"
+                        ToolTip.Tip="{l:Tr Search_Advanced}" AutomationProperties.Name="{l:Tr Search_Advanced}">
+            <LucideIcon Kind="SlidersHorizontal" Size="16" />
+          </ToggleButton>
+        </Grid>
+        <Border IsVisible="{Binding IsAdvancedSearchOpen}" Margin="12,8,12,0" Padding="12" CornerRadius="10"
+                Background="{DynamicResource SurfaceAlt}">
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+            <TextBlock Text="{l:Tr Rule_Field_From}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+            <TextBox Grid.Column="1" Text="{Binding SearchFrom}" PlaceholderText="{l:Tr Search_FromPlaceholder}" />
+            <TextBlock Grid.Row="1" Text="{l:Tr Rule_Field_Subject}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SearchSubject}" />
+            <TextBlock Grid.Row="2" Text="{l:Tr Rule_Field_To}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SearchTo}" />
+            <TextBlock Grid.Row="3" Text="{l:Tr Search_Period}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SearchPeriods}" SelectedItem="{Binding SearchPeriod}"
+                      HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:SearchPeriodOption">
+                  <TextBlock>
+                    <TextBlock.Text>
+                      <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                        <Binding Path="LabelKey" />
+                        <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                      </MultiBinding>
+                    </TextBlock.Text>
+                  </TextBlock>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <WrapPanel Grid.Row="4" Grid.ColumnSpan="2" ItemSpacing="14" LineSpacing="4">
+              <CheckBox IsChecked="{Binding SearchHasAttachment}" Content="{l:Tr Filter_Attachments}" />
+              <CheckBox IsChecked="{Binding SearchUnread}" Content="{l:Tr Filter_Unread}" />
+              <CheckBox IsChecked="{Binding SearchInFolder}" Content="{l:Tr Search_InFolder}" IsEnabled="{Binding CanSearchInFolder}" />
+            </WrapPanel>
+            <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+              <Button Command="{Binding SearchServerCommand}" IsEnabled="{Binding CanSearchServer}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsSearchingServer}" />
+                  <LucideIcon Kind="Server" Size="14" IsVisible="{Binding !IsSearchingServer}" />
+                  <TextBlock Text="{l:Tr Search_Server}" />
+                </StackPanel>
+              </Button>
+              <Button Content="{l:Tr Search_Clear}" Command="{Binding ClearSearchCommand}" IsVisible="{Binding IsSearchActive}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </StackPanel>
+
+      <!-- Várias selecionadas: ações em lote (vale também no layout de duas colunas) -->
+      <Border DockPanel.Dock="Top" IsVisible="{Binding HasMultipleSelection}" Background="{DynamicResource AccentSubtle}"
+              Margin="12,8,12,0" Padding="12,4,4,4" CornerRadius="10">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{Binding SelectionCountText}" FontWeight="SemiBold" VerticalAlignment="Center"
+                     Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0">
+            <Button Classes="icon" Command="{Binding ArchiveSelectedCommand}" ToolTip.Tip="{l:Tr Action_Archive}" AutomationProperties.Name="{l:Tr Action_Archive}">
+              <LucideIcon Kind="Archive" Size="16" />
+            </Button>
+            <Button Classes="icon" Command="{Binding DeleteSelectedCommand}" ToolTip.Tip="{l:Tr Action_Delete}" AutomationProperties.Name="{l:Tr Action_Delete}">
+              <LucideIcon Kind="Trash" Size="16" />
+            </Button>
+            <Button Classes="icon" Command="{Binding ToggleFlagSelectedCommand}" ToolTip.Tip="{Binding SelectionFlagText}" AutomationProperties.Name="{Binding SelectionFlagText}">
+              <LucideIcon Kind="Flag" Size="16" />
+            </Button>
+            <Button Classes="icon" Command="{Binding ToggleReadSelectedCommand}" ToolTip.Tip="{Binding SelectionReadText}" AutomationProperties.Name="{Binding SelectionReadText}">
+              <LucideIcon Kind="MailOpen" Size="16" />
+            </Button>
+            <Button Classes="icon" Command="{Binding ClearSelectionCommand}" ToolTip.Tip="{l:Tr Selection_Clear}" AutomationProperties.Name="{l:Tr Selection_Clear}">
+              <LucideIcon Kind="X" Size="16" />
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
       <!-- Filtros rápidos -->
       <Border DockPanel.Dock="Top" Padding="14,8,12,8" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
               IsVisible="{Binding HasAccounts}">
@@ -105,9 +195,16 @@
                    MinHeight="2" Height="2" Margin="0,-2,0,0" />
 
       <Grid>
-        <TextBlock Text="{Binding ListEmptyText}" Classes="secondary"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   IsVisible="{Binding IsListEmpty}" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24" IsVisible="{Binding IsListEmpty}">
+          <TextBlock Text="{Binding ListEmptyText}" Classes="secondary" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+          <!-- Sem resultado no aparelho: procurar no servidor -->
+          <Button HorizontalAlignment="Center" Command="{Binding SearchServerCommand}" IsVisible="{Binding CanSearchServer}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="Server" Size="14" />
+              <TextBlock Text="{l:Tr Search_Server}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
 
         <!-- Sem contas -->
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24"
@@ -143,10 +240,15 @@
         <!-- ListBox usa VirtualizingStackPanel: só os itens visíveis têm containers. -->
         <ListBox x:Name="Messages" ItemsSource="{Binding Rows}"
                  SelectedItem="{Binding SelectedRow}"
+                 SelectionMode="Multiple"
                  Classes.compact="{Binding Appearance.CompactMode}"
                  ItemContainerTheme="{StaticResource MessageItemTheme}"
                  Background="Transparent"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <!-- Botão direito: os itens são montados na hora para a mensagem clicada (code-behind). -->
+          <ListBox.ContextMenu>
+            <ContextMenu x:Name="RowMenu" />
+          </ListBox.ContextMenu>
           <ListBox.DataTemplates>
             <DataTemplate DataType="vm:DateHeaderRow">
               <TextBlock Classes="groupHeader" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"

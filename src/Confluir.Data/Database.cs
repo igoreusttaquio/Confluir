@@ -107,6 +107,32 @@ public sealed class Database
         ALTER TABLE messages ADD COLUMN recipients TEXT NOT NULL DEFAULT '';
         ALTER TABLE pending_ops ADD COLUMN target_folder TEXT;
         """,
+
+        // v8: busca de texto completo (FTS5). Sem acentos ("orcamento" acha "orçamento"); o rowid é o da
+        // tabela messages, mantido por gatilhos. O corpo entra quando a mensagem é aberta (SaveBodyAsync).
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+            subject, sender, recipients, preview, body,
+            tokenize = 'unicode61 remove_diacritics 2'
+        );
+        DELETE FROM messages_fts;
+        INSERT INTO messages_fts (rowid, subject, sender, recipients, preview, body)
+            SELECT m.rowid, m.subject, m.from_name || ' ' || m.from_address, m.recipients, m.preview,
+                   COALESCE(substr(json_extract(b.data, '$.TextBody'), 1, 20000), '')
+            FROM messages m LEFT JOIN bodies b ON b.message_id = m.id;
+        CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN
+            INSERT INTO messages_fts (rowid, subject, sender, recipients, preview, body)
+            VALUES (new.rowid, new.subject, new.from_name || ' ' || new.from_address, new.recipients, new.preview, '');
+        END;
+        CREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages BEGIN
+            DELETE FROM messages_fts WHERE rowid = old.rowid;
+        END;
+        CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE OF subject, from_name, from_address, recipients, preview ON messages BEGIN
+            UPDATE messages_fts SET subject = new.subject, sender = new.from_name || ' ' || new.from_address,
+                   recipients = new.recipients, preview = new.preview
+            WHERE rowid = old.rowid;
+        END;
+        """,
     ];
 
     private readonly string _connectionString;

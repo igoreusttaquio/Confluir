@@ -8,9 +8,39 @@
              x:DataType="vm:MainWindowViewModel">
   <Border Classes="panel" Background="{DynamicResource Surface}">
     <Grid>
+      <!-- Várias selecionadas: as ações em lote -->
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" IsVisible="{Binding HasMultipleSelection}">
+        <Border Width="96" Height="96" CornerRadius="48" Background="{DynamicResource AccentSubtle}" HorizontalAlignment="Center">
+          <LucideIcon Kind="Layers" Size="44" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />
+        </Border>
+        <TextBlock Text="{Binding SelectionCountText}" FontSize="16" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,8,0,0" />
+        <WrapPanel HorizontalAlignment="Center" ItemSpacing="8" LineSpacing="8" Margin="0,6,0,0" MaxWidth="460">
+          <Button Command="{Binding ArchiveSelectedCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6"><LucideIcon Kind="Archive" Size="15" /><TextBlock Text="{l:Tr Action_Archive}" /></StackPanel>
+          </Button>
+          <Button Command="{Binding DeleteSelectedCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6"><LucideIcon Kind="Trash" Size="15" /><TextBlock Text="{l:Tr Action_Delete}" /></StackPanel>
+          </Button>
+          <Button Command="{Binding ToggleFlagSelectedCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6"><LucideIcon Kind="Flag" Size="15" /><TextBlock Text="{Binding SelectionFlagText}" /></StackPanel>
+          </Button>
+          <Button Command="{Binding ToggleReadSelectedCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6"><LucideIcon Kind="MailOpen" Size="15" /><TextBlock Text="{Binding SelectionReadText}" /></StackPanel>
+          </Button>
+        </WrapPanel>
+        <Button HorizontalAlignment="Center" Content="{l:Tr Selection_Clear}" Command="{Binding ClearSelectionCommand}"
+                Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Accent}" />
+      </StackPanel>
+
       <!-- Estado vazio -->
-      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10"
-                  IsVisible="{Binding !HasSelection}">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+        <StackPanel.IsVisible>
+          <MultiBinding Converter="{x:Static BoolConverters.And}">
+            <Binding Path="!HasSelection" />
+            <Binding Path="HasSingleOrNoSelection" />
+          </MultiBinding>
+        </StackPanel.IsVisible>
         <Border Width="96" Height="96" CornerRadius="48" Background="{DynamicResource AccentSubtle}"
                 HorizontalAlignment="Center">
           <LucideIcon Kind="Mail" Size="44" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />

@@ -1,5 +1,6 @@
 using Confluir.Core.Models;
 using Confluir.Core.Rules;
+using Confluir.Core.Search;
 
 namespace Confluir.Core.Services;
 
@@ -52,6 +53,15 @@ public interface IMailboxService
 
     /// <summary>Aplica uma regra às mensagens que já estão na caixa de entrada; retorna quantas foram afetadas.</summary>
     Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default);
+
+    /// <summary>Busca no cache local (texto completo + filtros).</summary>
+    Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default);
+
+    /// <summary>
+    /// Busca no servidor (IMAP SEARCH) numa pasta e traz para o cache o que ainda não estava nele.
+    /// Retorna quantas mensagens novas entraram no cache.
+    /// </summary>
+    Task<int> SearchServerAsync(Guid folderId, SearchQuery query, CancellationToken ct = default);
 
     /// <summary>Endereços já vistos (remetentes), para autocompletar destinatários; os mais frequentes primeiro.</summary>
     Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit = 8, CancellationToken ct = default);

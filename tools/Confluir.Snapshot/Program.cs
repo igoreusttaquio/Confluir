@@ -2,7 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Media.Imaging;
+using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Confluir.App;
 using Confluir.App.Services;
 using Confluir.App.ViewModels;
@@ -191,6 +193,23 @@ ruleEditor.MarkRead = true;
 ruleEditor.IsDestinationArchive = true;
 Save(window, "rule-editor.png");
 vm.GoBackCommand.Execute(null);
+
+// Clique direito numa mensagem: o menu de contexto precisa abrir com as ações.
+{
+    var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
+    var target = vm.Rows.OfType<MessageRow>().Skip(3).First();
+    list.ScrollIntoView(target);
+    Pump(() => list.ContainerFromItem(target) is not null);
+    var container = (Control)list.ContainerFromItem(target)!;
+    var point = container.TranslatePoint(new Point(40, 10), window)!.Value;
+    window.MouseDown(point, MouseButton.Right);
+    window.MouseUp(point, MouseButton.Right);
+    Pump(() => list.ContextMenu?.IsOpen == true, 2000);
+    var headers = list.ContextMenu?.Items.OfType<MenuItem>().Select(i => i.Header?.ToString()) ?? [];
+    Console.WriteLine($"menu de contexto aberto: {list.ContextMenu?.IsOpen == true}; itens: {string.Join(" | ", headers)}");
+    list.ContextMenu?.Close();
+
+}
 
 // Domínio desconhecido, tema escuro, com resultado de teste.
 theme.SetTheme(ThemeMode.Dark);

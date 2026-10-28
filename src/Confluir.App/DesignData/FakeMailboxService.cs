@@ -1,5 +1,6 @@
 using Confluir.Core.Models;
 using Confluir.Core.Rules;
+using Confluir.Core.Search;
 using Confluir.Core.Providers;
 using Confluir.Core.Services;
 
@@ -142,6 +143,31 @@ public sealed class FakeMailboxService : IMailboxService
     public Task DeleteAsync(Guid messageId, CancellationToken ct = default) => Remove(messageId);
 
     public Task MoveAsync(Guid messageId, string folderFullName, CancellationToken ct = default) => Remove(messageId);
+
+    // Busca simples (sem índice): o bastante para a interface com dados de exemplo.
+    public Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default)
+    {
+        var q = search.Query;
+        // Como o índice real: sem diferenciar maiúsculas nem acentos ("orcamento" acha "orçamento").
+        var compare = System.Globalization.CultureInfo.InvariantCulture.CompareInfo;
+        bool Has(string? field, string value) => field is not null &&
+            compare.IndexOf(field, value, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) >= 0;
+        var found = _byId.Values
+            .Where(m => search.AccountId is null || m.AccountId == search.AccountId)
+            .Where(m => search.FolderId is null || m.FolderId == search.FolderId)
+            .Where(m => search.Since is null || m.Date >= search.Since)
+            .Where(m => !q.HasAttachment || m.HasAttachments)
+            .Where(m => !q.Unread || !m.IsRead)
+            .Where(m => q.Terms.All(t => Has(m.Subject, t) || Has(m.FromName, t) || Has(m.FromAddress, t) || Has(m.Preview, t)))
+            .Where(m => q.From.All(t => Has(m.FromName, t) || Has(m.FromAddress, t)))
+            .Where(m => q.Subject.All(t => Has(m.Subject, t)))
+            .OrderByDescending(m => m.Date)
+            .Take(limit)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<MessageSummary>>(found);
+    }
+
+    public Task<int> SearchServerAsync(Guid folderId, SearchQuery query, CancellationToken ct = default) => Task.FromResult(0);
 
     public Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default)
     {

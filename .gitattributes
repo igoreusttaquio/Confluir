@@ -1,0 +1,12 @@
+# Arquivos usados nos runners de Linux/macOS precisam de LF (bash quebra com CRLF).
+*.sh       text eol=lf
+*.desktop  text eol=lf
+*.plist    text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+
+# Binários
+*.png  binary
+*.ico  binary
+*.icns binary
+*.ttf  binary

@@ -1,5 +1,6 @@
 using Confluir.Core;
 using Confluir.Core.Models;
+using Confluir.Core.Search;
 using Confluir.Core.Services;
 using Microsoft.Data.Sqlite;
 
@@ -84,6 +85,10 @@ public sealed class SqliteMailCacheTests : IDisposable
                 ALTER TABLE pending_ops DROP COLUMN folder_name;
                 ALTER TABLE pending_ops DROP COLUMN folder_id;
                 ALTER TABLE pending_ops DROP COLUMN uid;
+                DROP TRIGGER messages_fts_insert;
+                DROP TRIGGER messages_fts_delete;
+                DROP TRIGGER messages_fts_update;
+                DROP TABLE messages_fts;
                 ALTER TABLE pending_ops DROP COLUMN target_folder;
                 ALTER TABLE messages DROP COLUMN recipients;
                 PRAGMA user_version = 1;
@@ -243,6 +248,47 @@ public sealed class SqliteMailCacheTests : IDisposable
         var op = Assert.Single(await _cache.GetPendingAsync(_account, _ct));
         Assert.Equal(OperationKind.Move, op.Kind);
         Assert.Equal("Promoções", op.TargetFolder);
+    }
+
+    [Fact]
+    public async Task Busca_de_texto_completo_ignora_acentos_usa_prefixo_e_operadores()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        var archive = Folder("Arquivo", SpecialFolderKind.Archive);
+        await _cache.SaveFoldersAsync(_account, [inbox, archive], _ct);
+        CachedMessage Msg(MailFolder folder, uint uid, string subject, string fromName, string from, bool attachments = false) =>
+            Message(folder, uid) with
+            {
+                Summary = Message(folder, uid).Summary with
+                {
+                    Subject = subject, FromName = fromName, FromAddress = from, HasAttachments = attachments,
+                    Recipients = "eu@exemplo.com",
+                },
+            };
+        await _cache.UpsertMessagesAsync(inbox.Id,
+        [
+            Msg(inbox, 1, "Orçamento de setembro", "Ana Souza", "ana@empresa.com", attachments: true),
+            Msg(inbox, 2, "Reunião de quinta", "Bruno", "bruno@empresa.com"),
+        ], _ct);
+        await _cache.UpsertMessagesAsync(archive.Id, [Msg(archive, 3, "Orçamentos antigos", "Carla", "carla@outra.com")], _ct);
+
+        async Task<string[]> Find(string text, Guid? folder = null) =>
+            (await _cache.SearchMessagesAsync(new MessageSearch(SearchQuery.Parse(text), FolderId: folder), 50, _ct))
+            .Select(m => m.Subject).Order().ToArray();
+
+        Assert.Equal(["Orçamento de setembro", "Orçamentos antigos"], await Find("orcamento"));   // sem acento e com prefixo
+        Assert.Equal(["Orçamento de setembro"], await Find("orçam de:ana"));
+        Assert.Equal(["Orçamento de setembro"], await Find("tem:anexo"));                    // só filtro, sem texto
+        Assert.Equal(["Orçamentos antigos"], await Find("orcamento", archive.Id));
+        Assert.Equal(["Reunião de quinta"], await Find("assunto:reuniao para:eu@exemplo.com"));
+        Assert.Empty(await Find("\"aspas\" soltas\""));                                     // nunca é erro de sintaxe
+
+        // Corpo entra no índice ao ser guardado; mensagem apagada sai do índice.
+        var bruno = (await _cache.GetMessagesAsync(inbox.Id, _ct)).Single(m => m.FromName == "Bruno");
+        await _cache.SaveBodyAsync(new MessageBody(bruno.Id, [], [], "Vamos falar do cronograma", []), _ct);
+        Assert.Equal(["Reunião de quinta"], await Find("cronograma"));
+        await _cache.DeleteMessageAsync(bruno.Id, _ct);
+        Assert.Empty(await Find("cronograma"));
     }
 
     [Fact]

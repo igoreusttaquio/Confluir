@@ -145,6 +145,54 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
     }
 
     /// <summary>
+    /// Busca no servidor e grava no cache as mensagens encontradas que ainda não estavam nele
+    /// (as 200 mais recentes). Retorna quantas entraram.
+    /// </summary>
+    public async Task<int> SearchServerAsync(MailAccount account, MailFolder folder, Core.Search.SearchQuery query, CancellationToken ct)
+    {
+        if (ToImapQuery(query) is not { } imapQuery)
+            return 0;
+        var cached = (await cache.GetUidsAsync(folder.Id, ct)).ToHashSet();
+        var (uidValidity, found) = await pool.RunAsync(account.Id, async (client, token) =>
+        {
+            var f = await OpenAsync(client, folder.FullName, FolderAccess.ReadOnly, token);
+            var uids = await f.SearchAsync(imapQuery, token);
+            return (f.UidValidity, uids.Select(u => u.Id).ToList());
+        }, ct);
+
+        var missing = found.Where(u => !cached.Contains(u)).OrderByDescending(u => u).Take(200).ToList();
+        if (missing.Count == 0)
+            return 0;
+        var messages = await pool.RunAsync(account.Id, async (client, token) =>
+        {
+            var f = await OpenAsync(client, folder.FullName, FolderAccess.ReadOnly, token);
+            var summaries = await f.FetchAsync(missing.Select(u => new UniqueId(uidValidity, u)).ToList(), SummaryRequest, token);
+            return summaries.Select(s => new CachedMessage(
+                MessageConverter.ToSummary(s, StableId.From(account.Id, folder.FullName, uidValidity, s.UniqueId.Id),
+                    account.Id, folder.Id),
+                s.UniqueId.Id)).ToList();
+        }, ct);
+        await cache.UpsertMessagesAsync(folder.Id, messages, ct);
+        logger.LogInformation("Busca no servidor trouxe {Count} mensagens (pasta {FolderId})", messages.Count, folder.Id);
+        return messages.Count;
+    }
+
+    /// <summary>Critério IMAP equivalente (texto solto procura em assunto, remetente e corpo). "Tem anexo" não existe no IMAP.</summary>
+    public static SearchQuery? ToImapQuery(Core.Search.SearchQuery query)
+    {
+        var parts = new List<SearchQuery>();
+        parts.AddRange(query.Terms.Select(t => SearchQuery.SubjectContains(t).Or(SearchQuery.FromContains(t)).Or(SearchQuery.BodyContains(t))));
+        parts.AddRange(query.From.Select(SearchQuery.FromContains));
+        parts.AddRange(query.To.Select(SearchQuery.ToContains));
+        parts.AddRange(query.Subject.Select(SearchQuery.SubjectContains));
+        if (parts.Count == 0)
+            return null;
+        if (query.Unread)
+            parts.Add(SearchQuery.NotSeen);
+        return parts.Aggregate((a, b) => a.And(b));
+    }
+
+    /// <summary>
     /// Com CONDSTORE, pede só o que mudou desde o último MODSEQ; sem ele, relê as flags de todas as mensagens em cache.
     /// </summary>
     private async Task<List<FlagUpdate>> FetchFlagChangesAsync(MailAccount account, MailFolder folder, uint uidValidity,

@@ -1,4 +1,5 @@
 using Confluir.Core.Models;
+using Confluir.Core.Search;
 
 namespace Confluir.Core.Services;
 
@@ -71,6 +72,9 @@ public interface IMailCache
     Task DeleteMessageAsync(Guid messageId, CancellationToken ct = default);
 
     Task<MessageLocation?> GetLocationAsync(Guid messageId, CancellationToken ct = default);
+
+    /// <summary>Busca de texto completo (FTS5) com filtros, da mais recente para a mais antiga.</summary>
+    Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSearch search, int limit, CancellationToken ct = default);
 
     /// <summary>Remetentes já vistos cujo nome ou endereço contém o texto, por frequência.</summary>
     Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit, CancellationToken ct = default);
