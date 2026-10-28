@@ -105,7 +105,7 @@
       <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,6,0,10" HorizontalAlignment="Center">
         <Button Classes="icon" IsVisible="{Binding Updates.IsAvailable}" Command="{Binding Updates.InstallCommand}"
                 ToolTip.Tip="{Binding Updates.StatusText}" AutomationProperties.Name="{l:Tr Update_Button}">
-          <LucideIcon Kind="CircleArrowDown" Foreground="{DynamicResource Accent}" />
+          <LucideIcon Kind="RefreshCw" Foreground="{DynamicResource Accent}" Classes.spin="{Binding Updates.IsSpinning}" />
         </Button>
         <Button Classes="icon" ToolTip.Tip="{l:Tr Account_Add}" AutomationProperties.Name="{l:Tr Account_Add}" Command="{Binding AddAccountCommand}">
           <LucideIcon Kind="UserPlus" />
@@ -179,7 +179,7 @@
                   IsVisible="{Binding Updates.IsAvailable}" Command="{Binding Updates.InstallCommand}"
                   ToolTip.Tip="{Binding Updates.StatusText}" AutomationProperties.Name="{l:Tr Update_Button}">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <LucideIcon Kind="CircleArrowDown" Size="14" />
+              <LucideIcon Kind="RefreshCw" Size="14" Classes.spin="{Binding Updates.IsSpinning}" />
               <TextBlock Text="{l:Tr Update_Button}" FontSize="12" IsVisible="{Binding !Updates.IsDownloading}" />
               <TextBlock Text="{Binding Updates.Progress, StringFormat={}{0:0}%}" FontSize="12" IsVisible="{Binding Updates.IsDownloading}" />
             </StackPanel>

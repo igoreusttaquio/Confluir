@@ -68,7 +68,7 @@ public sealed partial class UpdateService : ObservableObject
     public string CurrentVersionText => CurrentVersion.ToString(3);
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsAvailable), nameof(IsBusy), nameof(StatusText), nameof(CanInstall), nameof(IsDownloading))]
+    [NotifyPropertyChangedFor(nameof(IsAvailable), nameof(IsBusy), nameof(StatusText), nameof(CanInstall), nameof(IsDownloading), nameof(IsSpinning))]
     public partial UpdateState State { get; private set; }
 
     [ObservableProperty]
@@ -91,6 +91,24 @@ public sealed partial class UpdateService : ObservableObject
     public bool IsBusy => State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Installing;
 
     public bool IsDownloading => State == UpdateState.Downloading;
+
+    // O ícone dos botões gira enquanto trabalha, e pelo menos um instante depois do clique (uma busca rápida
+    // terminaria antes de dar para ver).
+    private static readonly TimeSpan MinimumSpin = TimeSpan.FromSeconds(1.2);
+    private bool _holdSpin;
+
+    public bool IsSpinning => IsBusy || _holdSpin;
+
+    private void Spin()
+    {
+        _holdSpin = true;
+        OnPropertyChanged(nameof(IsSpinning));
+        DispatcherTimer.RunOnce(() =>
+        {
+            _holdSpin = false;
+            OnPropertyChanged(nameof(IsSpinning));
+        }, MinimumSpin);
+    }
 
     public bool CanInstall => Available is not null && State is UpdateState.Available or UpdateState.Failed;
 
@@ -143,7 +161,11 @@ public sealed partial class UpdateService : ObservableObject
     }
 
     [RelayCommand]
-    private Task Check() => CheckAsync(quiet: false);
+    private Task Check()
+    {
+        Spin();
+        return CheckAsync(quiet: false);
+    }
 
     /// <param name="quiet">Busca automática: falha de rede não aparece como erro.</param>
     public async Task CheckAsync(bool quiet)
@@ -201,6 +223,7 @@ public sealed partial class UpdateService : ObservableObject
     {
         if (Available is not { } info || IsBusy)
             return;
+        Spin();
         if (info.InstallerUrl is null)
         {
             _ = _launcher.OpenAsync(info.PageUrl);

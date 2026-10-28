@@ -315,6 +315,14 @@ Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000
         ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Advanced;
         Save(window, "settings-updates.png");
         Console.WriteLine($"atualização: \"{updates.StatusText}\", botão visível: {updates.IsAvailable}, pode instalar: {updates.CanInstall}");
+        // Clicar faz o ícone girar (por pelo menos um instante), e ele para depois.
+        var spinIcon = window.GetVisualDescendants().OfType<Lucide.Avalonia.LucideIcon>()
+            .First(i => i.Kind == Lucide.Avalonia.LucideIconKind.RefreshCw && i.IsEffectivelyVisible && i.FindAncestorOfType<SettingsView>() is not null);
+        updates.CheckCommand.Execute(null);
+        Pump(() => true, 300);
+        Console.WriteLine($"girando ao clicar: {updates.IsSpinning}, classe spin no ícone: {spinIcon.Classes.Contains("spin")}");
+        Pump(() => !updates.IsSpinning, 25000);
+        Console.WriteLine($"parou depois: {!updates.IsSpinning}, estado \"{updates.StatusText}\"");
     }
     vm.GoBackCommand.Execute(null);
 

@@ -622,10 +622,21 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                   <Button Content="{l:Tr Update_ReleaseNotes}" Command="{Binding Updates.OpenReleasePageCommand}"
                           IsVisible="{Binding Updates.IsAvailable}" />
-                  <Button Classes="accent" Content="{l:Tr Update_InstallNow}" Command="{Binding Updates.InstallCommand}"
-                          IsVisible="{Binding Updates.CanInstall}" />
-                  <Button Content="{l:Tr Update_CheckNow}" Command="{Binding Updates.CheckCommand}"
-                          IsVisible="{Binding !Updates.IsAvailable}" IsEnabled="{Binding !Updates.IsBusy}" />
+                  <!-- Continuam à vista enquanto trabalham, com o ícone girando -->
+                  <Button Classes="accent" Command="{Binding Updates.InstallCommand}"
+                          IsVisible="{Binding Updates.IsAvailable}" IsEnabled="{Binding Updates.CanInstall}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <LucideIcon Kind="RefreshCw" Size="14" Classes.spin="{Binding Updates.IsSpinning}" />
+                      <TextBlock Text="{l:Tr Update_InstallNow}" />
+                    </StackPanel>
+                  </Button>
+                  <Button Command="{Binding Updates.CheckCommand}"
+                          IsVisible="{Binding !Updates.IsAvailable}" IsEnabled="{Binding !Updates.IsBusy}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <LucideIcon Kind="RefreshCw" Size="14" Classes.spin="{Binding Updates.IsSpinning}" />
+                      <TextBlock Text="{l:Tr Update_CheckNow}" />
+                    </StackPanel>
+                  </Button>
                 </StackPanel>
               </Grid>
               <ProgressBar Value="{Binding Updates.Progress}" Maximum="100" IsVisible="{Binding Updates.IsDownloading}" />
