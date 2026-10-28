@@ -106,7 +106,7 @@
         </Grid>
         <Border IsVisible="{Binding IsAdvancedSearchOpen}" Margin="12,8,12,0" Padding="12" CornerRadius="10"
                 Background="{DynamicResource SurfaceAlt}">
-          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
             <TextBlock Text="{l:Tr Rule_Field_From}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
             <TextBox Grid.Column="1" Text="{Binding SearchFrom}" PlaceholderText="{l:Tr Search_FromPlaceholder}" />
             <TextBlock Grid.Row="1" Text="{l:Tr Rule_Field_Subject}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
@@ -129,12 +129,21 @@
                 </DataTemplate>
               </ComboBox.ItemTemplate>
             </ComboBox>
-            <WrapPanel Grid.Row="4" Grid.ColumnSpan="2" ItemSpacing="14" LineSpacing="4">
+            <TextBlock Grid.Row="4" Text="{l:Tr Rule_Account}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding SearchAccounts}" SelectedItem="{Binding SearchAccount}"
+                      HorizontalAlignment="Stretch" PlaceholderText="{l:Tr Rule_AllAccounts}" IsEnabled="{Binding !SearchInFolder}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:SearchAccountOption">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <WrapPanel Grid.Row="5" Grid.ColumnSpan="2" ItemSpacing="14" LineSpacing="4">
               <CheckBox IsChecked="{Binding SearchHasAttachment}" Content="{l:Tr Filter_Attachments}" />
               <CheckBox IsChecked="{Binding SearchUnread}" Content="{l:Tr Filter_Unread}" />
               <CheckBox IsChecked="{Binding SearchInFolder}" Content="{l:Tr Search_InFolder}" IsEnabled="{Binding CanSearchInFolder}" />
             </WrapPanel>
-            <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+            <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
               <Button Command="{Binding SearchServerCommand}" IsEnabled="{Binding CanSearchServer}">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsSearchingServer}" />
@@ -171,6 +180,16 @@
               <LucideIcon Kind="X" Size="16" />
             </Button>
           </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Busca com mais resultados do que os mostrados -->
+      <Border DockPanel.Dock="Top" IsVisible="{Binding CanLoadMoreResults}" Margin="12,8,12,0" Padding="12,6" CornerRadius="10"
+              Background="{DynamicResource SurfaceAlt}">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{l:Tr Search_MoreAvailable}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextSecondary}" />
+          <Button Grid.Column="1" Content="{l:Tr Search_LoadMore}" Command="{Binding LoadMoreResultsCommand}" Margin="8,0,0,0" />
         </Grid>
       </Border>
 

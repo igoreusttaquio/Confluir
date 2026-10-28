@@ -380,6 +380,8 @@
   <data name="Undo_TooLate"><value>Algunos mensajes ya habían llegado al servidor y no se recuperaron.</value></data>
   <data name="Rule_MoveUp"><value>Subir (se aplica antes)</value></data>
   <data name="Rule_MoveDown"><value>Bajar (se aplica después)</value></data>
+  <data name="Search_MoreAvailable"><value>Se muestran los más recientes. Hay más resultados.</value></data>
+  <data name="Search_LoadMore"><value>Mostrar más</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

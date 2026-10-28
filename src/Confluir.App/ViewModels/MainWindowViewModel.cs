@@ -466,6 +466,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         }
 
         RecountUnified();
+        OnPropertyChanged(nameof(SearchAccounts));
         SelectedNode = null;
         SelectedNode = _unified;
         await Task.WhenAll(nodes.Select(ReloadFoldersAsync));

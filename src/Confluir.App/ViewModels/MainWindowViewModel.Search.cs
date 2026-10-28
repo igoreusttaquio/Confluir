@@ -8,6 +8,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Confluir.App.ViewModels;
 
+/// <param name="Account">Nula = todas as contas.</param>
+public sealed record SearchAccountOption(MailAccount? Account, string Label);
+
 /// <param name="Days">Últimos N dias; 0 = qualquer data.</param>
 public sealed record SearchPeriodOption(int Days, string LabelKey);
 
@@ -19,6 +22,8 @@ public sealed record SearchPeriodOption(int Days, string LabelKey);
 public sealed partial class MainWindowViewModel
 {
     private static readonly TimeSpan SearchDelay = TimeSpan.FromMilliseconds(250);
+    private const int SearchPageSize = 500;
+    private int _searchLimit = SearchPageSize;
     private CancellationTokenSource? _searchCts;
     private DispatcherTimer? _searchTimer;
     private bool _resettingSearch;
@@ -54,6 +59,26 @@ public sealed partial class MainWindowViewModel
 
     [ObservableProperty]
     public partial SearchPeriodOption? SearchPeriod { get; set; }
+
+    /// <summary>Contas para o filtro avançado ("Todas" + cada conta).</summary>
+    public IReadOnlyList<SearchAccountOption> SearchAccounts =>
+        [new SearchAccountOption(null, Strings.Rule_AllAccounts), .. _accounts.Values.Select(a => new SearchAccountOption(a, a.DisplayName))];
+
+    [ObservableProperty]
+    public partial SearchAccountOption? SearchAccount { get; set; }
+
+    partial void OnSearchAccountChanged(SearchAccountOption? value) => ScheduleSearch();
+
+    /// <summary>Há mais resultados além dos mostrados (a busca devolve em páginas de 500).</summary>
+    [ObservableProperty]
+    public partial bool CanLoadMoreResults { get; private set; }
+
+    [RelayCommand]
+    private Task LoadMoreResults()
+    {
+        _searchLimit += SearchPageSize;
+        return RunSearchAsync(keepSelection: true, keepLimit: true);
+    }
 
     /// <summary>Só na pasta aberta (padrão: todas as contas).</summary>
     [ObservableProperty]
@@ -126,8 +151,11 @@ public sealed partial class MainWindowViewModel
         return RunSearchAsync();
     }
 
-    private async Task RunSearchAsync(bool keepSelection = false)
+    private async Task RunSearchAsync(bool keepSelection = false, bool keepLimit = false)
     {
+        // Busca nova (outro texto ou filtro) volta para a primeira página.
+        if (!keepLimit && !keepSelection)
+            _searchLimit = SearchPageSize;
         var query = CurrentQuery();
         _searchCts?.Cancel();
         if (query.IsEmpty)
@@ -150,9 +178,9 @@ public sealed partial class MainWindowViewModel
         {
             var days = SearchPeriod?.Days ?? 0;
             var folderId = SearchInFolder && SelectedNode is FolderNode f ? f.Folder.Id : (Guid?)null;
-            var search = new MessageSearch(query, FolderId: folderId,
+            var search = new MessageSearch(query, AccountId: folderId is null ? SearchAccount?.Account?.Id : null, FolderId: folderId,
                 Since: days > 0 ? DateTimeOffset.Now.AddDays(-days) : null);
-            var found = await _mailbox.SearchAsync(search, 500, cts.Token);
+            var found = await _mailbox.SearchAsync(search, _searchLimit, cts.Token);
             if (cts.IsCancellationRequested)
                 return;
 
@@ -172,7 +200,8 @@ public sealed partial class MainWindowViewModel
                 SelectedRow = null;
                 Rows = rows;
             }
-            ListSubtitle = _loc.Plural("Search_ResultCount", Rows.Count(r => r is MessageRow));
+            CanLoadMoreResults = found.Count >= _searchLimit;
+            ListSubtitle = _loc.Plural("Search_ResultCount", Rows.Count(r => r is MessageRow)) + (CanLoadMoreResults ? "+" : "");
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
@@ -216,6 +245,9 @@ public sealed partial class MainWindowViewModel
             SearchUnread = false;
             SearchPeriod = SearchPeriods[0];
             SearchInFolder = false;
+            SearchAccount = null;
+            CanLoadMoreResults = false;
+            _searchLimit = SearchPageSize;
         }
         finally
         {
@@ -245,9 +277,16 @@ public sealed partial class MainWindowViewModel
         var total = 0;
         try
         {
-            IEnumerable<Guid> folders = SelectedNode is FolderNode f
+            // Pasta aberta: só nela. Senão, em cada conta (ou na escolhida): no Gmail, "Todos os e-mails" (cobre a
+            // caixa inteira); nas demais, Caixa de entrada e Arquivo.
+            IEnumerable<Guid> folders = SelectedNode is FolderNode f && SearchInFolder
                 ? [f.Folder.Id]
-                : _folderNodes.Values.Where(n => n.Folder.Kind == SpecialFolderKind.Inbox).Select(n => n.Folder.Id).ToList();
+                : _folderNodes.Values
+                    .Where(n => SearchAccount?.Account is not { } only || n.Account.Id == only.Id)
+                    .Where(n => n.Account.Provider == MailProvider.Gmail
+                        ? n.Folder.Kind == SpecialFolderKind.Archive
+                        : n.Folder.Kind is SpecialFolderKind.Inbox or SpecialFolderKind.Archive)
+                    .Select(n => n.Folder.Id).ToList();
             foreach (var folderId in folders)
                 total += await _mailbox.SearchServerAsync(folderId, query);
             ShowStatus(total > 0 ? _loc.Plural("Search_ServerFound", total) : Strings.Search_ServerNothing);

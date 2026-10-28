@@ -380,6 +380,8 @@
   <data name="Undo_TooLate"><value>Some messages had already reached the server and weren&apos;t restored.</value></data>
   <data name="Rule_MoveUp"><value>Move up (runs earlier)</value></data>
   <data name="Rule_MoveDown"><value>Move down (runs later)</value></data>
+  <data name="Search_MoreAvailable"><value>Showing the most recent. There are more results.</value></data>
+  <data name="Search_LoadMore"><value>Show more</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>
