@@ -400,6 +400,28 @@ vm.GoBackCommand.Execute(null);
     Console.WriteLine($"na pasta Spam: \"{vm.SpamActionText([junkRow])}\", barra da mensagem: \"{vm.Detail?.SpamTooltip}\"");
     Save(window, "spam-folder.png");
 
+    // Seleção múltipla: depois de arquivar (e de marcar lida) a barra "x selecionadas" some.
+    vm.SelectedNode = inbox;
+    Pump(() => vm.Rows.OfType<MessageRow>().Any(r => r.Summary.FolderId == inbox.Folder.Id), 3000);
+    var messagesList = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
+    void SelectThree()
+    {
+        messagesList.SelectedItems!.Clear();
+        foreach (var r in vm.Rows.OfType<MessageRow>().Take(3))
+            messagesList.SelectedItems.Add(r);
+        Pump(() => vm.HasMultipleSelection, 1000);
+    }
+    SelectThree();
+    Console.WriteLine($"seleção: {vm.SelectionCountText}, barra {vm.HasMultipleSelection}");
+    var bulk = vm.ArchiveSelectedCommand.ExecuteAsync(null);
+    Pump(() => bulk.IsCompleted);
+    Console.WriteLine($"depois de arquivar: barra {vm.HasMultipleSelection}, selecionadas {vm.SelectedMessages.Count}");
+    SelectThree();
+    bulk = vm.ToggleReadSelectedCommand.ExecuteAsync(null);
+    Pump(() => bulk.IsCompleted);
+    Pump(() => !vm.HasMultipleSelection, 1000);
+    Console.WriteLine($"depois de marcar lida: barra {vm.HasMultipleSelection}");
+
     // Janela estreita: a leitura vira tela própria em vez de ser cortada; volta ao alargar.
     window.Width = 900;
     Pump(() => vm.IsNarrow, 1500);

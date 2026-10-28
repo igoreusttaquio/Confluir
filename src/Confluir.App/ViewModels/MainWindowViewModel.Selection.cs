@@ -51,6 +51,21 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(SelectionSpamText));
     }
 
+    /// <summary>
+    /// Lista nova (arquivar/excluir, sincronização, busca): a lista perde a seleção sem avisar, então a seleção
+    /// múltipla termina aqui (senão a barra "x selecionadas" ficava à vista sem nada selecionado).
+    /// </summary>
+    partial void OnRowsChanged(IReadOnlyList<MessageListRow> value)
+    {
+        if (_selectedMessages.Count == 0)
+            return;
+        _selectedMessages = [];
+        HasMultipleSelection = false;
+        OnPropertyChanged(nameof(SelectedMessages));
+        OnPropertyChanged(nameof(SelectionCountText));
+        RaiseSelectionLabels();
+    }
+
     /// <summary>A mensagem do menu de contexto, ou a seleção inteira se ela faz parte dela.</summary>
     public IReadOnlyList<MessageRow> TargetsFor(MessageRow row) =>
         _selectedMessages.Count > 1 && _selectedMessages.Contains(row) ? _selectedMessages : [row];
@@ -197,11 +212,21 @@ var originals = Snapshot(rows);
     [RelayCommand]
     private Task DeleteSelected() => DeleteRowsAsync(_selectedMessages);
 
-    [RelayCommand]
-    private Task ToggleFlagSelected() => ToggleFlagRowsAsync(_selectedMessages);
+    // Sinalizar e marcar lida mantêm as mensagens na lista: a seleção termina depois, como nas outras ações.
 
     [RelayCommand]
-    private Task ToggleReadSelected() => ToggleReadRowsAsync(_selectedMessages);
+    private async Task ToggleFlagSelected()
+    {
+        await ToggleFlagRowsAsync(_selectedMessages);
+        ClearSelection();
+    }
+
+    [RelayCommand]
+    private async Task ToggleReadSelected()
+    {
+        await ToggleReadRowsAsync(_selectedMessages);
+        ClearSelection();
+    }
 
     [RelayCommand]
     private Task ToggleSpamSelected() => ToggleSpamRowsAsync(_selectedMessages);
