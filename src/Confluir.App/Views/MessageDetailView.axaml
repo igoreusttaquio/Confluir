@@ -24,13 +24,13 @@
         </Button>
         <Border Width="1" Margin="6,6" Background="{DynamicResource Border}"
                 IsVisible="{Binding $parent[views:MessageDetailView].ShowBack}" />
-        <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Reply}" AutomationProperties.Name="{l:Tr Action_Reply}">
+        <Button Classes="icon" Command="{Binding ReplyCommand}" ToolTip.Tip="{l:Tr Action_Reply}" AutomationProperties.Name="{l:Tr Action_Reply}">
           <LucideIcon Kind="Reply" />
         </Button>
-        <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_ReplyAll}" AutomationProperties.Name="{l:Tr Action_ReplyAll}">
+        <Button Classes="icon" Command="{Binding ReplyAllCommand}" ToolTip.Tip="{l:Tr Action_ReplyAll}" AutomationProperties.Name="{l:Tr Action_ReplyAll}">
           <LucideIcon Kind="ReplyAll" />
         </Button>
-        <Button Classes="icon" IsEnabled="False" ToolTip.Tip="{l:Tr Action_Forward}" AutomationProperties.Name="{l:Tr Action_Forward}">
+        <Button Classes="icon" Command="{Binding ForwardCommand}" ToolTip.Tip="{l:Tr Action_Forward}" AutomationProperties.Name="{l:Tr Action_Forward}">
           <LucideIcon Kind="Forward" />
         </Button>
         <Border Width="1" Margin="6,6" Background="{DynamicResource Border}" />

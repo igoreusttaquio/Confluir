@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:conv="using:Confluir.App.Converters"
+             x:Class="Confluir.App.Views.ComposeView"
+             x:DataType="vm:ComposeViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.fieldLabel">
+      <Setter Property="Width" Value="72" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <!-- Campos "sem moldura", separados por linhas, como nos clientes de email -->
+    <Style Selector="Grid.field">
+      <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="Border.fieldRow">
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="24,6" />
+    </Style>
+    <Style Selector="Border.fieldRow TextBox, Border.fieldRow AutoCompleteBox, Border.fieldRow ComboBox">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.dropOverlay">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border.dropOverlay.active">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </UserControl.Styles>
+
+  <Panel x:Name="Root" DragDrop.AllowDrop="True">
+    <DockPanel Background="{DynamicResource Surface}">
+      <!-- Barra: voltar, título e ações -->
+      <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+              Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button Classes="icon" Command="{Binding DiscardCommand}"
+                    ToolTip.Tip="{l:Tr Action_Back}" AutomationProperties.Name="{l:Tr Action_Back}">
+              <LucideIcon Kind="ArrowLeft" />
+            </Button>
+            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button Classes="icon" Click="OnAttachClick"
+                    ToolTip.Tip="{l:Tr Compose_Attach}" AutomationProperties.Name="{l:Tr Compose_Attach}">
+              <LucideIcon Kind="Paperclip" />
+            </Button>
+            <Button Classes="icon" Command="{Binding DiscardCommand}"
+                    ToolTip.Tip="{l:Tr Compose_Discard}" AutomationProperties.Name="{l:Tr Compose_Discard}">
+              <LucideIcon Kind="Trash" />
+            </Button>
+            <Button Classes="accent" Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}" Margin="6,0,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <LucideIcon Kind="LoaderCircle" Size="16" Classes="spin" IsVisible="{Binding IsSending}"
+                            Foreground="{DynamicResource OnAccent}" />
+                <LucideIcon Kind="Send" Size="16" IsVisible="{Binding !IsSending}" Foreground="{DynamicResource OnAccent}" />
+                <TextBlock Text="{l:Tr Compose_Send}" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Confirmação inline de descarte -->
+      <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceAlt}" Padding="24,10"
+              IsVisible="{Binding IsConfirmingDiscard}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <LucideIcon Kind="TriangleAlert" Size="16" Foreground="{DynamicResource Warning}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{l:Tr Compose_DiscardConfirm}" Margin="10,0" VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+            <Button Content="{l:Tr Compose_KeepEditing}" Command="{Binding CancelDiscardCommand}" />
+            <Button Classes="danger" Content="{l:Tr Compose_Discard}" Command="{Binding ConfirmDiscardCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Erro de envio/validação -->
+      <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceAlt}" Padding="24,10" IsVisible="{Binding HasError}">
+        <Grid ColumnDefinitions="Auto,*">
+          <LucideIcon Kind="CircleAlert" Size="16" Foreground="{DynamicResource Danger}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{Binding Error}" Margin="10,0,0,0" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+        </Grid>
+      </Border>
+
+      <!-- Cabeçalhos -->
+      <StackPanel DockPanel.Dock="Top">
+        <Border Classes="fieldRow">
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Classes="fieldLabel" Text="{l:Tr Compose_From}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding FromOptions}" SelectedItem="{Binding SelectedFrom}"
+                      HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:FromOption">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Ellipse Width="9" Height="9" VerticalAlignment="Center"
+                             Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                    <TextBlock Text="{Binding Label}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </Grid>
+        </Border>
+        <Border Classes="fieldRow">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <TextBlock Classes="fieldLabel" Text="{l:Tr Reading_To}" />
+            <AutoCompleteBox x:Name="ToBox" Grid.Column="1" Text="{Binding To}" MinimumPrefixLength="2"
+                             FilterMode="None" HorizontalAlignment="Stretch" />
+            <Button Grid.Column="2" Content="{l:Tr Compose_CcBcc}" Command="{Binding ToggleCcBccCommand}"
+                    Classes="crumb" Padding="8,4" Background="Transparent" BorderThickness="0"
+                    Foreground="{DynamicResource Accent}" />
+          </Grid>
+        </Border>
+        <Border Classes="fieldRow" IsVisible="{Binding ShowCcBcc}">
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Classes="fieldLabel" Text="{l:Tr Reading_Cc}" />
+            <AutoCompleteBox x:Name="CcBox" Grid.Column="1" Text="{Binding Cc}" MinimumPrefixLength="2"
+                             FilterMode="None" HorizontalAlignment="Stretch" />
+          </Grid>
+        </Border>
+        <Border Classes="fieldRow" IsVisible="{Binding ShowCcBcc}">
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Classes="fieldLabel" Text="{l:Tr Compose_Bcc}" />
+            <AutoCompleteBox x:Name="BccBox" Grid.Column="1" Text="{Binding Bcc}" MinimumPrefixLength="2"
+                             FilterMode="None" HorizontalAlignment="Stretch" />
+          </Grid>
+        </Border>
+        <Border Classes="fieldRow">
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Classes="fieldLabel" Text="{l:Tr Compose_Subject}" />
+            <TextBox Grid.Column="1" Text="{Binding Subject}" FontWeight="SemiBold" />
+          </Grid>
+        </Border>
+
+        <!-- Anexos -->
+        <ItemsControl ItemsSource="{Binding Attachments}" Margin="24,10,24,0">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel ItemSpacing="8" LineSpacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:ComposeAttachmentViewModel">
+              <Border Background="{DynamicResource SurfaceAlt}" CornerRadius="14" Padding="10,4,4,4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <LucideIcon Kind="Paperclip" Size="13" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding FileName}" FontSize="13" VerticalAlignment="Center" MaxWidth="220"
+                             TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextPrimary}" />
+                  <TextBlock Text="{Binding SizeText}" Classes="caption" VerticalAlignment="Center" />
+                  <Button Classes="icon" Padding="4" Command="{Binding RemoveCommand}"
+                          ToolTip.Tip="{l:Tr Compose_RemoveAttachment}" AutomationProperties.Name="{l:Tr Compose_RemoveAttachment}">
+                    <LucideIcon Kind="X" Size="14" />
+                  </Button>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <!-- Corpo (o editor rico entra na próxima etapa) -->
+      <TextBox x:Name="BodyBox" Text="{Binding Body}" AcceptsReturn="True" TextWrapping="Wrap"
+               BorderThickness="0" Background="Transparent" Padding="24,16"
+               FontSize="15" VerticalContentAlignment="Top"
+               ScrollViewer.VerticalScrollBarVisibility="Auto" />
+    </DockPanel>
+
+    <!-- Arraste arquivos aqui -->
+    <Border x:Name="DropOverlay" Classes="dropOverlay" Background="{DynamicResource AccentSubtle}"
+            BorderBrush="{DynamicResource Accent}" BorderThickness="2" CornerRadius="12" Margin="12"
+            IsHitTestVisible="False">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+        <LucideIcon Kind="Paperclip" Size="36" Foreground="{DynamicResource Accent}" />
+        <TextBlock Text="{l:Tr Compose_DropFiles}" FontSize="16" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" />
+      </StackPanel>
+    </Border>
+  </Panel>
+</UserControl>

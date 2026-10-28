@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Resources;
 using Confluir.App.Services;
+using Confluir.Core.Compose;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
 using Confluir.Core.Settings;
@@ -16,6 +17,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 {
     private readonly LocalizationService _loc;
     private readonly ReadingServices _reading;
+    private readonly ComposeServices _compose;
     private readonly IMailboxService _mailbox;
     private readonly IAccountStore _accountStore;
     private readonly AccountService _accountService;
@@ -46,10 +48,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         AppearanceViewModel appearance,
         LocalizationService localization,
         ReadingServices reading,
+        ComposeServices compose,
         TimeProvider time,
         ILogger<MainWindowViewModel> logger)
     {
         _reading = reading;
+        _compose = compose;
         // O HTML do email usa as cores do tema: remonta ao trocar de tema ou de cor de destaque.
         reading.Theme.PaletteChanged += (_, _) => Dispatcher.UIThread.Post(() => Detail?.RebuildDocument());
         _loc = localization;
@@ -151,6 +155,55 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     public Task ArchiveAsync(MessageDetailViewModel message) => RemoveFromListAsync(message, _mailbox.ArchiveAsync);
 
     public Task DeleteAsync(MessageDetailViewModel message) => RemoveFromListAsync(message, _mailbox.DeleteAsync);
+
+    // Composição --------------------------------------------------------------------------------------
+
+    /// <summary>Nova mensagem, saindo pela conta da pasta aberta (ou a primeira).</summary>
+    [RelayCommand]
+    private void NewMessage()
+    {
+        var accountId = (SelectedNode as FolderNode)?.Account.Id;
+        Navigation.NavigateTo(new ComposeViewModel(_compose, _accounts.Values.ToList(), accountId, ShowStatus));
+    }
+
+    public async Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode)
+    {
+        var body = message.LoadedBody;
+        try
+        {
+            body ??= await _mailbox.GetMessageBodyAsync(message.Row.Summary.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Não foi possível carregar a mensagem para responder");
+            ShowStatus(Strings.Reading_NotAvailableOffline);
+            return;
+        }
+        var compose = new ComposeViewModel(_compose, _accounts.Values.ToList(), message.Row.Account.Id, ShowStatus);
+        compose.InitFrom(mode, message.Row.Summary, body, message.Row.Account);
+        Navigation.NavigateTo(compose);
+    }
+
+    // Aviso temporário (ex.: "Mensagem enviada") -------------------------------------------------------
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasStatus))]
+    public partial string? StatusMessage { get; private set; }
+
+    public bool HasStatus => StatusMessage is not null;
+
+    private int _statusId;
+
+    public void ShowStatus(string message)
+    {
+        StatusMessage = message;
+        var id = ++_statusId;
+        DispatcherTimer.RunOnce(() =>
+        {
+            if (id == _statusId)
+                StatusMessage = null;
+        }, TimeSpan.FromSeconds(4));
+    }
 
     public async Task ToggleFlagAsync(MessageDetailViewModel message)
     {

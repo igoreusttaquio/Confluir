@@ -85,6 +85,12 @@ public sealed class Database
         ALTER TABLE pending_ops ADD COLUMN folder_id TEXT;
         ALTER TABLE pending_ops ADD COLUMN uid INTEGER;
         """,
+
+        // v5: corpos passam a guardar Message-Id/References/Reply-To (para responder na mesma conversa).
+        """
+        DELETE FROM bodies;
+        CREATE INDEX IF NOT EXISTS ix_messages_from ON messages (from_address);
+        """,
     ];
 
     private readonly string _connectionString;

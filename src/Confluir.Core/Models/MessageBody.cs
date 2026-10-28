@@ -20,4 +20,7 @@ public sealed record MessageBody(
     IReadOnlyList<MailAddress> Cc,
     string TextBody,
     IReadOnlyList<AttachmentInfo> Attachments,
-    string? HtmlBody = null);
+    string? HtmlBody = null,
+    string? MessageIdHeader = null,
+    IReadOnlyList<string>? References = null,
+    IReadOnlyList<MailAddress>? ReplyTo = null);

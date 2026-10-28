@@ -62,7 +62,7 @@
             <Button Classes="icon" Command="{Binding RefreshCommand}" ToolTip.Tip="{l:Tr Action_Sync}" AutomationProperties.Name="{l:Tr Action_Sync}">
               <LucideIcon Kind="RefreshCw" />
             </Button>
-            <Button Classes="accent iconOnly" IsEnabled="False" ToolTip.Tip="{l:Tr Action_NewMessage}" AutomationProperties.Name="{l:Tr Action_NewMessage}">
+            <Button Classes="accent iconOnly" Command="{Binding NewMessageCommand}" ToolTip.Tip="{l:Tr Action_NewMessage}" AutomationProperties.Name="{l:Tr Action_NewMessage}">
               <LucideIcon Kind="SquarePen" Size="18" Foreground="{DynamicResource OnAccent}" />
             </Button>
           </StackPanel>

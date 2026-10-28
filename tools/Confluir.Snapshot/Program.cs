@@ -114,6 +114,14 @@ Pump(() => vm.Detail is { IsLoading: false });
 var archived = (MessageRow)vm.SelectedRow!;
 await vm.Detail!.ToggleFlagCommand.ExecuteAsync(null);
 Save(window, "action-flagged.png");
+
+// Responder: tela de composição com destinatário, assunto "Re:" e citação.
+await vm.Detail!.ReplyCommand.ExecuteAsync(null);
+var compose = (ComposeViewModel)vm.Navigation.CurrentPage!;
+compose.ShowCcBcc = true;
+Save(window, "compose-reply.png");
+compose.ConfirmDiscardCommand.Execute(null);
+Pump(() => vm.Navigation.IsAtRoot);
 await vm.Detail!.ArchiveCommand.ExecuteAsync(null);
 Pump(() => vm.Detail is { IsLoading: false });
 Console.WriteLine($"arquivada saiu da lista: {vm.Rows.OfType<MessageRow>().All(r => r.Summary.Id != archived.Summary.Id)}; " +

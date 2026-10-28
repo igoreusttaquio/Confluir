@@ -65,9 +65,11 @@ public static class AppHost
         if (useFakeData)
         {
             builder.Services.AddSingleton<IMailboxService, FakeMailboxService>();
+            builder.Services.AddSingleton<IMailSender, FakeMailSender>();
         }
         else
         {
+            builder.Services.AddSingleton<IMailSender, SmtpMailSender>();
             // Lê do cache e sincroniza em segundo plano enquanto o host estiver rodando.
             builder.Services.AddSingleton<SyncingMailboxService>();
             builder.Services.AddSingleton<IMailboxService>(sp => sp.GetRequiredService<SyncingMailboxService>());
@@ -81,6 +83,7 @@ public static class AppHost
         builder.Services.AddSingleton<AccountService>();
         builder.Services.AddSingleton<AttachmentService>();
         builder.Services.AddSingleton<ReadingServices>();
+        builder.Services.AddSingleton<ComposeServices>();
 
         builder.Services.AddSingleton<AppearanceViewModel>();
         builder.Services.AddSingleton<MainWindowViewModel>();

@@ -67,7 +67,10 @@ public static partial class MessageConverter
             ToAddresses(message.Cc),
             text?.Trim() ?? "",
             attachments,
-            html is null ? null : InlineCidImages(html, message));
+            html is null ? null : InlineCidImages(html, message),
+            MessageIdHeader: string.IsNullOrWhiteSpace(message.MessageId) ? null : $"<{message.MessageId}>",
+            References: message.References.Select(r => $"<{r}>").ToList(),
+            ReplyTo: ToAddresses(message.ReplyTo));
     }
 
     /// <summary>Anexos na mesma ordem usada por <see cref="AttachmentInfo.Index"/>.</summary>

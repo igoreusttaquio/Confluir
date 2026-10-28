@@ -79,6 +79,9 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         return await _engine.FetchAttachmentAsync(location, attachmentIndex, ct);
     }
 
+    public Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit = 8, CancellationToken ct = default) =>
+        _cache.SearchAddressesAsync(text, limit, ct);
+
     public SyncStatus GetStatus(Guid accountId) =>
         _runners.TryGetValue(accountId, out var r) ? r.Status : SyncStatus.Unknown;
 

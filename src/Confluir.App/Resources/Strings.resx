@@ -164,6 +164,24 @@
   <data name="Action_Unflag"><value>Remover sinalização</value></data>
   <data name="Action_MarkUnread"><value>Marcar como não lida</value></data>
   <data name="Action_MarkRead"><value>Marcar como lida</value></data>
+  <data name="Compose_From"><value>De</value></data>
+  <data name="Compose_Subject"><value>Assunto</value></data>
+  <data name="Compose_Date"><value>Data</value></data>
+  <data name="Compose_Bcc"><value>Cco</value></data>
+  <data name="Compose_CcBcc"><value>Cc/Cco</value></data>
+  <data name="Compose_Send"><value>Enviar</value></data>
+  <data name="Compose_Attach"><value>Anexar arquivos</value></data>
+  <data name="Compose_Discard"><value>Descartar</value></data>
+  <data name="Compose_DiscardConfirm"><value>Descartar esta mensagem? O que foi escrito será perdido.</value></data>
+  <data name="Compose_KeepEditing"><value>Continuar editando</value></data>
+  <data name="Compose_RemoveAttachment"><value>Remover anexo</value></data>
+  <data name="Compose_DropFiles"><value>Solte os arquivos para anexar</value></data>
+  <data name="Compose_InvalidAddress"><value>Endereço inválido: {0}</value></data>
+  <data name="Compose_NoRecipients"><value>Informe pelo menos um destinatário.</value></data>
+  <data name="Compose_Sent"><value>Mensagem enviada</value></data>
+  <data name="Compose_SendFailed"><value>Não foi possível enviar.</value></data>
+  <data name="Compose_QuoteHeader"><value>Em {0}, {1} escreveu:</value></data>
+  <data name="Compose_ForwardHeader"><value>---------- Mensagem encaminhada ----------</value></data>
   <data name="Action_Back"><value>Voltar</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

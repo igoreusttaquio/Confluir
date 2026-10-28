@@ -155,6 +155,14 @@ public sealed class FakeMailboxService : IMailboxService
     public event EventHandler<AccountStatusEventArgs>? AccountStatusChanged { add { } remove { } }
     public event EventHandler<OperationFailedEventArgs>? OperationFailed { add { } remove { } }
 
+    public Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit = 8, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<MailAddress>>(Senders
+            .Where(s => s.Name.Contains(text, StringComparison.OrdinalIgnoreCase) ||
+                        s.Address.Contains(text, StringComparison.OrdinalIgnoreCase))
+            .Take(limit)
+            .Select(s => new MailAddress(s.Name, s.Address))
+            .ToList());
+
     public void RequestSync(Guid? accountId = null)
     {
     }

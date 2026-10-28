@@ -164,6 +164,24 @@
   <data name="Action_Unflag"><value>Remove flag</value></data>
   <data name="Action_MarkUnread"><value>Mark as unread</value></data>
   <data name="Action_MarkRead"><value>Mark as read</value></data>
+  <data name="Compose_From"><value>From</value></data>
+  <data name="Compose_Subject"><value>Subject</value></data>
+  <data name="Compose_Date"><value>Date</value></data>
+  <data name="Compose_Bcc"><value>Bcc</value></data>
+  <data name="Compose_CcBcc"><value>Cc/Bcc</value></data>
+  <data name="Compose_Send"><value>Send</value></data>
+  <data name="Compose_Attach"><value>Attach files</value></data>
+  <data name="Compose_Discard"><value>Discard</value></data>
+  <data name="Compose_DiscardConfirm"><value>Discard this message? What you wrote will be lost.</value></data>
+  <data name="Compose_KeepEditing"><value>Keep editing</value></data>
+  <data name="Compose_RemoveAttachment"><value>Remove attachment</value></data>
+  <data name="Compose_DropFiles"><value>Drop files to attach</value></data>
+  <data name="Compose_InvalidAddress"><value>Invalid address: {0}</value></data>
+  <data name="Compose_NoRecipients"><value>Add at least one recipient.</value></data>
+  <data name="Compose_Sent"><value>Message sent</value></data>
+  <data name="Compose_SendFailed"><value>The message couldn&apos;t be sent.</value></data>
+  <data name="Compose_QuoteHeader"><value>On {0}, {1} wrote:</value></data>
+  <data name="Compose_ForwardHeader"><value>---------- Forwarded message ----------</value></data>
   <data name="Action_Back"><value>Back</value></data>
 
   <data name="Color_Blue"><value>Blue</value></data>

@@ -188,6 +188,35 @@ public sealed class SqliteMailCache(Database db) : IMailCache
         WriteAsync((c, tx) => c.ExecuteAsync(new CommandDefinition(
             "DELETE FROM messages WHERE id = @id", new { id = messageId.ToString() }, tx, cancellationToken: ct)), ct);
 
+    public async Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return [];
+        await using var c = await db.OpenAsync(ct);
+        // O nome mais recente de cada endereço, os mais frequentes primeiro.
+        var rows = await c.QueryAsync<AddressRow>(new CommandDefinition("""
+            SELECT from_address AS Address,
+                   (SELECT m2.from_name FROM messages m2 WHERE lower(m2.from_address) = lower(m.from_address)
+                    ORDER BY m2.date_utc_ms DESC LIMIT 1) AS Name,
+                   COUNT(*) AS Uses
+            FROM messages m
+            WHERE from_address <> '' AND (from_address LIKE @p ESCAPE '\' OR from_name LIKE @p ESCAPE '\')
+            GROUP BY lower(from_address)
+            ORDER BY Uses DESC
+            LIMIT @limit
+            """, new { p = "%" + EscapeLike(text.Trim()) + "%", limit }, cancellationToken: ct));
+        return rows.Select(r => new MailAddress(r.Name ?? "", r.Address)).ToList();
+    }
+
+    private static string EscapeLike(string s) => s.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
+
+    private sealed class AddressRow
+    {
+        public string Address { get; set; } = "";
+        public string? Name { get; set; }
+        public long Uses { get; set; }
+    }
+
     public async Task<MessageLocation?> GetLocationAsync(Guid messageId, CancellationToken ct = default)
     {
         await using var c = await db.OpenAsync(ct);

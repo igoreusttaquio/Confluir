@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Localization;
 using Confluir.App.Resources;
 using Confluir.App.Services;
+using Confluir.Core.Compose;
 using Confluir.Core.Formatting;
 using Confluir.Core.Models;
 using Confluir.Core.Services;
@@ -29,6 +30,7 @@ public interface IMessageActions
     Task DeleteAsync(MessageDetailViewModel message);
     Task ToggleFlagAsync(MessageDetailViewModel message);
     Task ToggleReadAsync(MessageDetailViewModel message);
+    Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode);
 }
 
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
@@ -131,6 +133,18 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
     public IMessageActions? Actions { get; set; }
 
     public bool CanArchive => Actions?.CanArchive(this) ?? false;
+
+    /// <summary>Corpo já carregado (para responder/encaminhar sem buscar de novo); nulo enquanto carrega.</summary>
+    public MessageBody? LoadedBody => _body;
+
+    [RelayCommand]
+    private Task Reply() => Actions?.ComposeAsync(this, ComposeMode.Reply) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task ReplyAll() => Actions?.ComposeAsync(this, ComposeMode.ReplyAll) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task Forward() => Actions?.ComposeAsync(this, ComposeMode.Forward) ?? Task.CompletedTask;
 
     public string FlagTooltip => Row.IsFlagged ? Strings.Action_Unflag : Strings.Action_Flag;
     public string ReadTooltip => Row.IsRead ? Strings.Action_MarkUnread : Strings.Action_MarkRead;
@@ -281,7 +295,7 @@ public sealed partial class AttachmentViewModel(AttachmentInfo info, MessageDeta
 
     public string FileName => Info.FileName;
 
-    public string SizeText => FormatSize(Info.Size);
+    public string SizeText => FileSizes.Format(Info.Size);
 
     /// <summary>Executáveis (.exe, .bat, .js…) só podem ser salvos.</summary>
     public bool CanOpen => AttachmentService.CanOpen(Info.FileName);
@@ -312,16 +326,4 @@ public sealed partial class AttachmentViewModel(AttachmentInfo info, MessageDeta
     [RelayCommand]
     private Task Open() => CanOpen ? owner.OpenAttachmentAsync(this) : Task.CompletedTask;
 
-    private static string FormatSize(long bytes)
-    {
-        string[] units = ["B", "KB", "MB", "GB"];
-        double size = bytes;
-        var unit = 0;
-        while (size >= 1024 && unit < units.Length - 1)
-        {
-            size /= 1024;
-            unit++;
-        }
-        return unit == 0 ? $"{bytes} B" : $"{size.ToString("0.#", LocalizationService.Instance.FormatCulture)} {units[unit]}";
-    }
 }

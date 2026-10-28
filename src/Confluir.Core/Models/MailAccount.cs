@@ -10,4 +10,5 @@ public sealed record MailAccount(
     string UserName,
     ServerSettings Servers,
     AuthMethod Auth = AuthMethod.Password,
-    string? OAuthAccountId = null);
+    string? OAuthAccountId = null,
+    string? SenderName = null);

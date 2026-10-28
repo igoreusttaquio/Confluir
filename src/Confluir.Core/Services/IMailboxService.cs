@@ -46,6 +46,9 @@ public interface IMailboxService
     /// <summary>Move para a Lixeira; se já estiver nela, exclui definitivamente.</summary>
     Task DeleteAsync(Guid messageId, CancellationToken ct = default);
 
+    /// <summary>Endereços já vistos (remetentes), para autocompletar destinatários; os mais frequentes primeiro.</summary>
+    Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit = 8, CancellationToken ct = default);
+
     /// <summary>Pede uma sincronização agora (de uma conta ou de todas).</summary>
     void RequestSync(Guid? accountId = null);
 

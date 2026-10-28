@@ -164,6 +164,24 @@
   <data name="Action_Unflag"><value>Quitar marca</value></data>
   <data name="Action_MarkUnread"><value>Marcar como no leído</value></data>
   <data name="Action_MarkRead"><value>Marcar como leído</value></data>
+  <data name="Compose_From"><value>De</value></data>
+  <data name="Compose_Subject"><value>Asunto</value></data>
+  <data name="Compose_Date"><value>Fecha</value></data>
+  <data name="Compose_Bcc"><value>CCO</value></data>
+  <data name="Compose_CcBcc"><value>CC/CCO</value></data>
+  <data name="Compose_Send"><value>Enviar</value></data>
+  <data name="Compose_Attach"><value>Adjuntar archivos</value></data>
+  <data name="Compose_Discard"><value>Descartar</value></data>
+  <data name="Compose_DiscardConfirm"><value>¿Descartar este mensaje? Lo que escribiste se perderá.</value></data>
+  <data name="Compose_KeepEditing"><value>Seguir editando</value></data>
+  <data name="Compose_RemoveAttachment"><value>Quitar adjunto</value></data>
+  <data name="Compose_DropFiles"><value>Suelta los archivos para adjuntarlos</value></data>
+  <data name="Compose_InvalidAddress"><value>Dirección no válida: {0}</value></data>
+  <data name="Compose_NoRecipients"><value>Indica al menos un destinatario.</value></data>
+  <data name="Compose_Sent"><value>Mensaje enviado</value></data>
+  <data name="Compose_SendFailed"><value>No se pudo enviar el mensaje.</value></data>
+  <data name="Compose_QuoteHeader"><value>El {0}, {1} escribió:</value></data>
+  <data name="Compose_ForwardHeader"><value>---------- Mensaje reenviado ----------</value></data>
   <data name="Action_Back"><value>Volver</value></data>
 
   <data name="Color_Blue"><value>Azul</value></data>

@@ -68,6 +68,9 @@ public interface IMailCache
 
     Task<MessageLocation?> GetLocationAsync(Guid messageId, CancellationToken ct = default);
 
+    /// <summary>Remetentes já vistos cujo nome ou endereço contém o texto, por frequência.</summary>
+    Task<IReadOnlyList<MailAddress>> SearchAddressesAsync(string text, int limit, CancellationToken ct = default);
+
     // Corpos
     Task<MessageBody?> GetBodyAsync(Guid messageId, CancellationToken ct = default);
 
