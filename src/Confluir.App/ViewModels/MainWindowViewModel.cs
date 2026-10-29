@@ -534,6 +534,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
 
     public Task RemoveAccountAsync(AccountNode node) => _accountService.RemoveAsync(node.Account);
 
+    public void EditSignature(AccountNode node) => EditSignature(node.Account);
+
+    /// <summary>Assinatura da conta, em tela própria (também aberta por Configurações → Escrita).</summary>
+    public void EditSignature(MailAccount account) =>
+        Navigation.NavigateTo(new SignatureEditorViewModel(account, _accountStore, () => Navigation.GoBack(), m => ShowStatus(m)));
+
     public void EditAccount(AccountNode node)
     {
         var editor = _accountEditor();

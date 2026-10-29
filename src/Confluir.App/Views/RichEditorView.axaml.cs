@@ -125,6 +125,13 @@ public partial class RichEditorView : UserControl
         Run(EditorDocument.Call("cmd", command));
     }
 
+    /// <summary>Comando com valor (ex.: insertImage com um data:).</summary>
+    public void Exec(string command, string value)
+    {
+        _web?.Focus();
+        Run($"cmd({JsonSerializer.Serialize(command)}, {JsonSerializer.Serialize(value)})");
+    }
+
     public void InsertLink(string url)
     {
         _web?.Focus();

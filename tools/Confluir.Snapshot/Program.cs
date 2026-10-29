@@ -167,6 +167,32 @@ Save(window, "add-account-gmail-password.png");
 Console.WriteLine($"Gmail com senha de app: pede senha {!gmail.RequiresOAuth}, dica {gmail.HasAppPasswordHint}");
 vm.GoBackCommand.Execute(null);
 
+// Assinaturas: mensagem nova com a da conta; trocar "De" troca a assinatura; tela de edição.
+{
+    var withSignatures = vm.AccountNodes.Select(n => n.Account).ToList();
+    withSignatures[0] = withSignatures[0] with { Signature = "<div><b>Você Silva</b></div><div>Pessoal</div>" };
+    withSignatures[1] = withSignatures[1] with { Signature = "<div><b>Você Silva</b> · Engenharia</div><div>Empresa Exemplo</div>" };
+    var sigCompose = new ComposeViewModel(services.GetRequiredService<ComposeServices>(), withSignatures, withSignatures[0].Id, _ => { });
+    Console.WriteLine($"assinatura na nova: {sigCompose.Html.Contains("Pessoal")}, texto: {sigCompose.Body.Contains("-- \nVocê Silva")}");
+    sigCompose.SelectedFrom = sigCompose.FromOptions[1];
+    // Sem WebView (headless) a escrita fica em texto simples: a troca acontece no texto.
+    Pump(() => sigCompose.Body.Contains("Engenharia"), 2000);
+    Console.WriteLine($"trocou De (texto {sigCompose.IsPlainText}): nova {sigCompose.Body.Contains("Engenharia")}, antiga saiu {!sigCompose.Body.Contains("\nPessoal")}");
+    sigCompose.SelectedFrom = sigCompose.FromOptions[2];
+    Pump(() => !sigCompose.Body.Contains("Engenharia"), 2000);
+    sigCompose.SelectedFrom = sigCompose.FromOptions[0];
+    Pump(() => sigCompose.Body.Contains("Pessoal"), 2000);
+    Console.WriteLine($"sem assinatura e de volta: {sigCompose.Body.Contains("Pessoal")} (texto: {sigCompose.Body.Replace("\n", "⏎")})");
+    vm.EditSignature(withSignatures[1]);
+    Pump(() => vm.Navigation.CurrentPage is SignatureEditorViewModel);
+    Save(window, "signature-editor.png");
+    vm.GoBackCommand.Execute(null);
+    vm.OpenSettingsCommand.Execute(null);
+    ((SettingsViewModel)vm.Navigation.CurrentPage!).Section = SettingsSection.Compose;
+    Save(window, "settings-signatures.png");
+    vm.GoBackCommand.Execute(null);
+}
+
 // Sobre: versão, links e créditos.
 vm.OpenAboutCommand.Execute(null);
 Pump(() => vm.Navigation.CurrentPage is AboutViewModel);

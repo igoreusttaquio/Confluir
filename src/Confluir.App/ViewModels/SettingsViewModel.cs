@@ -50,6 +50,22 @@ public sealed partial class TrustedSenderViewModel(string address, SettingsViewM
 
 public sealed record MarkReadOption(int Seconds, string LabelKey);
 
+/// <summary>Uma conta na lista de assinaturas (Configurações → Escrita).</summary>
+public sealed partial class SignatureItem(Core.Models.MailAccount account, SettingsViewModel owner)
+{
+    public Core.Models.MailAccount Account { get; } = account;
+
+    public bool HasSignature => ComposeHtml.HasContent(Account.Signature);
+
+    /// <summary>Primeira linha da assinatura, ou "Sem assinatura".</summary>
+    public string Preview => HasSignature
+        ? ComposeHtml.ToText(Account.Signature!).Trim().Split('\n')[0].Trim() is { Length: > 0 } line ? line : Strings.Signature_ImageOnly
+        : Strings.Signature_None;
+
+    [RelayCommand]
+    private void Edit() => owner.EditSignature(Account);
+}
+
 public sealed class AccountNotifyOption(Core.Models.MailAccount account, SettingsViewModel owner)
 {
     public Core.Models.MailAccount Account { get; } = account;
@@ -181,7 +197,10 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
         _main.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(MainWindowViewModel.AccountNodes) or "")
+            {
                 OnPropertyChanged(nameof(HasAccounts));
+                OnPropertyChanged(nameof(Signatures));
+            }
         };
     }
 
@@ -320,6 +339,12 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
     }
 
     public bool IsRichTextAvailable => WebViewSupport.IsAvailable;
+
+    /// <summary>Assinatura de cada conta.</summary>
+    public IReadOnlyList<SignatureItem> Signatures =>
+        _main.AccountNodes.Select(n => new SignatureItem(n.Account, this)).ToList();
+
+    public void EditSignature(Core.Models.MailAccount account) => _main.EditSignature(account);
 
     // Notificações e sistema ------------------------------------------------------------------------
 

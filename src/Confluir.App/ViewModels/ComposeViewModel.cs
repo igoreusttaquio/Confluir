@@ -86,6 +86,10 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         SelectedFrom = FromOptions.FirstOrDefault(o => o.Account.Id == accountId) ?? FromOptions.FirstOrDefault();
         IsRichTextAvailable = WebViewSupport.IsAvailable;
         IsPlainText = !IsRichTextAvailable || services.Settings.Current.Compose.PlainText;
+        // Mensagem nova: espaço para escrever e a assinatura da conta (responder e rascunhos trocam isto depois).
+        var signature = SignatureFor(SelectedFrom?.Account);
+        Html = ComposeHtml.NewMessage(signature);
+        Body = WithSignature("", signature);
         _loading = false;
 
         Attachments.CollectionChanged += (_, _) => ScheduleSave();
@@ -191,8 +195,9 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
             _inReplyTo = body.MessageIdHeader;
             _references = ReplyBuilder.References(body.References, body.MessageIdHeader);
             var header = string.Format(Strings.Compose_QuoteHeader, dateText, from);
-            Body = $"\n\n{header}\n{ReplyBuilder.Quote(body.TextBody)}";
-            Html = ComposeHtml.Reply(header, body);
+            var signature = SignatureFor(SelectedFrom?.Account);
+            Body = WithSignature($"{header}\n{ReplyBuilder.Quote(body.TextBody)}", signature);
+            Html = ComposeHtml.Reply(header, body, signature);
         }
         else
         {
@@ -203,9 +208,10 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
                 (Strings.Compose_Subject, original.Subject),
                 (Strings.Reading_To, AddressParser.Format(body.To)),
             ];
-            Body = $"\n\n{Strings.Compose_ForwardHeader}\n" +
-                   string.Concat(headers.Select(h => $"{h.Item1}: {h.Item2}\n")) + "\n" + body.TextBody;
-            Html = ComposeHtml.Forward(Strings.Compose_ForwardHeader, headers, body);
+            var signature = SignatureFor(SelectedFrom?.Account);
+            Body = WithSignature($"{Strings.Compose_ForwardHeader}\n" +
+                                 string.Concat(headers.Select(h => $"{h.Item1}: {h.Item2}\n")) + "\n" + body.TextBody, signature);
+            Html = ComposeHtml.Forward(Strings.Compose_ForwardHeader, headers, body, signature);
             foreach (var a in body.Attachments)
                 Attachments.Add(new ComposeAttachmentViewModel(
                     new OutgoingAttachment(a.FileName, a.Size, SourceMessageId: original.Id, SourceIndex: a.Index), this));
@@ -589,7 +595,49 @@ public sealed partial class ComposeViewModel : ViewModelBase, INavigationPage
         Body = await Task.Run(() => ComposeHtml.ToText(html));
     }
 
-    partial void OnSelectedFromChanged(FromOption? value) => OnPropertyChanged(nameof(CanSend));
+    partial void OnSelectedFromChanged(FromOption? oldValue, FromOption? newValue)
+    {
+        OnPropertyChanged(nameof(CanSend));
+        if (!_loading && oldValue is not null && newValue is not null)
+            _ = SwapSignatureAsync(SignatureFor(oldValue.Account), SignatureFor(newValue.Account));
+    }
+
+    // Assinatura -------------------------------------------------------------------------------------
+
+    /// <summary>A assinatura da conta para este tipo de mensagem (respostas e encaminhamentos só se a conta quiser).</summary>
+    private string? SignatureFor(MailAccount? account) =>
+        account is null || !ComposeHtml.HasContent(account.Signature) ? null
+        : Mode == ComposeMode.New || account.SignatureOnReplies ? account.Signature
+        : null;
+
+    /// <summary>Texto simples com espaço para escrever no topo, a assinatura e o resto (citação).</summary>
+    private static string WithSignature(string rest, string? signature)
+    {
+        var text = ComposeHtml.SignatureText(signature);
+        return text.Length == 0
+            ? rest.Length == 0 ? "" : $"\n\n{rest}"
+            : rest.Length == 0 ? $"\n\n{text}" : $"\n\n{text}\n\n{rest}";
+    }
+
+    /// <summary>Trocou a conta "De": a assinatura da nova conta entra no lugar da anterior.</summary>
+    private async Task SwapSignatureAsync(string? previous, string? signature)
+    {
+        if (previous == signature)
+            return;
+        if (IsPlainText)
+        {
+            Body = Body.Trim().Length == 0 ? WithSignature("", signature)
+                : ComposeHtml.ReplaceSignatureText(Body, previous, signature);
+            return;
+        }
+        await FlushAsync();
+        var html = ComposeHtml.ReplaceSignature(Html, signature);
+        if (html == Html)
+            return;
+        Html = html;
+        HtmlReplaced?.Invoke(this, EventArgs.Empty);
+        ScheduleSave();
+    }
 
     partial void OnIsPlainTextChanged(bool value)
     {

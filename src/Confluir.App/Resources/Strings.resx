@@ -452,4 +452,20 @@
   <data name="About_Group_Data"><value>Dados e login</value></data>
   <data name="About_Group_Platform"><value>Plataforma</value></data>
   <data name="About_Group_Fonts"><value>Fontes e ícones</value></data>
+  <data name="Signature_Title"><value>Assinatura</value></data>
+  <data name="Signature_TitleFor"><value>Assinatura · {0}</value></data>
+  <data name="Signature_Hint"><value>Entra no fim das mensagens novas desta conta. Dá para usar negrito, links e imagens (cole ou insira um logo).</value></data>
+  <data name="Signature_OnReplies"><value>Incluir também em respostas e encaminhamentos (acima da mensagem citada)</value></data>
+  <data name="Signature_Save"><value>Salvar assinatura</value></data>
+  <data name="Signature_Saved"><value>Assinatura salva</value></data>
+  <data name="Signature_Removed"><value>Assinatura removida</value></data>
+  <data name="Signature_Placeholder"><value>Escreva sua assinatura (nome, cargo, telefone…)</value></data>
+  <data name="Signature_InsertImage"><value>Inserir imagem</value></data>
+  <data name="Signature_ImageTooLarge"><value>A imagem “{0}” passa de {1} KB. Use uma menor (um logo costuma ter bem menos).</value></data>
+  <data name="Signature_ImageType"><value>Use uma imagem PNG, JPG, GIF ou WebP.</value></data>
+  <data name="Signature_None"><value>Sem assinatura</value></data>
+  <data name="Signature_ImageOnly"><value>Imagem</value></data>
+  <data name="Signature_Edit"><value>Editar</value></data>
+  <data name="Settings_Signatures"><value>Assinaturas</value></data>
+  <data name="Settings_SignaturesHint"><value>Cada conta tem a sua. Ao trocar a conta em “De” enquanto escreve, a assinatura troca junto.</value></data>
 </root>

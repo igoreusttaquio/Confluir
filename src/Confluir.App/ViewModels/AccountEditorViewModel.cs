@@ -453,7 +453,13 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
                 UserName.Trim(),
                 BuildServers(),
                 Auth,
-                Auth == AuthMethod.OAuth2 ? _oauthAccountId ?? _editing?.OAuthAccountId : null);
+                Auth == AuthMethod.OAuth2 ? _oauthAccountId ?? _editing?.OAuthAccountId : null)
+            {
+                // O que esta tela não edita continua como estava (nome do remetente, assinatura).
+                SenderName = _editing?.SenderName,
+                Signature = _editing?.Signature,
+                SignatureOnReplies = _editing?.SignatureOnReplies ?? true,
+            };
 
             // Na edição, senha em branco mantém a atual.
             if (Auth == AuthMethod.Password && (!IsEditing || Password.Length > 0))

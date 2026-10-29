@@ -102,6 +102,9 @@
           <DataTemplate DataType="vm:AboutViewModel">
             <views:AboutView />
           </DataTemplate>
+          <DataTemplate DataType="vm:SignatureEditorViewModel">
+            <views:SignatureEditorView />
+          </DataTemplate>
         </TransitioningContentControl.DataTemplates>
       </TransitioningContentControl>
       </Border>

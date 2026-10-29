@@ -160,6 +160,24 @@ public class AccountEditorOAuthTests
     }
 
     [Fact]
+    public async Task Editar_a_conta_mantem_assinatura_e_nome_do_remetente()
+    {
+        var (vm, _, accounts, _, _) = Create(configured: true);
+        var account = new MailAccount(Guid.NewGuid(), "Trabalho", "ana@outlook.com", MailProvider.Outlook, "#FF7A66",
+            "ana@outlook.com", KnownProviders.Outlook, AuthMethod.OAuth2, "conta-ms-123", SenderName: "Ana Souza",
+            Signature: "<div>Ana · Engenharia</div>", SignatureOnReplies: false);
+        accounts.Add(account);
+        vm.Load(account);
+        vm.DisplayName = "Trabalho (novo nome)";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        var saved = Assert.Single(accounts.Accounts);
+        Assert.Equal("Trabalho (novo nome)", saved.DisplayName);
+        Assert.Equal(("Ana Souza", "<div>Ana · Engenharia</div>", false), (saved.SenderName, saved.Signature, saved.SignatureOnReplies));
+    }
+
+    [Fact]
     public async Task Workspace_entra_com_o_Google_por_padrao_e_salva_sem_senha()
     {
         var (vm, tester, accounts, credentials, oauth) = Create(configured: true, google: true);

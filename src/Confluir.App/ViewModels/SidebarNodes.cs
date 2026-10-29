@@ -35,6 +35,8 @@ public interface IAccountNodeHost
 
     /// <summary>Cria a pasta; devolve o erro para mostrar (nulo = criada).</summary>
     Task<string?> CreateFolderAsync(AccountNode node, string name);
+
+    void EditSignature(AccountNode node);
 }
 
 public sealed partial class AccountNode(MailAccount account, IAccountNodeHost host) : SidebarNode
@@ -82,6 +84,9 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
 
     [RelayCommand]
     private void Edit() => host.EditAccount(this);
+
+    [RelayCommand]
+    private void EditSignature() => host.EditSignature(this);
 
     [RelayCommand]
     private void AskRemove() => IsConfirmingRemoval = true;

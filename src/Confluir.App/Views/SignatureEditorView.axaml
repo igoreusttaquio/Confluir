@@ -1,0 +1,111 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             xmlns:views="using:Confluir.App.Views"
+             x:Class="Confluir.App.Views.SignatureEditorView"
+             x:DataType="vm:SignatureEditorViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.fmt.on">
+      <Setter Property="Background" Value="{DynamicResource AccentSubtle}" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+    </Style>
+    <Style Selector="Border.toolbarDivider">
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Margin" Value="6,6" />
+      <Setter Property="Background" Value="{DynamicResource Border}" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Background="{DynamicResource Background}">
+    <!-- Barra superior -->
+    <Border DockPanel.Dock="Top" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1" Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Classes="icon" Command="{Binding BackCommand}"
+                  ToolTip.Tip="{l:Tr Action_Back}" AutomationProperties.Name="{l:Tr Action_Back}">
+            <LucideIcon Kind="ArrowLeft" />
+          </Button>
+          <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding BackCommand}" />
+          <Button Classes="accent" Command="{Binding SaveCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <LucideIcon Kind="Check" Size="16" Foreground="{DynamicResource OnAccent}" />
+              <TextBlock Text="{l:Tr Signature_Save}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Conta e opções -->
+    <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="24,18,24,12">
+      <TextBlock Text="{Binding Account.Email}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+      <TextBlock Text="{l:Tr Signature_Hint}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+      <CheckBox IsChecked="{Binding OnReplies}" Content="{l:Tr Signature_OnReplies}" />
+      <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}" Foreground="{DynamicResource Danger}"
+                 TextWrapping="Wrap" FontSize="13" />
+    </StackPanel>
+
+    <!-- Barra de formatação -->
+    <Border DockPanel.Dock="Top" Margin="24,0" Padding="8,4" Background="{DynamicResource Surface}"
+            BorderBrush="{DynamicResource Border}" BorderThickness="1,1,1,0" CornerRadius="10,10,0,0"
+            IsVisible="{Binding IsRichTextAvailable}">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button x:Name="BoldButton" Classes="icon fmt" Tag="bold"
+                ToolTip.Tip="{l:Tr Compose_Bold}" AutomationProperties.Name="{l:Tr Compose_Bold}">
+          <LucideIcon Kind="Bold" Size="16" />
+        </Button>
+        <Button x:Name="ItalicButton" Classes="icon fmt" Tag="italic"
+                ToolTip.Tip="{l:Tr Compose_Italic}" AutomationProperties.Name="{l:Tr Compose_Italic}">
+          <LucideIcon Kind="Italic" Size="16" />
+        </Button>
+        <Button x:Name="UnderlineButton" Classes="icon fmt" Tag="underline"
+                ToolTip.Tip="{l:Tr Compose_Underline}" AutomationProperties.Name="{l:Tr Compose_Underline}">
+          <LucideIcon Kind="Underline" Size="16" />
+        </Button>
+        <Border Classes="toolbarDivider" />
+        <Button Classes="icon" Click="OnLinkClick"
+                ToolTip.Tip="{l:Tr Compose_Link}" AutomationProperties.Name="{l:Tr Compose_Link}">
+          <LucideIcon Kind="Link" Size="16" />
+        </Button>
+        <Button Classes="icon" Click="OnImageClick"
+                ToolTip.Tip="{l:Tr Signature_InsertImage}" AutomationProperties.Name="{l:Tr Signature_InsertImage}">
+          <LucideIcon Kind="ImagePlus" Size="16" />
+        </Button>
+        <Button Classes="icon fmt" Tag="removeFormat"
+                ToolTip.Tip="{l:Tr Compose_ClearFormatting}" AutomationProperties.Name="{l:Tr Compose_ClearFormatting}">
+          <LucideIcon Kind="RemoveFormatting" Size="16" />
+        </Button>
+      </StackPanel>
+    </Border>
+
+    <!-- Inserir link (inline, sem diálogo) -->
+    <Border x:Name="LinkRow" DockPanel.Dock="Top" Margin="24,0" Padding="12,8" Background="{DynamicResource SurfaceAlt}"
+            BorderBrush="{DynamicResource Border}" BorderThickness="1,1,1,0" IsVisible="False">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <LucideIcon Kind="Link" Size="15" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+        <TextBox x:Name="LinkBox" Grid.Column="1" Margin="10,0" PlaceholderText="{l:Tr Compose_LinkPlaceholder}" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+          <Button Content="{l:Tr AddAccount_Cancel}" Click="OnLinkCancel" />
+          <Button Classes="accent" Content="{l:Tr Compose_InsertLink}" Click="OnLinkInsert" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Editor (altura fixa: assinaturas são curtas; o WebView não fica dentro de rolagem) -->
+    <Panel Margin="24,0,24,24" Height="300" VerticalAlignment="Top">
+      <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
+              CornerRadius="0,0,10,10" ClipToBounds="True" IsVisible="{Binding IsRichTextAvailable}">
+        <views:RichEditorView x:Name="Editor" IsWebAllowed="{Binding IsActive}" />
+      </Border>
+      <!-- Sem WebView: texto simples -->
+      <TextBox Text="{Binding PlainText}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
+               PlaceholderText="{l:Tr Signature_Placeholder}" IsVisible="{Binding IsPlainOnly}" />
+    </Panel>
+  </DockPanel>
+</UserControl>

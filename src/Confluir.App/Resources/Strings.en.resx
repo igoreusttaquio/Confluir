@@ -452,4 +452,20 @@
   <data name="About_Group_Data"><value>Data and sign-in</value></data>
   <data name="About_Group_Platform"><value>Platform</value></data>
   <data name="About_Group_Fonts"><value>Fonts and icons</value></data>
+  <data name="Signature_Title"><value>Signature</value></data>
+  <data name="Signature_TitleFor"><value>Signature · {0}</value></data>
+  <data name="Signature_Hint"><value>Added to the end of new messages from this account. You can use bold, links and images (paste or insert a logo).</value></data>
+  <data name="Signature_OnReplies"><value>Also add to replies and forwards (above the quoted message)</value></data>
+  <data name="Signature_Save"><value>Save signature</value></data>
+  <data name="Signature_Saved"><value>Signature saved</value></data>
+  <data name="Signature_Removed"><value>Signature removed</value></data>
+  <data name="Signature_Placeholder"><value>Write your signature (name, title, phone…)</value></data>
+  <data name="Signature_InsertImage"><value>Insert image</value></data>
+  <data name="Signature_ImageTooLarge"><value>The image “{0}” is over {1} KB. Use a smaller one (a logo is usually much smaller).</value></data>
+  <data name="Signature_ImageType"><value>Use a PNG, JPG, GIF or WebP image.</value></data>
+  <data name="Signature_None"><value>No signature</value></data>
+  <data name="Signature_ImageOnly"><value>Image</value></data>
+  <data name="Signature_Edit"><value>Edit</value></data>
+  <data name="Settings_Signatures"><value>Signatures</value></data>
+  <data name="Settings_SignaturesHint"><value>Each account has its own. Switching the “From” account while writing swaps the signature too.</value></data>
 </root>

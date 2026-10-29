@@ -212,6 +212,11 @@
                 <LucideIcon Kind="Settings" Size="16" />
               </MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="{l:Tr Signature_Title}" Command="{Binding EditSignatureCommand}">
+              <MenuItem.Icon>
+                <LucideIcon Kind="Signature" Size="16" />
+              </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">
               <MenuItem.Icon>
                 <LucideIcon Kind="Trash" Size="16" />
@@ -268,6 +273,11 @@
                       <MenuItem Header="{l:Tr Account_Edit}" Command="{Binding EditCommand}">
                         <MenuItem.Icon>
                           <LucideIcon Kind="Settings" Size="16" />
+                        </MenuItem.Icon>
+                      </MenuItem>
+                      <MenuItem Header="{l:Tr Signature_Title}" Command="{Binding EditSignatureCommand}">
+                        <MenuItem.Icon>
+                          <LucideIcon Kind="Signature" Size="16" />
                         </MenuItem.Icon>
                       </MenuItem>
                       <MenuItem Header="{l:Tr Account_Remove}" Command="{Binding AskRemoveCommand}">

@@ -501,6 +501,34 @@
               </UniformGrid>
             </StackPanel>
           </Border>
+          <!-- Assinaturas, uma por conta -->
+          <Border Classes="card" IsVisible="{Binding HasAccounts}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="groupTitle" Text="{l:Tr Settings_Signatures}" />
+              <TextBlock Classes="hint" Text="{l:Tr Settings_SignaturesHint}" />
+              <ItemsControl ItemsSource="{Binding Signatures}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:SignatureItem">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Margin="0,6">
+                      <Ellipse Width="9" Height="9" VerticalAlignment="Center"
+                               Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                        <TextBlock Text="{Binding Preview}" FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                   TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Command="{Binding EditCommand}" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <LucideIcon Kind="Signature" Size="14" />
+                          <TextBlock Text="{l:Tr Signature_Edit}" />
+                        </StackPanel>
+                      </Button>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
         </StackPanel>
 
         <!-- Notificações e sistema -->
