@@ -430,6 +430,23 @@ vm.GoBackCommand.Execute(null);
     Pump(() => !vm.HasMultipleSelection, 1000);
     Console.WriteLine($"depois de marcar lida: barra {vm.HasMultipleSelection}");
 
+    // Mesma coisa na pasta Spam: excluir várias, e o X.
+    vm.SelectedNode = junk;
+    Pump(() => vm.Rows.OfType<MessageRow>().Any(r => r.Summary.FolderId == junk.Folder.Id), 3000);
+    messagesList = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Messages");
+    SelectThree();
+    Console.WriteLine($"spam: seleção {vm.SelectionCountText}, barra {vm.HasMultipleSelection}");
+    bulk = vm.DeleteSelectedCommand.ExecuteAsync(null);
+    Pump(() => bulk.IsCompleted);
+    Pump(() => true, 300);
+    Console.WriteLine($"spam depois de excluir: barra {vm.HasMultipleSelection}, selecionadas vm {vm.SelectedMessages.Count}, lista {messagesList.SelectedItems?.Count}, erro {bulk.Exception?.InnerException?.Message}");
+    SelectThree();
+    // Lista que já perdeu a seleção sem avisar (o caso da pasta real): o X ainda fecha a barra.
+    vm.SetSelection(vm.Rows.OfType<MessageRow>().Take(3));
+    vm.ClearSelectionCommand.Execute(null);
+    Pump(() => true, 300);
+    Console.WriteLine($"spam depois do X: barra {vm.HasMultipleSelection}");
+
     // Janela estreita: a leitura vira tela própria em vez de ser cortada; volta ao alargar.
     window.Width = 900;
     Pump(() => vm.IsNarrow, 1500);

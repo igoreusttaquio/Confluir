@@ -28,10 +28,14 @@ public sealed partial class MainWindowViewModel
     public string SelectionReadText => _selectedMessages.Any(r => !r.IsRead) ? Strings.Action_MarkRead : Strings.Action_MarkUnread;
     public string SelectionFlagText => _selectedMessages.Any(r => !r.IsFlagged) ? Strings.Action_Flag : Strings.Action_Unflag;
 
+    // Linhas da lista atual: ao trocar a lista, ela ainda pode avisar a seleção antiga uma última vez antes de
+    // limpá-la (sem avisar de novo); essas linhas que já saíram não contam.
+    private HashSet<MessageRow> _currentRows = new(ReferenceEqualityComparer.Instance);
+
     /// <summary>Chamado pela lista a cada mudança de seleção (cabeçalhos de data ficam de fora).</summary>
     public void SetSelection(IEnumerable<object> selected)
     {
-        _selectedMessages = selected.OfType<MessageRow>().ToList();
+        _selectedMessages = selected.OfType<MessageRow>().Where(_currentRows.Contains).ToList();
         var multiple = _selectedMessages.Count > 1;
         if (multiple && Detail is not null)
         {
@@ -57,7 +61,14 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     partial void OnRowsChanged(IReadOnlyList<MessageListRow> value)
     {
-        if (_selectedMessages.Count == 0)
+        _currentRows = new HashSet<MessageRow>(value.OfType<MessageRow>(), ReferenceEqualityComparer.Instance);
+        EndMultipleSelection();
+    }
+
+    /// <summary>Encerra a seleção múltipla no ViewModel, sem depender de a lista avisar (some a barra).</summary>
+    private void EndMultipleSelection()
+    {
+        if (_selectedMessages.Count == 0 && !HasMultipleSelection)
             return;
         _selectedMessages = [];
         HasMultipleSelection = false;
@@ -202,6 +213,7 @@ var originals = Snapshot(rows);
     {
         OnPropertyChanged(nameof(SelectionReadText));
         OnPropertyChanged(nameof(SelectionFlagText));
+        OnPropertyChanged(nameof(SelectionSpamText));
     }
 
     // Barra de ações em lote ----------------------------------------------------------------------------
@@ -234,6 +246,11 @@ var originals = Snapshot(rows);
     /// <summary>Pede à lista que desmarque tudo (a lista trata o pedido).</summary>
     public event EventHandler? ClearSelectionRequested;
 
+    /// <summary>O X da barra: a barra some mesmo que a lista já não tenha nada selecionado (e não avise).</summary>
     [RelayCommand]
-    private void ClearSelection() => ClearSelectionRequested?.Invoke(this, EventArgs.Empty);
+    private void ClearSelection()
+    {
+        ClearSelectionRequested?.Invoke(this, EventArgs.Empty);
+        EndMultipleSelection();
+    }
 }

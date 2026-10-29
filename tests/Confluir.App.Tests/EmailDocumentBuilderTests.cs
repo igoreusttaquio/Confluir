@@ -19,8 +19,35 @@ public class EmailDocumentBuilderTests
         Assert.Contains("Content-Security-Policy", doc.Html);
         Assert.Contains("default-src 'none'", doc.Html);
         Assert.Contains("img-src data: cid:;", doc.Html);
-        Assert.DoesNotContain("script-src", doc.Html);
         Assert.DoesNotContain("https:", doc.Html.Split("Content-Security-Policy")[1].Split('>')[0]);
+    }
+
+    [Fact]
+    public void So_roda_o_script_do_app_com_nonce_novo_e_nunca_o_do_email()
+    {
+        var html = "<p>oi</p><script>alert(1)</script><img src=x onerror=\"alert(2)\">";
+        var first = EmailDocumentBuilder.Build(Body(html: html), allowRemoteImages: false, Dark, EmailFonts.Default).Html;
+        var second = EmailDocumentBuilder.Build(Body(html: html), allowRemoteImages: false, Dark, EmailFonts.Default).Html;
+
+        var nonce = System.Text.RegularExpressions.Regex.Match(first, "script-src 'nonce-([^']+)'").Groups[1].Value;
+        Assert.NotEmpty(nonce);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(first, "<script"));
+        Assert.Contains($"<script nonce=\"{nonce}\">", first);
+        Assert.DoesNotContain("alert(", first);
+        Assert.DoesNotContain("onerror", first);
+        Assert.DoesNotContain($"nonce-{nonce}", second); // cada documento tem o seu
+    }
+
+    [Fact]
+    public void Tabelas_mantem_a_largura_de_projeto_para_o_ajuste_a_largura()
+    {
+        var doc = EmailDocumentBuilder.Build(Body(html: "<table width=\"600\"><tr><td>x</td></tr></table>"),
+            allowRemoteImages: false, Light, EmailFonts.Default).Html;
+
+        // Sem "table { max-width: 100% }" (espremia as colunas): o script reduz o email inteiro em proporção.
+        Assert.DoesNotContain("table { max-width", doc);
+        Assert.Contains("<div class=\"content\">", doc);
+        Assert.Contains("content.style.zoom", doc);
     }
 
     [Fact]

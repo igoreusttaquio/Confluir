@@ -48,10 +48,12 @@ public static partial class EmailDocumentBuilder
             content = $"<div class=\"plain\">{Linkify(WebUtility.HtmlEncode(body.TextBody))}</div>";
         }
 
-        // Sem script-src: nenhum JavaScript roda. Rede só para imagens/fontes quando o usuário permitiu.
+        // Só roda o script do próprio app (nonce novo a cada documento); os do email já saíram no sanitizador e a
+        // CSP os bloquearia de qualquer forma. Rede só para imagens/fontes quando o usuário permitiu.
         var remote = allowRemoteImages ? " https: http:" : "";
+        var nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
         var csp = $"default-src 'none'; style-src 'unsafe-inline'; img-src data: cid:{remote}; font-src data:{remote}; " +
-                  "form-action 'none'; frame-src 'none'; base-uri 'none'";
+                  $"script-src 'nonce-{nonce}'; form-action 'none'; frame-src 'none'; base-uri 'none'";
 
         // Emails com cores próprias foram desenhados para fundo claro: ficam num "papel" branco, também no tema escuro.
         // A folha continua o fundo externo do próprio email quando dá para saber qual é (sem moldura branca em volta);
@@ -81,19 +83,62 @@ public static partial class EmailDocumentBuilder
                       border: 1px solid {{sheetBorder}}; overflow-wrap: anywhere; }
               a { color: {{link}}; }
               img { max-width: 100%; height: auto; }
-              table { max-width: 100%; }
               blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid {{palette.Border}};
                            color: {{quoteText}}; }
               .plain { white-space: pre-wrap; }
               pre, code { font-family: {{fonts.MonoFamily}}; font-size: 0.87em; }
               ::selection { background: {{palette.Accent}}33; }
+              /* Barra de rolagem discreta: trilho transparente, só o polegar fino na cor do tema. */
+              html { scrollbar-width: thin; scrollbar-color: {{palette.TextSecondary}}66 transparent; }
+              ::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+              ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+              ::-webkit-scrollbar-thumb { background: {{palette.TextSecondary}}66; border-radius: 8px;
+                                          border: 3px solid transparent; background-clip: content-box; }
+              ::-webkit-scrollbar-thumb:hover { background: {{palette.TextSecondary}}AA; background-clip: content-box; }
             </style>
             </head>
-            <body><div class="mail">{{content}}</div></body>
+            <body><div class="mail"><div class="content">{{content}}</div></div>
+            <script nonce="{{nonce}}">{{FitScript}}</script>
+            </body>
             </html>
             """;
         return new EmailDocument(html, blocked);
     }
+
+    /// <summary>
+    /// "Ajustar à largura": um email desenhado mais largo que o painel (newsletters de 600 px em tabelas) é montado na
+    /// largura dele e reduzido em proporção, em vez de ser espremido (colunas apertadas) ou cortado à direita.
+    /// A largura de projeto vem do que o próprio conteúdo ocupa e das larguras fixas em tabelas e blocos (imagens não
+    /// contam: elas já encolhem). Recalcula ao redimensionar o painel.
+    /// </summary>
+    private const string FitScript = """
+        (function () {
+          var mail = document.querySelector('.mail'), content = document.querySelector('.content');
+          if (!mail || !content) return;
+          function px(v) { return v && /^\s*\d+(\.\d+)?(px)?\s*$/.test(v) ? parseFloat(v) : 0; }
+          function designed() {
+            var max = 0, all = content.querySelectorAll('table, td, th, div, center');
+            for (var i = 0; i < all.length && i < 3000; i++) {
+              var e = all[i];
+              max = Math.max(max, px(e.getAttribute('width')), px(e.style.width), px(e.style.minWidth));
+            }
+            return max;
+          }
+          function fit() {
+            content.style.zoom = ''; content.style.width = '';
+            var s = getComputedStyle(mail);
+            var available = mail.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+            var natural = Math.max(content.scrollWidth, designed());
+            if (available > 0 && natural > available + 1) {
+              content.style.width = natural + 'px';
+              content.style.zoom = Math.max(0.4, available / natural);
+            }
+          }
+          fit();
+          addEventListener('load', fit);
+          addEventListener('resize', fit);
+        })();
+        """;
 
     /// <summary>Torna URLs e endereços clicáveis num texto já codificado em HTML.</summary>
     public static string Linkify(string encodedText) =>
