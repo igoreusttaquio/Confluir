@@ -327,6 +327,20 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
                 tx, cancellationToken: ct));
         }, ct);
 
+    public async Task<IReadOnlyList<Guid>> GetMessagesWithoutBodyAsync(Guid folderId, DateTimeOffset since, int limit,
+        CancellationToken ct = default)
+    {
+        await ThreadPoolSwitch.Instance;
+        await using var c = await db.OpenAsync(ct);
+        var ids = await c.QueryAsync<string>(new CommandDefinition("""
+            SELECT m.id FROM messages m
+            WHERE m.folder_id = @f AND m.date_utc_ms >= @since
+              AND NOT EXISTS (SELECT 1 FROM bodies b WHERE b.message_id = m.id)
+            ORDER BY m.date_utc_ms DESC LIMIT @limit
+            """, new { f = folderId.ToString(), since = since.ToUnixTimeMilliseconds(), limit }, cancellationToken: ct));
+        return ids.Select(Guid.Parse).ToList();
+    }
+
     public Task ClearBodiesAsync(CancellationToken ct = default) =>
         WriteAsync(async (c, tx) =>
         {

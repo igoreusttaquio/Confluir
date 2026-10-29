@@ -9,9 +9,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Confluir.Mail;
 
+/// <summary>Qual conexão da conta usar.</summary>
+public enum ImapLane
+{
+    /// <summary>Sincronização, fila de operações e envio: trabalho em segundo plano, que pode demorar.</summary>
+    Sync,
+    /// <summary>O que o usuário está esperando (abrir uma mensagem, um anexo): não fica atrás da sincronização.</summary>
+    Reading,
+}
+
 /// <summary>
-/// Uma conexão IMAP autenticada por conta, usada por uma operação de cada vez.
-/// Reconecta automaticamente se a conexão tiver caído. (A fila de operações e o IDLE chegam na fase 3.)
+/// Conexões IMAP autenticadas por conta, uma por <see cref="ImapLane"/>, cada uma usada por uma operação de cada vez.
+/// Reconecta automaticamente se a conexão tiver caído.
 /// </summary>
 public sealed class ImapConnectionPool : IAsyncDisposable, IDisposable
 {
@@ -20,7 +29,7 @@ public sealed class ImapConnectionPool : IAsyncDisposable, IDisposable
     private readonly IAccountStore _accounts;
     private readonly MailAuthenticator _authenticator;
     private readonly ILogger<ImapConnectionPool> _logger;
-    private readonly ConcurrentDictionary<Guid, Connection> _connections = new();
+    private readonly ConcurrentDictionary<(Guid Account, ImapLane Lane), Connection> _connections = new();
 
     public ImapConnectionPool(IAccountStore accounts, MailAuthenticator authenticator, ILogger<ImapConnectionPool> logger)
     {
@@ -30,11 +39,12 @@ public sealed class ImapConnectionPool : IAsyncDisposable, IDisposable
         _accounts.Changed += (_, _) => _ = DropStaleConnectionsAsync();
     }
 
-    public async Task<T> RunAsync<T>(Guid accountId, Func<ImapClient, CancellationToken, Task<T>> operation, CancellationToken ct)
+    public async Task<T> RunAsync<T>(Guid accountId, Func<ImapClient, CancellationToken, Task<T>> operation, CancellationToken ct,
+        ImapLane lane = ImapLane.Sync)
     {
         var account = _accounts.Accounts.FirstOrDefault(a => a.Id == accountId)
             ?? throw new InvalidOperationException($"Conta {accountId} não encontrada.");
-        var connection = _connections.GetOrAdd(accountId, _ => new Connection(account));
+        var connection = _connections.GetOrAdd((accountId, lane), _ => new Connection(account));
 
         await connection.Gate.WaitAsync(ct);
         try
@@ -98,11 +108,11 @@ public sealed class ImapConnectionPool : IAsyncDisposable, IDisposable
     private async Task DropStaleConnectionsAsync()
     {
         var current = _accounts.Accounts.ToDictionary(a => a.Id);
-        foreach (var (id, connection) in _connections)
+        foreach (var (key, connection) in _connections)
         {
-            if (current.TryGetValue(id, out var account) && account == connection.Account)
+            if (current.TryGetValue(key.Account, out var account) && account == connection.Account)
                 continue;
-            if (_connections.TryRemove(id, out _))
+            if (_connections.TryRemove(key, out _))
                 await connection.CloseAsync();
         }
     }

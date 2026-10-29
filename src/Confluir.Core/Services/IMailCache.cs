@@ -91,6 +91,9 @@ public interface IMailCache
 
     Task SaveBodyAsync(MessageBody body, CancellationToken ct = default);
 
+    /// <summary>Mensagens da pasta recebidas desde <paramref name="since"/> cujo corpo ainda não foi baixado, mais novas primeiro.</summary>
+    Task<IReadOnlyList<Guid>> GetMessagesWithoutBodyAsync(Guid folderId, DateTimeOffset since, int limit, CancellationToken ct = default);
+
     /// <summary>Apaga os corpos guardados (voltam a ser baixados ao abrir cada mensagem).</summary>
     Task ClearBodiesAsync(CancellationToken ct = default);
 

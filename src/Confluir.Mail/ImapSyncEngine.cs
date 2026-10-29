@@ -285,14 +285,16 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
         return updates;
     }
 
-    public Task<MessageBody> FetchBodyAsync(MessageLocation location, CancellationToken ct) =>
+    /// <param name="lane">Abrir uma mensagem usa a conexão de leitura, para não esperar a sincronização;
+    /// o download antecipado em segundo plano usa a de sincronização.</param>
+    public Task<MessageBody> FetchBodyAsync(MessageLocation location, CancellationToken ct, ImapLane lane = ImapLane.Reading) =>
         pool.RunAsync(location.AccountId, async (client, token) =>
         {
             var f = await OpenAsync(client, location.FolderFullName, FolderAccess.ReadOnly, token);
             // GetMessage usa BODY.PEEK: não marca como lida por conta própria.
             var mime = await f.GetMessageAsync(new UniqueId(f.UidValidity, location.Uid), token);
             return MessageConverter.ToBody(mime, location.MessageId);
-        }, ct);
+        }, ct, lane);
 
     public Task<byte[]> FetchAttachmentAsync(MessageLocation location, int index, CancellationToken ct) =>
         pool.RunAsync(location.AccountId, async (client, token) =>
@@ -300,7 +302,7 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
             var f = await OpenAsync(client, location.FolderFullName, FolderAccess.ReadOnly, token);
             var mime = await f.GetMessageAsync(new UniqueId(f.UidValidity, location.Uid), token);
             return MessageConverter.ReadAttachment(mime, index, token);
-        }, ct);
+        }, ct, ImapLane.Reading);
 
     /// <param name="folders">Pastas da conta, para achar Arquivo e Lixeira.</param>
     /// <param name="targetFolder">Destino de <see cref="OperationKind.Move"/>.</param>

@@ -198,6 +198,25 @@ public sealed class SqliteMailCacheTests : IDisposable
     }
 
     [Fact]
+    public async Task Download_antecipado_lista_as_recentes_sem_corpo_mais_novas_primeiro()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        var now = DateTimeOffset.UtcNow;
+        var old = Message(inbox, 1, date: now.AddDays(-30));
+        var recent = Message(inbox, 2, date: now.AddDays(-2));
+        var newest = Message(inbox, 3, date: now.AddHours(-1));
+        var opened = Message(inbox, 4, date: now.AddHours(-2));
+        await _cache.UpsertMessagesAsync(inbox.Id, [old, recent, newest, opened], _ct);
+        await _cache.SaveBodyAsync(new MessageBody(opened.Summary.Id, [], [], "já lida", []), _ct);
+
+        var ids = await _cache.GetMessagesWithoutBodyAsync(inbox.Id, now.AddDays(-14), 10, _ct);
+
+        Assert.Equal([newest.Summary.Id, recent.Summary.Id], ids);
+        Assert.Equal([newest.Summary.Id], await _cache.GetMessagesWithoutBodyAsync(inbox.Id, now.AddDays(-14), 1, _ct));
+    }
+
+    [Fact]
     public async Task Fila_guarda_so_a_ultima_intencao_e_conta_falhas()
     {
         var message = Guid.NewGuid();

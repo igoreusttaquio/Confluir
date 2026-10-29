@@ -388,6 +388,8 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
 
                 attempt = 0;
                 SetStatus(runner, SyncStatus.UpToDate);
+                if (full || inbox)
+                    await PrefetchBodiesAsync(account, ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -455,6 +457,36 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         if (notify.Count > 0)
             MessagesArrived?.Invoke(this, new MessagesArrivedEventArgs(account.Id, notify));
     }
+
+    /// <summary>
+    /// Baixa já os corpos das mensagens recentes da caixa de entrada, para abrirem na hora. Usa a conexão de
+    /// sincronização (abrir uma mensagem continua com a de leitura só para si) e para no primeiro erro.
+    /// </summary>
+    private async Task PrefetchBodiesAsync(MailAccount account, CancellationToken ct)
+    {
+        try
+        {
+            var inbox = (await _cache.GetFoldersAsync(account.Id, ct)).FirstOrDefault(f => f.Kind == SpecialFolderKind.Inbox);
+            if (inbox is null)
+                return;
+            var ids = await _cache.GetMessagesWithoutBodyAsync(inbox.Id, DateTimeOffset.UtcNow - PrefetchWindow, PrefetchLimit, ct);
+            foreach (var id in ids)
+            {
+                if (await _cache.GetLocationAsync(id, ct) is not { } location || await _cache.GetBodyAsync(id, ct) is not null)
+                    continue;
+                await _cache.SaveBodyAsync(await _engine.FetchBodyAsync(location, ct, ImapLane.Sync), ct);
+            }
+            if (ids.Count > 0)
+                _logger.LogDebug("{Count} corpos baixados antecipadamente (conta {AccountId})", ids.Count, account.Id);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogDebug(ex, "Download antecipado de corpos interrompido (conta {AccountId})", account.Id);
+        }
+    }
+
+    private static readonly TimeSpan PrefetchWindow = TimeSpan.FromDays(14);
+    private const int PrefetchLimit = 30;
 
     private async Task ProcessQueueAsync(MailAccount account, CancellationToken ct)
     {
