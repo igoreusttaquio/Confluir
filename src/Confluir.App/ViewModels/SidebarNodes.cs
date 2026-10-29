@@ -10,6 +10,17 @@ namespace Confluir.App.ViewModels;
 public abstract partial class SidebarNode : ViewModelBase
 {
     public virtual bool IsSelectable => true;
+
+    /// <summary>
+    /// Linha entrando na lista ao abrir a conta: nasce fechada (altura e opacidade zero) já no primeiro quadro,
+    /// e a View a faz crescer. Sem isso a linha aparecia cheia por um quadro antes da animação (piscava).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RowMaxHeight), nameof(RowOpacity))]
+    public partial bool IsEntering { get; set; }
+
+    public double RowMaxHeight => IsEntering ? 0 : double.PositiveInfinity;
+    public double RowOpacity => IsEntering ? 0 : 1;
 }
 
 public sealed partial class UnifiedInboxNode : SidebarNode

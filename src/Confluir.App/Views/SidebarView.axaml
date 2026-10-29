@@ -289,7 +289,8 @@
                   <Ellipse Grid.Column="1" Width="9" Height="9" Margin="8,0"
                            Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
                   <!-- Compacto: nome e e-mail numa linha só (o e-mail encolhe primeiro). -->
-                  <Grid Grid.Column="2" Classes="accountText" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                  <Grid Grid.Column="2" Classes="accountText" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto"
+                        VerticalAlignment="Center">
                     <TextBlock Classes="accountName" Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="{DynamicResource SidebarAccountFontSize}"
                                Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
                     <TextBlock Classes="caption accountEmail" Text="{Binding Account.Email}" FontSize="{DynamicResource SidebarCaptionFontSize}" TextTrimming="CharacterEllipsis" />

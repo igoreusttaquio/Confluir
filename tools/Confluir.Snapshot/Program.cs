@@ -108,35 +108,49 @@ Pump(() => Environment.TickCount64 > openedAt, 1000);
     var header = nodesList.GetVisualDescendants().OfType<Button>()
         .First(b => b.Classes.Contains("accountHeader") && b.DataContext == account);
     var headerPoint = header.TranslatePoint(new Point(40, header.Bounds.Height / 2), window)!.Value;
-    string Sample(Func<bool> done)
+    var slowMotion = typeof(SidebarView).GetField("SlowMotion", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+    // Registra a 1a pasta a cada passada de layout (o que vai para a tela), não só nas capturas: um quadro
+    // com a linha cheia ao abrir, ou vazia no começo do recolher, é a piscada.
+    var trace = new List<(double Height, double Opacity)>();
+    void OnLayout(object? s, EventArgs e)
     {
-        var samples = new List<string>();
-        var start = Environment.TickCount64;
-        for (var i = 0; i < 30 && !(done() && samples.Count > 2); i++)
-        {
-            Dispatcher.UIThread.RunJobs();
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-            var row = nodesList.ContainerFromItem(firstFolder) as Control;
-            samples.Add($"{Environment.TickCount64 - start}ms={(row is null ? "-" : $"{row.Bounds.Height:0}/{row.Opacity:0.0}/{row.MaxHeight:0}")}");
-            Thread.Sleep(5);
-        }
-        return string.Join(" ", samples);
+        if (nodesList.ContainerFromItem(firstFolder) is Control row && row.IsVisible)
+            trace.Add((row.Bounds.Height, row.Opacity));
     }
-    var before = (nodesList.ContainerFromItem(firstFolder) as Control)?.Bounds.Height;
-    var hit = window.InputHitTest(headerPoint) as Visual;
-    Console.WriteLine($"conta: clique cai em {hit?.GetType().Name} dentro do cabeçalho {hit?.FindAncestorOfType<Button>(includeSelf: true) == header}, ponto {headerPoint}");
-    window.MouseDown(headerPoint, MouseButton.Left);
-    window.MouseUp(headerPoint, MouseButton.Left);
-    var collapse = Sample(() => !vm.SidebarNodes.Contains(firstFolder));
-    Console.WriteLine($"conta recolhendo (altura/opacidade da 1a pasta, antes {before:0}): {collapse}; recolhida {!account.IsExpanded}");
-    // O relógio das animações sem janela anda por tiques: um tique logo antes do clique para não começar "atrasado".
-    AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-    window.MouseDown(headerPoint, MouseButton.Left);
-    window.MouseUp(headerPoint, MouseButton.Left);
-    var expand =Sample(() => (nodesList.ContainerFromItem(firstFolder) as Control)?.Bounds.Height >= before);
-    Console.WriteLine($"conta abrindo: {expand}; aberta {account.IsExpanded}, altura final {(nodesList.ContainerFromItem(firstFolder) as Control)?.Bounds.Height:0}");
+    nodesList.LayoutUpdated += OnLayout;
+    string Run(Func<bool> done)
+    {
+        trace.Clear();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        window.MouseDown(headerPoint, MouseButton.Left);
+        window.MouseUp(headerPoint, MouseButton.Left);
+        var until = Environment.TickCount64 + 3000;
+        Pump(() => done() && Environment.TickCount64 > until - 2000, 4000);
+        var distinct = trace.Where((v, i) => i == 0 || v != trace[i - 1]).ToList();
+        return string.Join(" ", distinct.Select(v => $"{v.Height:0}/{v.Opacity:0.00}"));
+    }
+    static bool Monotonic(IEnumerable<double> values, bool rising)
+    {
+        var list = values.ToList();
+        return list.Zip(list.Skip(1)).All(p => rising ? p.Second >= p.First - 0.01 : p.Second <= p.First + 0.01);
+    }
+    var full = (nodesList.ContainerFromItem(firstFolder) as Control)!.Bounds.Height;
+    foreach (var speed in new[] { 1.0, 6.0 })
+    {
+        slowMotion.SetValue(null, speed);
+        var collapse = Run(() => !vm.SidebarNodes.Contains(firstFolder));
+        var collapseTrace = trace.ToList();
+        Console.WriteLine($"conta recolhendo (x{speed}): {collapse}");
+        Console.WriteLine($"  só encolhe: {Monotonic(collapseTrace.Select(v => v.Height), false) && Monotonic(collapseTrace.Select(v => v.Opacity), false)}; recolhida {!account.IsExpanded}");
+        var expand = Run(() => account.IsExpanded);
+        var expandTrace = trace.ToList();
+        Console.WriteLine($"conta abrindo (x{speed}): {expand}");
+        Console.WriteLine($"  só cresce: {Monotonic(expandTrace.Select(v => v.Height), true) && Monotonic(expandTrace.Select(v => v.Opacity), true)}; " +
+                          $"primeiro quadro {(expandTrace.Count > 0 ? $"{expandTrace[0].Height:0}/{expandTrace[0].Opacity:0.00}" : "-")} (cheia {full:0}); termina {expandTrace.LastOrDefault().Height:0}/{expandTrace.LastOrDefault().Opacity:0.00}");
+    }
+    nodesList.LayoutUpdated -= OnLayout;
+    slowMotion.SetValue(null, 1.0);
 }
-
 // Texto da lista grande.
 vm.Appearance.IsListTextLarge = true;
 Save(window, "list-text-large.png");

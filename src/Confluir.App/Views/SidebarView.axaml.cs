@@ -60,8 +60,11 @@ public partial class SidebarView : UserControl
 
     // Abrir/fechar a conta: as pastas crescem a partir do cabeçalho (e encolhem de volta antes de sair da lista).
 
-    private static readonly TimeSpan ExpandDuration = TimeSpan.FromMilliseconds(200);
-    private static readonly TimeSpan CollapseDuration = TimeSpan.FromMilliseconds(160);
+    private static TimeSpan ExpandDuration => TimeSpan.FromMilliseconds(200 * SlowMotion);
+    private static TimeSpan CollapseDuration => TimeSpan.FromMilliseconds(160 * SlowMotion);
+
+    // Câmera lenta para a verificação sem janela, que captura quadro a quadro (lá cada quadro demora).
+    private static double SlowMotion = 1;
     private const double FolderRowHeight = 40; // um pouco acima da linha real; a animação para quando a linha cabe
 
     private readonly HashSet<AccountNode> _collapsing = [];
@@ -73,12 +76,21 @@ public partial class SidebarView : UserControl
             return;
         if (!node.IsExpanded)
         {
-            // As linhas entram no próximo layout (só as visíveis têm linha); fechadas antes de aparecerem, crescem dali.
+            // As pastas entram fechadas (o tema lê IsEntering desde o primeiro quadro) e crescem depois do layout
+            // que cria as linhas; as que ficaram fora da tela só perdem a marca.
+            var folders = node.Folders.ToList();
+            foreach (var folder in folders)
+                folder.IsEntering = true;
             void OnLayoutUpdated(object? s, EventArgs args)
             {
                 Nodes.LayoutUpdated -= OnLayoutUpdated;
-                foreach (var row in node.Folders.Select(f => Nodes.ContainerFromItem(f)).OfType<ListBoxItem>())
-                    _ = Expand(row);
+                foreach (var folder in folders)
+                {
+                    if (Nodes.ContainerFromItem(folder) is ListBoxItem row)
+                        _ = Expand(row, folder);
+                    else
+                        folder.IsEntering = false;
+                }
             }
             Nodes.LayoutUpdated += OnLayoutUpdated;
             node.ToggleCommand.Execute(null);
@@ -89,16 +101,18 @@ public partial class SidebarView : UserControl
         try
         {
             var rows = node.Folders.Select(f => Nodes.ContainerFromItem(f)).OfType<ListBoxItem>().ToList();
-            var animations = rows.Select(row => Animate(row, row.Bounds.Height, 0, 1, 0, CollapseDuration, new CubicEaseIn())).ToList();
-            // Fechada por baixo da animação: entre o fim dela e a saída da lista a linha não pisca de volta.
-            foreach (var row in rows)
-            {
-                row.MaxHeight = 0;
-                row.Opacity = 0;
-            }
+            var animations = Task.WhenAll(rows.Select(row => Animate(row, row.Bounds.Height, 0, 1, 0, CollapseDuration, new CubicEaseIn())));
             try
             {
-                await Task.WhenAll(animations);
+                // Fechada por baixo da animação, já com ela rodando (antes, a linha sumiria por um quadro no começo):
+                // entre o fim dela e a saída da lista a linha não pisca de volta.
+                await Task.Delay(CollapseDuration / 2);
+                foreach (var row in rows)
+                {
+                    row.MaxHeight = 0;
+                    row.Opacity = 0;
+                }
+                await animations;
                 if (node.IsExpanded)
                     node.ToggleCommand.Execute(null);
             }
@@ -117,19 +131,14 @@ public partial class SidebarView : UserControl
         }
     }
 
-    private static async Task Expand(ListBoxItem row)
+    // A marca sai no meio da animação, quando ela já cobre os valores de base: nem no começo (a linha apareceria cheia)
+    // nem depois do fim (voltaria a zero por um quadro).
+    private static async Task Expand(ListBoxItem row, FolderNode folder)
     {
-        row.MaxHeight = 0;
-        row.Opacity = 0;
-        try
-        {
-            await Animate(row, 0, FolderRowHeight, 0, 1, ExpandDuration, new CubicEaseOut());
-        }
-        finally
-        {
-            row.ClearValue(MaxHeightProperty);
-            row.ClearValue(OpacityProperty);
-        }
+        var animation = Animate(row, 0, FolderRowHeight, 0, 1, ExpandDuration, new CubicEaseOut());
+        await Task.Delay(ExpandDuration / 2);
+        folder.IsEntering = false;
+        await animation;
     }
 
     // Altura máxima, margem e opacidade juntas; ao terminar a linha volta aos valores do tema (pode ser reciclada).

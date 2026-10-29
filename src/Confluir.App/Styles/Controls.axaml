@@ -47,6 +47,8 @@
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Focusable" Value="{Binding IsSelectable}" />
+        <Setter Property="MaxHeight" Value="{Binding RowMaxHeight}" />
+        <Setter Property="Opacity" Value="{Binding RowOpacity}" />
         <Setter Property="Transitions">
           <Transitions>
             <BrushTransition Property="Background" Duration="0:0:0.12" />
