@@ -19,6 +19,28 @@
                      Button.accountHeader:pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
     </Style>
+    <!-- Nome e e-mail: duas linhas; no modo compacto, uma (cabeçalho mais baixo, pastas iguais). -->
+    <Style Selector="Grid.accountText TextBlock.accountName">
+      <Setter Property="Grid.ColumnSpan" Value="2" />
+    </Style>
+    <Style Selector="Grid.accountText TextBlock.accountEmail">
+      <Setter Property="Grid.Row" Value="1" />
+      <Setter Property="Grid.ColumnSpan" Value="2" />
+    </Style>
+    <Style Selector="Button.accountHeader.compact">
+      <Setter Property="Padding" Value="10,8,10,4" />
+    </Style>
+    <Style Selector="Button.accountHeader.compact TextBlock.accountName">
+      <Setter Property="Grid.ColumnSpan" Value="1" />
+      <Setter Property="MaxWidth" Value="120" />
+    </Style>
+    <Style Selector="Button.accountHeader.compact TextBlock.accountEmail">
+      <Setter Property="Grid.Row" Value="0" />
+      <Setter Property="Grid.Column" Value="1" />
+      <Setter Property="Grid.ColumnSpan" Value="1" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
     <Style Selector="Button.accountMore">
       <Setter Property="Opacity" Value="0" />
     </Style>
@@ -134,12 +156,21 @@
                       AutomationProperties.Name="{Binding Account.DisplayName}"
                       Command="{Binding $parent[views:SidebarView].((vm:MainWindowViewModel)DataContext).SelectAccountInboxCommand}"
                       CommandParameter="{Binding}">
-                <Border Width="30" Height="30" CornerRadius="15"
-                        Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}">
-                  <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" FontSize="13"
-                             Foreground="{DynamicResource OnAccountColor}"
-                             HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
+                <Panel Width="30" Height="30">
+                  <!-- Provedor conhecido: a marca dele na cor da conta; servidor genérico: a inicial no círculo. -->
+                  <Path Data="{Binding Account.Provider, Converter={x:Static conv:ProviderIconConverter.Instance}}"
+                        Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                        Width="22" Height="22" Stretch="Uniform"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  <Border CornerRadius="15"
+                          Background="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                          IsVisible="{Binding Account.Provider, Converter={x:Static conv:ProviderIconConverter.Instance}, ConverterParameter=none}">
+                    <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" FontSize="13"
+                               Foreground="{DynamicResource OnAccountColor}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                </Panel>
               </Button>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
@@ -249,18 +280,20 @@
 
           <DataTemplate DataType="vm:AccountNode">
             <StackPanel>
-              <Button Classes="accountHeader" Command="{Binding ToggleCommand}"
+              <Button Classes="accountHeader" Click="OnAccountHeaderClick"
+                      Classes.compact="{Binding $parent[views:SidebarView].((vm:MainWindowViewModel)DataContext).Appearance.CompactMode}"
                       ToolTip.Tip="{l:Tr Action_Collapse}">
                 <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                   <LucideIcon Classes="chevron" Classes.collapsed="{Binding !IsExpanded}"
                               Kind="ChevronDown" Size="14" Foreground="{DynamicResource TextSecondary}" />
                   <Ellipse Grid.Column="1" Width="9" Height="9" Margin="8,0"
                            Fill="{Binding Account.ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
-                  <StackPanel Grid.Column="2">
-                    <TextBlock Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="{DynamicResource SidebarAccountFontSize}"
+                  <!-- Compacto: nome e e-mail numa linha só (o e-mail encolhe primeiro). -->
+                  <Grid Grid.Column="2" Classes="accountText" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="accountName" Text="{Binding Account.DisplayName}" FontWeight="SemiBold" FontSize="{DynamicResource SidebarAccountFontSize}"
                                Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Account.Email}" Classes="caption" FontSize="{DynamicResource SidebarCaptionFontSize}" TextTrimming="CharacterEllipsis" />
-                  </StackPanel>
+                    <TextBlock Classes="caption accountEmail" Text="{Binding Account.Email}" FontSize="{DynamicResource SidebarCaptionFontSize}" TextTrimming="CharacterEllipsis" />
+                  </Grid>
                   <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                   <Panel VerticalAlignment="Center">
                     <LucideIcon Kind="LoaderCircle" Size="14" Classes="spin" IsVisible="{Binding IsLoading}"

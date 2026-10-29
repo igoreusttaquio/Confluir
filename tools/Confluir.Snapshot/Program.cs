@@ -97,6 +97,45 @@ Console.WriteLine("animacao barra lateral: " + string.Join(" ", widths));
 Save(window, "compact-collapsed.png");
 vm.ToggleSidebarCommand.Execute(null);
 vm.Appearance.CompactMode = false;
+var openedAt = Environment.TickCount64 + 600;
+Pump(() => Environment.TickCount64 > openedAt, 1000);
+
+// Recolher e abrir a primeira conta com clique de verdade: as pastas encolhem e crescem em vez de sumir de uma vez.
+{
+    var nodesList = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "Nodes");
+    var account = vm.SidebarNodes.OfType<AccountNode>().First();
+    var firstFolder = account.Folders[0];
+    var header = nodesList.GetVisualDescendants().OfType<Button>()
+        .First(b => b.Classes.Contains("accountHeader") && b.DataContext == account);
+    var headerPoint = header.TranslatePoint(new Point(40, header.Bounds.Height / 2), window)!.Value;
+    string Sample(Func<bool> done)
+    {
+        var samples = new List<string>();
+        var start = Environment.TickCount64;
+        for (var i = 0; i < 30 && !(done() && samples.Count > 2); i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            var row = nodesList.ContainerFromItem(firstFolder) as Control;
+            samples.Add($"{Environment.TickCount64 - start}ms={(row is null ? "-" : $"{row.Bounds.Height:0}/{row.Opacity:0.0}/{row.MaxHeight:0}")}");
+            Thread.Sleep(5);
+        }
+        return string.Join(" ", samples);
+    }
+    var before = (nodesList.ContainerFromItem(firstFolder) as Control)?.Bounds.Height;
+    var hit = window.InputHitTest(headerPoint) as Visual;
+    Console.WriteLine($"conta: clique cai em {hit?.GetType().Name} dentro do cabeçalho {hit?.FindAncestorOfType<Button>(includeSelf: true) == header}, ponto {headerPoint}");
+    window.MouseDown(headerPoint, MouseButton.Left);
+    window.MouseUp(headerPoint, MouseButton.Left);
+    var collapse = Sample(() => !vm.SidebarNodes.Contains(firstFolder));
+    Console.WriteLine($"conta recolhendo (altura/opacidade da 1a pasta, antes {before:0}): {collapse}; recolhida {!account.IsExpanded}");
+    // O relógio das animações sem janela anda por tiques: um tique logo antes do clique para não começar "atrasado".
+    AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+    window.MouseDown(headerPoint, MouseButton.Left);
+    window.MouseUp(headerPoint, MouseButton.Left);
+    var expand =Sample(() => (nodesList.ContainerFromItem(firstFolder) as Control)?.Bounds.Height >= before);
+    Console.WriteLine($"conta abrindo: {expand}; aberta {account.IsExpanded}, altura final {(nodesList.ContainerFromItem(firstFolder) as Control)?.Bounds.Height:0}");
+}
 
 // Texto da lista grande.
 vm.Appearance.IsListTextLarge = true;
