@@ -85,7 +85,7 @@
   <data name="AddAccount_Help_1"><value>Escribe tu correo. Reconocemos Gmail, Yahoo y miles de proveedores y completamos los servidores.</value></data>
   <data name="AddAccount_Help_2"><value>Prueba la conexión. Verificamos la recepción (IMAP) y el envío (SMTP) antes de guardar.</value></data>
   <data name="AddAccount_Help_3"><value>Tu contraseña se guarda en el almacén seguro del sistema operativo, nunca como texto en el disco.</value></data>
-  <data name="AddAccount_Privacy"><value>Para encontrar los servidores, solo se consulta el dominio de tu correo en la base pública de Thunderbird.</value></data>
+  <data name="AddAccount_Privacy"><value>Para encontrar los servidores, solo se consulta el dominio de tu correo (en el DNS público y en la base de Thunderbird), nunca la dirección.</value></data>
   <data name="AddAccount_Email"><value>Dirección de correo</value></data>
   <data name="AddAccount_DisplayName"><value>Nombre de la cuenta</value></data>
   <data name="AddAccount_DisplayName_Placeholder"><value>P. ej.: Personal, Trabajo</value></data>
@@ -106,7 +106,7 @@
   <data name="AddAccount_Detected_Known"><value>{0} detectado. Servidores completados.</value></data>
   <data name="AddAccount_Detected_Autoconfig"><value>Configuración encontrada para {0}.</value></data>
   <data name="AddAccount_Detected_Guess"><value>No encontramos la configuración de {0}. Sugerimos servidores estándar; revísalos en Configuración avanzada.</value></data>
-  <data name="AddAccount_AppPasswordHint_Gmail"><value>Gmail requiere una contraseña de aplicación (con la verificación en dos pasos activada). Tu contraseña normal no funciona aquí.</value></data>
+  <data name="AddAccount_AppPasswordHint_Gmail"><value>Gmail requiere una contraseña de aplicación (con la verificación en dos pasos activada); tu contraseña normal no funciona aquí. Las cuentas administradas por una empresa o escuela suelen tener la contraseña de aplicación bloqueada: en ese caso, usa Iniciar sesión con Google.</value></data>
   <data name="AddAccount_AppPasswordHint_Yahoo"><value>Yahoo requiere una contraseña de aplicación. Tu contraseña normal no funciona aquí.</value></data>
   <data name="AddAccount_AppPasswordLink"><value>Cómo crear una contraseña de aplicación</value></data>
   <data name="AddAccount_Invalid_Email"><value>Escribe una dirección de correo válida.</value></data>
@@ -150,7 +150,7 @@
   <data name="OAuth_NotConfigured"><value>Iniciar sesión con Microsoft (necesario para Outlook y Hotmail) todavía no está disponible en esta versión de Confluir. Las demás cuentas funcionan normalmente.</value></data>
   <data name="OAuth_SignInFailed"><value>No se pudo iniciar sesión con Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Inicia sesión con Microsoft para continuar.</value></data>
-  <data name="Error_ReauthenticationRequired"><value>Tu sesión de Microsoft caducó. Edita la cuenta e inicia sesión de nuevo.</value></data>
+  <data name="Error_ReauthenticationRequired"><value>Tu sesión caducó. Edita la cuenta e inicia sesión de nuevo.</value></data>
   <data name="Action_OpenInPage"><value>Abrir en su propia vista</value></data>
   <data name="Action_CollapseSidebar"><value>Contraer barra lateral</value></data>
   <data name="Action_ExpandSidebar"><value>Expandir barra lateral</value></data>
@@ -433,4 +433,11 @@
   <data name="Feedback_Spam_Other"><value>{0:N0} mensajes movidos a Spam</value></data>
   <data name="Feedback_NotSpam_One"><value>Mensaje devuelto a la bandeja de entrada</value></data>
   <data name="Feedback_NotSpam_Other"><value>{0:N0} mensajes devueltos a la bandeja de entrada</value></data>
+  <data name="OAuth_SignIn_Google"><value>Iniciar sesión con Google</value></data>
+  <data name="OAuth_SignInHint_Google"><value>Se abre una página de Google en tu navegador; después de iniciar sesión y permitir el acceso al correo, vuelve a Confluir. También funciona con cuentas de Google Workspace (empresa o escuela).</value></data>
+  <data name="OAuth_NotConfigured_Google"><value>Iniciar sesión con Google todavía no está disponible en esta versión de Confluir. Usa una contraseña de aplicación.</value></data>
+  <data name="OAuth_SignInFailed_Google"><value>No se pudo iniciar sesión con Google: {0}</value></data>
+  <data name="AddAccount_AuthChoice"><value>Cómo iniciar sesión</value></data>
+  <data name="AddAccount_Detected_Workspace"><value>{0} usa Google Workspace. Servidores de Gmail completados.</value></data>
+  <data name="AddAccount_Detected_Microsoft365"><value>{0} usa Microsoft 365. Inicia sesión con tu cuenta de Microsoft.</value></data>
 </root>

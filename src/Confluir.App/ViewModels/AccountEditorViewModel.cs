@@ -227,12 +227,56 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     public partial SecurityOption SmtpSecurity { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AppPasswordHint), nameof(HasAppPasswordHint), nameof(PasswordLabel))]
+    [NotifyPropertyChangedFor(nameof(AppPasswordHint), nameof(HasAppPasswordHint), nameof(PasswordLabel), nameof(IsOAuthConfigured),
+        nameof(CanSubmit), nameof(ShowOAuthSignIn), nameof(ShowOAuthNotConfigured), nameof(CanChooseAuth), nameof(OAuthSignInText),
+        nameof(OAuthHint), nameof(OAuthNotConfiguredText))]
     public partial MailProvider Provider { get; private set; } = MailProvider.Imap;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RequiresOAuth), nameof(CanSubmit), nameof(ShowOAuthSignIn), nameof(ShowOAuthNotConfigured))]
+    [NotifyPropertyChangedFor(nameof(RequiresOAuth), nameof(CanSubmit), nameof(ShowOAuthSignIn), nameof(ShowOAuthNotConfigured),
+        nameof(UseOAuth), nameof(UsePassword), nameof(HasAppPasswordHint))]
     public partial AuthMethod Auth { get; private set; } = AuthMethod.Password;
+
+    /// <summary>
+    /// Google (Gmail e Workspace): dá para entrar com o Google ou com senha de app. Contas gerenciadas pela empresa
+    /// costumam ter a senha de app bloqueada; aí só o login do Google funciona.
+    /// </summary>
+    public bool CanChooseAuth => Provider == MailProvider.Gmail && _oauth.IsConfigured(MailProvider.Gmail);
+
+    public bool UseOAuth
+    {
+        get => Auth == AuthMethod.OAuth2;
+        set
+        {
+            if (value)
+                ChooseAuth(AuthMethod.OAuth2);
+        }
+    }
+
+    public bool UsePassword
+    {
+        get => Auth == AuthMethod.Password;
+        set
+        {
+            if (value)
+                ChooseAuth(AuthMethod.Password);
+        }
+    }
+
+    private void ChooseAuth(AuthMethod auth)
+    {
+        if (Auth == auth || !CanChooseAuth)
+            return;
+        Auth = auth;
+        ErrorMessage = null;
+        InvalidateTest();
+    }
+
+    /// <summary>Contas Google entram com o Google quando o app tem o cliente OAuth; senão, com senha de app.</summary>
+    private AuthMethod DefaultAuthFor(ProviderPreset preset) =>
+        preset.Provider == MailProvider.Gmail
+            ? _oauth.IsConfigured(MailProvider.Gmail) ? AuthMethod.OAuth2 : AuthMethod.Password
+            : preset.Auth;
 
     [ObservableProperty]
     public partial bool IsDetecting { get; private set; }
@@ -254,8 +298,14 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     public bool RequiresOAuth => Auth == AuthMethod.OAuth2;
     public bool CanSubmit => !IsBusy && (!RequiresOAuth || IsOAuthConfigured);
 
-    /// <summary>O app tem um ID de aplicativo da Microsoft configurado.</summary>
-    public bool IsOAuthConfigured => _oauth.IsConfigured;
+    /// <summary>O app tem as credenciais de aplicativo do login deste provedor (Microsoft ou Google).</summary>
+    public bool IsOAuthConfigured => _oauth.IsConfigured(Provider);
+
+    private bool IsGoogle => Provider == MailProvider.Gmail;
+
+    public string OAuthSignInText => IsGoogle ? Strings.OAuth_SignIn_Google : Strings.OAuth_SignIn;
+    public string OAuthHint => IsGoogle ? Strings.OAuth_SignInHint_Google : Strings.OAuth_SignInHint;
+    public string OAuthNotConfiguredText => IsGoogle ? Strings.OAuth_NotConfigured_Google : Strings.OAuth_NotConfigured;
 
     public bool ShowOAuthSignIn => RequiresOAuth && IsOAuthConfigured;
     public bool ShowOAuthNotConfigured => RequiresOAuth && !IsOAuthConfigured;
@@ -269,13 +319,13 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
     public string OAuthSignedInText => OAuthSignedInAs is null ? "" : string.Format(Strings.OAuth_SignedInAs, OAuthSignedInAs);
 
     [RelayCommand]
-    private async Task SignInWithMicrosoftAsync(CancellationToken ct)
+    private async Task SignInWithProviderAsync(CancellationToken ct)
     {
         IsBusy = true;
         ErrorMessage = null;
         try
         {
-            var result = await _oauth.SignInAsync(string.IsNullOrWhiteSpace(Email) ? null : Email, ct);
+            var result = await _oauth.SignInAsync(Provider, string.IsNullOrWhiteSpace(Email) ? null : Email, ct);
             _oauthAccountId = result.AccountId;
             _oauthToken = result.AccessToken;
             if (string.IsNullOrWhiteSpace(Email))
@@ -298,8 +348,8 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Login da Microsoft falhou");
-            ErrorMessage = string.Format(Strings.OAuth_SignInFailed, ex.Message);
+            _logger.LogWarning(ex, "Login OAuth falhou ({Provider})", Provider);
+            ErrorMessage = string.Format(IsGoogle ? Strings.OAuth_SignInFailed_Google : Strings.OAuth_SignInFailed, ex.Message);
         }
         finally
         {
@@ -318,7 +368,7 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         _ => null,
     };
 
-    public bool HasAppPasswordHint => AppPasswordHint is not null;
+    public bool HasAppPasswordHint => AppPasswordHint is not null && !RequiresOAuth;
 
     partial void OnEmailChanged(string value)
     {
@@ -552,7 +602,7 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         try
         {
             Provider = preset.Provider;
-            Auth = preset.Auth;
+            Auth = DefaultAuthFor(preset);
             UserName = preset.UserName;
             ImapHost = preset.Servers.Imap.Host;
             ImapPort = preset.Servers.Imap.Port;
@@ -571,6 +621,8 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
         DetectionMessage = preset.Source switch
         {
             PresetSource.Known => string.Format(Strings.AddAccount_Detected_Known, DefaultDisplayName(domain)),
+            PresetSource.Hosted => string.Format(
+                preset.Provider == MailProvider.Gmail ? Strings.AddAccount_Detected_Workspace : Strings.AddAccount_Detected_Microsoft365, domain),
             PresetSource.Autoconfig => string.Format(Strings.AddAccount_Detected_Autoconfig, domain),
             _ => string.Format(Strings.AddAccount_Detected_Guess, domain),
         };
@@ -578,7 +630,8 @@ public sealed partial class AccountEditorViewModel : ViewModelBase
             ShowAdvanced = true;
     }
 
-    private string DefaultDisplayName(string domain) => Provider switch
+    // Domínio próprio no Google Workspace ou no Microsoft 365: o nome é o domínio (ex.: "empresa.com.br").
+    private string DefaultDisplayName(string domain) => KnownProviders.Detect(Email) is null ? domain : Provider switch
     {
         MailProvider.Gmail => "Gmail",
         MailProvider.Yahoo => "Yahoo",

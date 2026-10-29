@@ -85,7 +85,7 @@
   <data name="AddAccount_Help_1"><value>Digite seu email. Reconhecemos Gmail, Yahoo e milhares de provedores e preenchemos os servidores.</value></data>
   <data name="AddAccount_Help_2"><value>Teste a conexão. Verificamos o recebimento (IMAP) e o envio (SMTP) antes de salvar.</value></data>
   <data name="AddAccount_Help_3"><value>Sua senha fica no cofre do sistema operacional, nunca em texto no disco.</value></data>
-  <data name="AddAccount_Privacy"><value>Para descobrir os servidores, só o domínio do seu email é consultado na base pública do Thunderbird.</value></data>
+  <data name="AddAccount_Privacy"><value>Para descobrir os servidores, só o domínio do seu email é consultado (no DNS público e na base do Thunderbird), nunca o endereço.</value></data>
   <data name="AddAccount_Email"><value>Endereço de email</value></data>
   <data name="AddAccount_DisplayName"><value>Nome da conta</value></data>
   <data name="AddAccount_DisplayName_Placeholder"><value>Ex.: Pessoal, Trabalho</value></data>
@@ -106,7 +106,7 @@
   <data name="AddAccount_Detected_Known"><value>{0} detectado. Servidores preenchidos.</value></data>
   <data name="AddAccount_Detected_Autoconfig"><value>Configuração encontrada para {0}.</value></data>
   <data name="AddAccount_Detected_Guess"><value>Não encontramos a configuração de {0}. Sugerimos servidores padrão; confira em Configuração avançada.</value></data>
-  <data name="AddAccount_AppPasswordHint_Gmail"><value>O Gmail exige uma senha de app (com verificação em duas etapas ativa). Sua senha normal não funciona aqui.</value></data>
+  <data name="AddAccount_AppPasswordHint_Gmail"><value>O Gmail exige uma senha de app (com verificação em duas etapas ativa); sua senha normal não funciona aqui. Contas gerenciadas pela empresa ou escola costumam ter a senha de app bloqueada: nesse caso, use Entrar com o Google.</value></data>
   <data name="AddAccount_AppPasswordHint_Yahoo"><value>O Yahoo exige uma senha de app. Sua senha normal não funciona aqui.</value></data>
   <data name="AddAccount_AppPasswordLink"><value>Como gerar uma senha de app</value></data>
   <data name="AddAccount_Invalid_Email"><value>Digite um endereço de email válido.</value></data>
@@ -150,7 +150,7 @@
   <data name="OAuth_NotConfigured"><value>Entrar com a Microsoft (necessário para Outlook e Hotmail) ainda não está disponível nesta versão do Confluir. As outras contas funcionam normalmente.</value></data>
   <data name="OAuth_SignInFailed"><value>Não foi possível entrar com a Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Entre com a Microsoft para continuar.</value></data>
-  <data name="Error_ReauthenticationRequired"><value>Sua sessão da Microsoft expirou. Edite a conta e entre novamente.</value></data>
+  <data name="Error_ReauthenticationRequired"><value>Sua sessão expirou. Edite a conta e entre novamente.</value></data>
   <data name="Action_OpenInPage"><value>Abrir em tela própria</value></data>
   <data name="Action_CollapseSidebar"><value>Recolher barra lateral</value></data>
   <data name="Action_ExpandSidebar"><value>Expandir barra lateral</value></data>
@@ -433,4 +433,11 @@
   <data name="Feedback_Spam_Other"><value>{0:N0} mensagens movidas para o Spam</value></data>
   <data name="Feedback_NotSpam_One"><value>Mensagem devolvida à caixa de entrada</value></data>
   <data name="Feedback_NotSpam_Other"><value>{0:N0} mensagens devolvidas à caixa de entrada</value></data>
+  <data name="OAuth_SignIn_Google"><value>Entrar com o Google</value></data>
+  <data name="OAuth_SignInHint_Google"><value>Uma página do Google abre no seu navegador; depois de entrar e permitir o acesso ao email, volte para o Confluir. Funciona também com contas do Google Workspace (empresa ou escola).</value></data>
+  <data name="OAuth_NotConfigured_Google"><value>Entrar com o Google ainda não está disponível nesta versão do Confluir. Use uma senha de app.</value></data>
+  <data name="OAuth_SignInFailed_Google"><value>Não foi possível entrar com o Google: {0}</value></data>
+  <data name="AddAccount_AuthChoice"><value>Como entrar</value></data>
+  <data name="AddAccount_Detected_Workspace"><value>{0} usa o Google Workspace. Servidores do Gmail preenchidos.</value></data>
+  <data name="AddAccount_Detected_Microsoft365"><value>{0} usa o Microsoft 365. Entre com a sua conta da Microsoft.</value></data>
 </root>

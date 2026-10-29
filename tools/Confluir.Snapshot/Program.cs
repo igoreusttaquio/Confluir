@@ -20,6 +20,9 @@ Directory.CreateDirectory(outDir);
 
 // Pasta de dados temporária: não toca nas configurações reais do usuário.
 var dataDir = Path.Combine(Path.GetTempPath(), "confluir-snapshot", Guid.NewGuid().ToString("N"));
+// Cliente do Google de mentira (só neste processo), para a tela de conta mostrar "Entrar com o Google".
+Environment.SetEnvironmentVariable("CONFLUIR_Google__ClientId", "snapshot.apps.googleusercontent.com");
+Environment.SetEnvironmentVariable("CONFLUIR_Google__ClientSecret", "snapshot");
 using var host = AppHost.Build(dataDir, useFakeData: true);
 var services = host.Services;
 
@@ -157,6 +160,11 @@ var gmail = (AccountEditorViewModel)vm.Navigation.CurrentPage!;
 gmail.Email = "voce@gmail.com";
 Pump(() => gmail.DetectionMessage is not null && !gmail.IsDetecting);
 Save(window, "add-account-gmail.png");
+Console.WriteLine($"Gmail: escolha {gmail.CanChooseAuth}, entrar com o Google {gmail.UseOAuth}, botão \"{gmail.OAuthSignInText}\"");
+gmail.UsePassword = true;
+Pump(() => true);
+Save(window, "add-account-gmail-password.png");
+Console.WriteLine($"Gmail com senha de app: pede senha {!gmail.RequiresOAuth}, dica {gmail.HasAppPasswordHint}");
 vm.GoBackCommand.Execute(null);
 
 // Outlook sem ID do Entra ID configurado.

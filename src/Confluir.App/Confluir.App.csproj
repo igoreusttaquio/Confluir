@@ -12,9 +12,19 @@
          CONFLUIR_MICROSOFT_CLIENT_ID (no GitHub, a variável de repositório MICROSOFT_CLIENT_ID) ou de
          -p:ConfluirMicrosoftClientId=... Quem usa o app não configura nada. -->
     <ConfluirMicrosoftClientId Condition="'$(ConfluirMicrosoftClientId)' == ''">$(CONFLUIR_MICROSOFT_CLIENT_ID)</ConfluirMicrosoftClientId>
+    <!-- Cliente OAuth do Google Cloud ("App para computador"), para "Entrar com o Google" (Gmail/Workspace).
+         O Google chama o segundo valor de "segredo", mas em apps instalados ele vai embutido (a proteção é o
+         PKCE). Vêm de CONFLUIR_GOOGLE_CLIENT_ID / CONFLUIR_GOOGLE_CLIENT_SECRET (no GitHub, a variável
+         GOOGLE_CLIENT_ID e o segredo GOOGLE_CLIENT_SECRET). Sem eles, o Gmail segue só com senha de app. -->
+    <ConfluirGoogleClientId Condition="'$(ConfluirGoogleClientId)' == ''">$(CONFLUIR_GOOGLE_CLIENT_ID)</ConfluirGoogleClientId>
+    <ConfluirGoogleClientSecret Condition="'$(ConfluirGoogleClientSecret)' == ''">$(CONFLUIR_GOOGLE_CLIENT_SECRET)</ConfluirGoogleClientSecret>
   </PropertyGroup>
   <ItemGroup Condition="'$(ConfluirMicrosoftClientId)' != ''">
     <AssemblyMetadata Include="MicrosoftClientId" Value="$(ConfluirMicrosoftClientId)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ConfluirGoogleClientId)' != '' And '$(ConfluirGoogleClientSecret)' != ''">
+    <AssemblyMetadata Include="GoogleClientId" Value="$(ConfluirGoogleClientId)" />
+    <AssemblyMetadata Include="GoogleClientSecret" Value="$(ConfluirGoogleClientSecret)" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />

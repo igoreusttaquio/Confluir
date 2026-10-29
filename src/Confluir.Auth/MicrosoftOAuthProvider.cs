@@ -21,7 +21,7 @@ public sealed class MicrosoftAuthOptions
 /// Login da Microsoft para Outlook/Hotmail com MSAL: navegador do sistema com retorno em
 /// <c>http://localhost</c>, renovação silenciosa e cache de tokens no cofre do sistema.
 /// </summary>
-public sealed class MicrosoftOAuthProvider : IOAuthTokenProvider
+public sealed class MicrosoftOAuthProvider : IOAuthIdentityProvider
 {
     // offline_access (refresh token) é pedido pelo MSAL automaticamente.
     private static readonly string[] Scopes =
@@ -42,6 +42,8 @@ public sealed class MicrosoftOAuthProvider : IOAuthTokenProvider
         _logger = logger;
         _app = new Lazy<Task<IPublicClientApplication>>(CreateAppAsync);
     }
+
+    public bool Handles(MailProvider provider) => provider == MailProvider.Outlook;
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ClientId);
 

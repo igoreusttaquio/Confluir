@@ -47,8 +47,15 @@ public static class AppHost
         // Normal: o ID vem embutido na compilação; appsettings/variável de ambiente só sobrescrevem (desenvolvimento).
         if (string.IsNullOrWhiteSpace(microsoft.ClientId))
             microsoft.ClientId = BuiltInMicrosoftClientId();
-        builder.Services.AddSingleton<IOAuthTokenProvider>(sp => new MicrosoftOAuthProvider(
+        var google = builder.Configuration.GetSection("Google").Get<GoogleAuthOptions>() ?? new GoogleAuthOptions();
+        if (string.IsNullOrWhiteSpace(google.ClientId))
+            (google.ClientId, google.ClientSecret) = (BuiltIn("GoogleClientId"), BuiltIn("GoogleClientSecret"));
+        builder.Services.AddSingleton<IOAuthIdentityProvider>(sp => new MicrosoftOAuthProvider(
             microsoft, paths.DataDirectory, sp.GetRequiredService<ILogger<MicrosoftOAuthProvider>>()));
+        builder.Services.AddSingleton<IOAuthIdentityProvider>(sp => new GoogleOAuthProvider(
+            google, sp.GetRequiredService<ICredentialStore>(), sp.GetRequiredService<HttpClient>(),
+            sp.GetRequiredService<ILogger<GoogleOAuthProvider>>()));
+        builder.Services.AddSingleton<IOAuthTokenProvider, OAuthTokenProvider>();
         builder.Services.AddSingleton<MailAuthenticator>();
 
         builder.Services.AddSingleton(paths);
@@ -110,8 +117,11 @@ public static class AppHost
     }
 
     /// <summary>ID do app no Entra ID gravado na compilação (propriedade ConfluirMicrosoftClientId); nulo se não houver.</summary>
-    public static string? BuiltInMicrosoftClientId() =>
+    public static string? BuiltInMicrosoftClientId() => BuiltIn("MicrosoftClientId");
+
+    /// <summary>Valor gravado na compilação (AssemblyMetadata do csproj); nulo se não houver.</summary>
+    private static string? BuiltIn(string key) =>
         typeof(AppHost).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
             .OfType<System.Reflection.AssemblyMetadataAttribute>()
-            .FirstOrDefault(a => a.Key == "MicrosoftClientId" && !string.IsNullOrWhiteSpace(a.Value))?.Value;
+            .FirstOrDefault(a => a.Key == key && !string.IsNullOrWhiteSpace(a.Value))?.Value;
 }

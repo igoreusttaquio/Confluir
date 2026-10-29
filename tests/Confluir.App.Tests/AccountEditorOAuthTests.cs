@@ -13,14 +13,19 @@ public class AccountEditorOAuthTests
 {
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
-    private sealed class FakeOAuth(bool configured) : IOAuthTokenProvider
+    private sealed class FakeOAuth(bool configured, bool google = false) : IOAuthTokenProvider
     {
-        public bool IsConfigured => configured;
+        public bool IsConfigured(MailProvider provider) =>
+            provider == MailProvider.Outlook ? configured : provider == MailProvider.Gmail && google;
         public string? LastHint;
-        public Task<OAuthSignIn> SignInAsync(string? loginHint, CancellationToken ct = default)
+        public MailProvider? LastProvider;
+        public Task<OAuthSignIn> SignInAsync(MailProvider provider, string? loginHint, CancellationToken ct = default)
         {
             LastHint = loginHint;
-            return Task.FromResult(new OAuthSignIn("conta-ms-123", "ana@outlook.com", "token-de-acesso"));
+            LastProvider = provider;
+            return Task.FromResult(provider == MailProvider.Gmail
+                ? new OAuthSignIn("google-sub-42", loginHint ?? "ana@empresa.com.br", "token-do-google")
+                : new OAuthSignIn("conta-ms-123", "ana@outlook.com", "token-de-acesso"));
         }
         public Task<string> GetAccessTokenAsync(MailAccount account, CancellationToken ct = default) => Task.FromResult("token-renovado");
         public Task SignOutAsync(MailAccount account, CancellationToken ct = default) => Task.CompletedTask;
@@ -37,10 +42,15 @@ public class AccountEditorOAuthTests
         }
     }
 
+    // empresa.com.br faz de conta que está no Google Workspace (MX do Google).
     private sealed class FakeResolver : IServerSettingsResolver
     {
         public Task<ProviderPreset?> ResolveAsync(string email, CancellationToken ct = default) =>
-            Task.FromResult(KnownProviders.Detect(email) ?? KnownProviders.Guess(email));
+            Task.FromResult(KnownProviders.Detect(email)
+                ?? (email.EndsWith("@empresa.com.br", StringComparison.Ordinal)
+                    ? KnownProviders.FromMailExchangers(email, ["aspmx.l.google.com."])
+                    : null)
+                ?? KnownProviders.Guess(email));
     }
 
     private sealed class MemoryAccounts : IAccountStore
@@ -66,9 +76,9 @@ public class AccountEditorOAuthTests
     }
 
     private static (AccountEditorViewModel Vm, FakeTester Tester, MemoryAccounts Accounts, MemoryCredentials Credentials, FakeOAuth OAuth)
-        Create(bool configured)
+        Create(bool configured, bool google = false)
     {
-        var oauth = new FakeOAuth(configured);
+        var oauth = new FakeOAuth(configured, google);
         var tester = new FakeTester();
         var accounts = new MemoryAccounts();
         var credentials = new MemoryCredentials();
@@ -106,7 +116,7 @@ public class AccountEditorOAuthTests
         Assert.True(vm.ShowOAuthSignIn);
         Assert.True(vm.CanSubmit);
 
-        await vm.SignInWithMicrosoftCommand.ExecuteAsync(null);
+        await vm.SignInWithProviderCommand.ExecuteAsync(null);
 
         Assert.Equal("ana@outlook.com", oauth.LastHint);
         Assert.Equal("ana@outlook.com", vm.OAuthSignedInAs);
@@ -147,6 +157,62 @@ public class AccountEditorOAuthTests
         await vm.TestCommand.ExecuteAsync(null);
 
         Assert.Equal(("token-renovado", AuthMethod.OAuth2), tester.Last);
+    }
+
+    [Fact]
+    public async Task Workspace_entra_com_o_Google_por_padrao_e_salva_sem_senha()
+    {
+        var (vm, tester, accounts, credentials, oauth) = Create(configured: true, google: true);
+        await TypeEmailAsync(vm, "ana@empresa.com.br");
+
+        Assert.Equal(MailProvider.Gmail, vm.Provider);
+        Assert.Equal("imap.gmail.com", vm.ImapHost);
+        Assert.Contains("Google Workspace", vm.DetectionMessage);
+        Assert.Equal("empresa.com.br", vm.DisplayName);
+        Assert.True(vm.CanChooseAuth);
+        Assert.True(vm.UseOAuth);
+        Assert.False(vm.HasAppPasswordHint);
+
+        await vm.SignInWithProviderCommand.ExecuteAsync(null);
+        Assert.Equal(MailProvider.Gmail, oauth.LastProvider);
+        Assert.Equal(("token-do-google", AuthMethod.OAuth2), tester.Last);
+
+        await vm.SaveCommand.ExecuteAsync(null);
+        var saved = Assert.Single(accounts.Accounts);
+        Assert.Equal((MailProvider.Gmail, AuthMethod.OAuth2, "google-sub-42"), (saved.Provider, saved.Auth, saved.OAuthAccountId));
+        Assert.Empty(credentials.Items);
+    }
+
+    [Fact]
+    public async Task Gmail_pode_trocar_para_senha_de_app()
+    {
+        var (vm, tester, accounts, credentials, _) = Create(configured: true, google: true);
+        await TypeEmailAsync(vm, "ana@gmail.com");
+        Assert.True(vm.UseOAuth);
+
+        vm.UsePassword = true;
+        Assert.False(vm.RequiresOAuth);
+        Assert.True(vm.HasAppPasswordHint);
+        vm.Password = "abcd efgh ijkl mnop";
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(("abcd efgh ijkl mnop", AuthMethod.Password), tester.Last);
+        var saved = Assert.Single(accounts.Accounts);
+        Assert.Equal(AuthMethod.Password, saved.Auth);
+        Assert.Equal("abcd efgh ijkl mnop", credentials.Items[CredentialKeys.Password(saved.Id)]);
+    }
+
+    [Fact]
+    public async Task Gmail_sem_cliente_do_Google_fica_so_com_senha_de_app()
+    {
+        var (vm, _, _, _, _) = Create(configured: true, google: false);
+        await TypeEmailAsync(vm, "ana@gmail.com");
+
+        Assert.False(vm.CanChooseAuth);
+        Assert.False(vm.RequiresOAuth);
+        Assert.True(vm.HasAppPasswordHint);
+        vm.UseOAuth = true; // sem o cliente, não troca
+        Assert.False(vm.RequiresOAuth);
     }
 
     [Fact]

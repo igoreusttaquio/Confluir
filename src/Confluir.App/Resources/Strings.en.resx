@@ -85,7 +85,7 @@
   <data name="AddAccount_Help_1"><value>Type your email. We recognize Gmail, Yahoo and thousands of providers and fill in the servers.</value></data>
   <data name="AddAccount_Help_2"><value>Test the connection. We check receiving (IMAP) and sending (SMTP) before saving.</value></data>
   <data name="AddAccount_Help_3"><value>Your password is kept in the operating system's keychain, never as plain text on disk.</value></data>
-  <data name="AddAccount_Privacy"><value>To find the servers, only your email's domain is looked up in Thunderbird's public database.</value></data>
+  <data name="AddAccount_Privacy"><value>To find the servers, only your email&apos;s domain is looked up (in public DNS and Thunderbird&apos;s database), never the full address.</value></data>
   <data name="AddAccount_Email"><value>Email address</value></data>
   <data name="AddAccount_DisplayName"><value>Account name</value></data>
   <data name="AddAccount_DisplayName_Placeholder"><value>E.g. Personal, Work</value></data>
@@ -106,7 +106,7 @@
   <data name="AddAccount_Detected_Known"><value>{0} detected. Servers filled in.</value></data>
   <data name="AddAccount_Detected_Autoconfig"><value>Settings found for {0}.</value></data>
   <data name="AddAccount_Detected_Guess"><value>We couldn't find settings for {0}. We suggested standard servers; please check them under Advanced settings.</value></data>
-  <data name="AddAccount_AppPasswordHint_Gmail"><value>Gmail requires an app password (with 2-Step Verification turned on). Your regular password won't work here.</value></data>
+  <data name="AddAccount_AppPasswordHint_Gmail"><value>Gmail requires an app password (with 2-Step Verification turned on); your regular password won&apos;t work here. Accounts managed by a company or school often have app passwords blocked: in that case, use Sign in with Google.</value></data>
   <data name="AddAccount_AppPasswordHint_Yahoo"><value>Yahoo requires an app password. Your regular password won't work here.</value></data>
   <data name="AddAccount_AppPasswordLink"><value>How to create an app password</value></data>
   <data name="AddAccount_Invalid_Email"><value>Enter a valid email address.</value></data>
@@ -150,7 +150,7 @@
   <data name="OAuth_NotConfigured"><value>Signing in with Microsoft (required for Outlook and Hotmail) isn&apos;t available in this version of Confluir yet. Other accounts work normally.</value></data>
   <data name="OAuth_SignInFailed"><value>Couldn&apos;t sign in with Microsoft: {0}</value></data>
   <data name="OAuth_SignInRequired"><value>Sign in with Microsoft to continue.</value></data>
-  <data name="Error_ReauthenticationRequired"><value>Your Microsoft session expired. Edit the account and sign in again.</value></data>
+  <data name="Error_ReauthenticationRequired"><value>Your session expired. Edit the account and sign in again.</value></data>
   <data name="Action_OpenInPage"><value>Open in its own view</value></data>
   <data name="Action_CollapseSidebar"><value>Collapse sidebar</value></data>
   <data name="Action_ExpandSidebar"><value>Expand sidebar</value></data>
@@ -433,4 +433,11 @@
   <data name="Feedback_Spam_Other"><value>{0:N0} messages moved to Spam</value></data>
   <data name="Feedback_NotSpam_One"><value>Message moved back to the inbox</value></data>
   <data name="Feedback_NotSpam_Other"><value>{0:N0} messages moved back to the inbox</value></data>
+  <data name="OAuth_SignIn_Google"><value>Sign in with Google</value></data>
+  <data name="OAuth_SignInHint_Google"><value>A Google page opens in your browser; after signing in and allowing access to your email, come back to Confluir. Also works with Google Workspace accounts (work or school).</value></data>
+  <data name="OAuth_NotConfigured_Google"><value>Signing in with Google isn&apos;t available in this version of Confluir yet. Use an app password.</value></data>
+  <data name="OAuth_SignInFailed_Google"><value>Couldn&apos;t sign in with Google: {0}</value></data>
+  <data name="AddAccount_AuthChoice"><value>How to sign in</value></data>
+  <data name="AddAccount_Detected_Workspace"><value>{0} uses Google Workspace. Gmail servers filled in.</value></data>
+  <data name="AddAccount_Detected_Microsoft365"><value>{0} uses Microsoft 365. Sign in with your Microsoft account.</value></data>
 </root>

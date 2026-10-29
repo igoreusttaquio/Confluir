@@ -15,6 +15,10 @@ env:
   # ID do app no Entra ID (login da Microsoft), embutido nos instaladores. Settings → Secrets and variables →
   # Actions → Variables → MICROSOFT_CLIENT_ID. Sem ele, o Outlook/Hotmail aparece como indisponível.
   CONFLUIR_MICROSOFT_CLIENT_ID: ${{ vars.MICROSOFT_CLIENT_ID }}
+  # Cliente OAuth do Google Cloud ("Entrar com o Google"): variável GOOGLE_CLIENT_ID e segredo
+  # GOOGLE_CLIENT_SECRET. Sem eles, contas Google usam só senha de app.
+  CONFLUIR_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+  CONFLUIR_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   PROJECT: src/Confluir.App/Confluir.App.csproj

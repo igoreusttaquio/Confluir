@@ -20,6 +20,9 @@ public enum PresetSource
 
     /// <summary>Palpite (imap.&lt;domínio&gt; / smtp.&lt;domínio&gt;); o usuário deve conferir.</summary>
     Guess,
+
+    /// <summary>Domínio próprio hospedado no Google Workspace ou no Microsoft 365 (descoberto pelo registro MX).</summary>
+    Hosted,
 }
 
 /// <summary>
@@ -40,6 +43,11 @@ public static class KnownProviders
     public static readonly ServerSettings Outlook = new(
         new ServerEndpoint("outlook.office365.com", 993, SecurityMode.SslOnConnect),
         new ServerEndpoint("smtp-mail.outlook.com", 587, SecurityMode.StartTls));
+
+    /// <summary>Contas corporativas do Microsoft 365 (Exchange Online).</summary>
+    public static readonly ServerSettings Microsoft365 = new(
+        new ServerEndpoint("outlook.office365.com", 993, SecurityMode.SslOnConnect),
+        new ServerEndpoint("smtp.office365.com", 587, SecurityMode.StartTls));
 
     private static readonly Dictionary<string, MailProvider> Domains = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -84,6 +92,25 @@ public static class KnownProviders
             MailProvider.Yahoo => new(provider, Yahoo, AuthMethod.Password, PresetSource.Known, address),
             _ => new(MailProvider.Outlook, Outlook, AuthMethod.OAuth2, PresetSource.Known, address),
         };
+    }
+
+    /// <summary>
+    /// Domínio próprio pelo registro MX: Google Workspace (aspmx.l.google.com, …google.com/googlemail.com) usa os
+    /// servidores do Gmail; Microsoft 365 (…mail.protection.outlook.com) os do Exchange Online, com login da
+    /// Microsoft. Nulo para os demais.
+    /// </summary>
+    public static ProviderPreset? FromMailExchangers(string email, IEnumerable<string> mxHosts)
+    {
+        if (GetDomain(email) is null)
+            return null;
+        var hosts = mxHosts.Select(h => h.Trim().TrimEnd('.').ToLowerInvariant()).ToList();
+        static bool Under(string host, string zone) => host == zone || host.EndsWith("." + zone, StringComparison.Ordinal);
+        var address = email.Trim();
+        if (hosts.Any(h => Under(h, "google.com") || Under(h, "googlemail.com")))
+            return new ProviderPreset(MailProvider.Gmail, Gmail, AuthMethod.Password, PresetSource.Hosted, address);
+        if (hosts.Any(h => Under(h, "mail.protection.outlook.com")))
+            return new ProviderPreset(MailProvider.Outlook, Microsoft365, AuthMethod.OAuth2, PresetSource.Hosted, address);
+        return null;
     }
 
     /// <summary>
