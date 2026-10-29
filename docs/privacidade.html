@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Política de Privacidade — Confluir</title>
+  <meta name="description" content="Como o Confluir trata seus dados: tudo fica no seu computador, sem servidores do Confluir, sem telemetria.">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F6F7FB; --surface: #FFFFFF; --border: #E3E6EF;
+      --text: #141A33; --muted: #5B6385; --accent: #2F5BEA;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0B1020; --surface: #121A33; --border: #243055;
+        --text: #E8ECF8; --muted: #9AA4C7; --accent: #7B97FF;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0B1020; --surface: #121A33; --border: #243055;
+      --text: #E8ECF8; --muted: #9AA4C7; --accent: #7B97FF;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif; line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); }
+    .wrap { max-width: 780px; margin: 0 auto; padding: 0 16px; }
+    header { border-bottom: 1px solid var(--border); }
+    header .wrap { display: flex; align-items: center; gap: 10px; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); text-decoration: none; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    header nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+    header nav a { color: var(--muted); text-decoration: none; }
+    main { padding: 40px 0 64px; }
+    .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px clamp(20px, 5vw, 40px); }
+    h1 { font-size: clamp(26px, 4vw, 34px); line-height: 1.2; margin: 0 0 6px; }
+    h2 { font-size: 19px; margin: 32px 0 8px; }
+    .updated { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+    .lead { font-size: 17px; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    code { font-size: 0.9em; background: color-mix(in srgb, var(--border) 60%, transparent); padding: 1px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+    .lang { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--border); }
+    footer { color: var(--muted); font-size: 14px; padding: 0 0 40px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="./"><img src="img/favicon.png" alt="">Confluir</a>
+      <nav><a href="#pt">Português</a><a href="#en">English</a></nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <article class="sheet" id="pt" lang="pt-BR">
+        <h1>Política de Privacidade</h1>
+        <p class="updated">Atualizada em 29 de outubro de 2026</p>
+
+        <p class="lead">O Confluir é um aplicativo de email de código aberto que roda no seu computador. <strong>Não existe
+          servidor do Confluir</strong>: seus emails, contas e senhas ficam na sua máquina, e o app conversa direto com o
+          seu provedor de email. Nós não coletamos, não recebemos e não vendemos nenhum dado seu.</p>
+
+        <h2>O que fica no seu computador</h2>
+        <ul>
+          <li><strong>Emails e pastas</strong>: uma cópia local (cache) para leitura rápida e uso sem conexão, na pasta de
+            dados do app (no Windows, <code>%APPDATA%\Confluir</code>).</li>
+          <li><strong>Senhas e sessões</strong> (senhas de app e tokens de login do Google ou da Microsoft): no cofre do
+            sistema operacional (Proteção de Dados do Windows, Keychain no macOS, Secret Service no Linux), nunca em
+            texto puro.</li>
+          <li><strong>Configurações</strong> (aparência, regras, atalhos): num arquivo local.</li>
+        </ul>
+
+        <h2>Com quem o Confluir se conecta</h2>
+        <ul>
+          <li><strong>Seu provedor de email</strong> (Gmail, Outlook, Yahoo ou o servidor IMAP/SMTP que você configurar),
+            para receber, organizar e enviar suas mensagens.</li>
+          <li><strong>Google ou Microsoft</strong>, só quando você escolhe “Entrar com o Google” ou “Entrar com a
+            Microsoft”, para fazer o login e renovar a sessão.</li>
+          <li><strong>Descoberta de servidores</strong>: ao adicionar uma conta, só o <em>domínio</em> do seu email (por
+            exemplo, <code>empresa.com.br</code>, nunca o endereço completo) é consultado no DNS e na base pública de
+            configuração do Thunderbird.</li>
+          <li><strong>Atualizações</strong>: o app consulta a página de versões do Confluir no GitHub para saber se há uma
+            nova versão. Essa consulta não leva nenhum dado seu.</li>
+          <li><strong>Fontes do Google Fonts</strong>, só se você importar uma fonte por lá nas configurações.</li>
+        </ul>
+        <p>Imagens remotas dentro dos emails (que podem servir para rastrear a leitura) ficam bloqueadas até você
+          permitir.</p>
+
+        <h2>Dados de usuário do Google</h2>
+        <p>Quando você entra com uma conta Google, o Confluir pede acesso ao seu Gmail
+          (<code>https://mail.google.com/</code>), que é a permissão exigida pelo Google para IMAP e SMTP, além do seu
+          endereço de email (para saber qual conta entrou).</p>
+        <ul>
+          <li>Esse acesso é usado <strong>somente</strong> para mostrar, organizar (arquivar, mover, marcar, excluir,
+            aplicar as suas regras) e enviar seus emails dentro do aplicativo, no seu computador.</li>
+          <li>Os dados do Gmail <strong>não são enviados</strong> ao desenvolvedor do Confluir nem a terceiros, não são
+            usados para publicidade e não são usados para treinar modelos de inteligência artificial.</li>
+          <li>Ninguém além de você tem acesso a eles por meio do Confluir.</li>
+        </ul>
+        <p>O uso e a transferência de informações recebidas das APIs do Google seguem a
+          <a href="https://developers.google.com/terms/api-services-user-data-policy">Política de Dados do Usuário dos
+          Serviços de API do Google</a>, incluindo os requisitos de Uso Limitado.</p>
+
+        <h2>Telemetria</h2>
+        <p>O Confluir não tem telemetria, análise de uso nem relatórios de erro automáticos. Os registros (logs) ficam só
+          no seu computador e não contêm senhas nem conteúdo de emails.</p>
+
+        <h2>Como apagar seus dados</h2>
+        <ul>
+          <li><strong>Remover uma conta</strong> no Confluir apaga a cópia local dos emails dela e a senha ou sessão
+            guardada no cofre; para contas Google, o acesso também é revogado no Google. Nada é apagado no seu servidor de
+            email.</li>
+          <li>Você também pode revogar o acesso a qualquer momento em
+            <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> (Google) ou
+            <a href="https://account.live.com/consent/Manage">account.live.com/consent/Manage</a> (Microsoft).</li>
+          <li>Para apagar tudo, desinstale o app e apague a pasta de dados (no Windows, <code>%APPDATA%\Confluir</code>).</li>
+        </ul>
+
+        <h2>Mudanças e contato</h2>
+        <p>Se esta política mudar, a nova versão aparece nesta página, com a data no topo. Dúvidas:
+          <a href="https://github.com/igoreusttaquio/Confluir/issues">abra uma issue no GitHub</a>.</p>
+      </article>
+
+      <article class="sheet lang" id="en" lang="en">
+        <h1>Privacy Policy</h1>
+        <p class="updated">Last updated October 29, 2026</p>
+
+        <p class="lead">Confluir is an open-source email app that runs on your computer. <strong>There is no Confluir
+          server</strong>: your email, accounts and passwords stay on your machine, and the app talks directly to your email
+          provider. We do not collect, receive or sell any of your data.</p>
+
+        <h2>What stays on your computer</h2>
+        <ul>
+          <li><strong>Messages and folders</strong>: a local copy (cache) for fast and offline reading, in the app's data
+            folder (on Windows, <code>%APPDATA%\Confluir</code>).</li>
+          <li><strong>Passwords and sessions</strong> (app passwords and Google or Microsoft sign-in tokens): in the
+            operating system's credential store (Windows Data Protection, macOS Keychain, Linux Secret Service), never in
+            plain text.</li>
+          <li><strong>Settings</strong> (appearance, rules, shortcuts): in a local file.</li>
+        </ul>
+
+        <h2>What Confluir connects to</h2>
+        <ul>
+          <li><strong>Your email provider</strong> (Gmail, Outlook, Yahoo or the IMAP/SMTP server you set up), to receive,
+            organize and send your messages.</li>
+          <li><strong>Google or Microsoft</strong>, only when you choose “Sign in with Google” or “Sign in with Microsoft”,
+            to sign in and renew the session.</li>
+          <li><strong>Server discovery</strong>: when adding an account, only your email's <em>domain</em> (for example,
+            <code>company.com</code>, never the full address) is looked up in DNS and in Thunderbird's public
+            configuration database.</li>
+          <li><strong>Updates</strong>: the app checks Confluir's releases page on GitHub for new versions. That request
+            carries none of your data.</li>
+          <li><strong>Google Fonts</strong>, only if you import a font from there in the settings.</li>
+        </ul>
+        <p>Remote images inside emails (which can be used to track reading) are blocked until you allow them.</p>
+
+        <h2>Google user data</h2>
+        <p>When you sign in with a Google account, Confluir requests access to your Gmail (<code>https://mail.google.com/</code>),
+          the permission Google requires for IMAP and SMTP, plus your email address (to know which account signed in).</p>
+        <ul>
+          <li>This access is used <strong>only</strong> to display, organize (archive, move, flag, delete, apply your own
+            rules) and send your email inside the app, on your computer.</li>
+          <li>Gmail data is <strong>not sent</strong> to the Confluir developer or to third parties, is not used for
+            advertising and is not used to train artificial intelligence models.</li>
+          <li>No one but you has access to it through Confluir.</li>
+        </ul>
+        <p>Confluir's use and transfer of information received from Google APIs will adhere to the
+          <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data
+          Policy</a>, including the Limited Use requirements.</p>
+
+        <h2>Telemetry</h2>
+        <p>Confluir has no telemetry, usage analytics or automatic crash reports. Logs stay on your computer and contain
+          no passwords or email content.</p>
+
+        <h2>Deleting your data</h2>
+        <ul>
+          <li><strong>Removing an account</strong> in Confluir deletes its local copy of your email and the stored password
+            or session; for Google accounts, access is also revoked at Google. Nothing is deleted on your email server.</li>
+          <li>You can also revoke access at any time at
+            <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> (Google) or
+            <a href="https://account.live.com/consent/Manage">account.live.com/consent/Manage</a> (Microsoft).</li>
+          <li>To delete everything, uninstall the app and delete its data folder (on Windows, <code>%APPDATA%\Confluir</code>).</li>
+        </ul>
+
+        <h2>Changes and contact</h2>
+        <p>If this policy changes, the new version will be posted on this page with the date at the top. Questions:
+          <a href="https://github.com/igoreusttaquio/Confluir/issues">open an issue on GitHub</a>.</p>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">© Confluir · <a href="./">confluir</a> · código aberto no <a href="https://github.com/igoreusttaquio/Confluir">GitHub</a></div>
+  </footer>
+</body>
+</html>
