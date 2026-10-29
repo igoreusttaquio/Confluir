@@ -468,4 +468,21 @@
   <data name="Signature_Edit"><value>Edit</value></data>
   <data name="Settings_Signatures"><value>Signatures</value></data>
   <data name="Settings_SignaturesHint"><value>Each account has its own. Switching the “From” account while writing swaps the signature too.</value></data>
+  <data name="Compose_TextColor"><value>Text color</value></data>
+  <data name="Compose_Highlight"><value>Highlight</value></data>
+  <data name="Compose_ColorAuto"><value>Automatic color</value></data>
+  <data name="Compose_NoHighlight"><value>No highlight</value></data>
+  <data name="Image_Options"><value>Image</value></data>
+  <data name="Image_AlignLeft"><value>Left of text</value></data>
+  <data name="Image_AlignRight"><value>Right of text</value></data>
+  <data name="Image_Inline"><value>In line with text</value></data>
+  <data name="Image_Size"><value>Size</value></data>
+  <data name="Image_Small"><value>Small</value></data>
+  <data name="Image_Medium"><value>Medium</value></data>
+  <data name="Image_Large"><value>Large</value></data>
+  <data name="Image_Original"><value>Original</value></data>
+  <data name="Settings_TrustedSendersFilter"><value>Filter senders</value></data>
+  <data name="Settings_TrustedSendersSelectAll"><value>Select all</value></data>
+  <data name="Settings_TrustedSendersRemoveSelected"><value>Remove selected ({0})</value></data>
+  <data name="Settings_TrustedSendersNoMatch"><value>No senders match the filter.</value></data>
 </root>

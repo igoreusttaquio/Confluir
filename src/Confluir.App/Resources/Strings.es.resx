@@ -468,4 +468,21 @@
   <data name="Signature_Edit"><value>Editar</value></data>
   <data name="Settings_Signatures"><value>Firmas</value></data>
   <data name="Settings_SignaturesHint"><value>Cada cuenta tiene la suya. Al cambiar la cuenta en “De” mientras escribes, la firma cambia también.</value></data>
+  <data name="Compose_TextColor"><value>Color del texto</value></data>
+  <data name="Compose_Highlight"><value>Resaltar</value></data>
+  <data name="Compose_ColorAuto"><value>Color automático</value></data>
+  <data name="Compose_NoHighlight"><value>Sin resaltado</value></data>
+  <data name="Image_Options"><value>Imagen</value></data>
+  <data name="Image_AlignLeft"><value>A la izquierda del texto</value></data>
+  <data name="Image_AlignRight"><value>A la derecha del texto</value></data>
+  <data name="Image_Inline"><value>En línea con el texto</value></data>
+  <data name="Image_Size"><value>Tamaño</value></data>
+  <data name="Image_Small"><value>Pequeña</value></data>
+  <data name="Image_Medium"><value>Mediana</value></data>
+  <data name="Image_Large"><value>Grande</value></data>
+  <data name="Image_Original"><value>Original</value></data>
+  <data name="Settings_TrustedSendersFilter"><value>Filtrar remitentes</value></data>
+  <data name="Settings_TrustedSendersSelectAll"><value>Seleccionar todos</value></data>
+  <data name="Settings_TrustedSendersRemoveSelected"><value>Quitar seleccionados ({0})</value></data>
+  <data name="Settings_TrustedSendersNoMatch"><value>Ningún remitente coincide con el filtro.</value></data>
 </root>

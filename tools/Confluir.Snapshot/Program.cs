@@ -496,6 +496,25 @@ vm.GoBackCommand.Execute(null);
     Console.WriteLine($"contador recolhido: \"{vm.UnifiedInbox.RailCount}\"");
     vm.ToggleSidebarCommand.Execute(null);
     Pump(() => true, 400);
+
+    // Leitura: remetentes com imagens sempre exibidas, filtro e remoção de vários de uma vez.
+    var trusted = services.GetRequiredService<ISettingsStore>().Current.Reading.TrustedImageSenders;
+    trusted.AddRange(Enumerable.Range(1, 18).Select(i => $"noticias{i}@{(i % 3 == 0 ? "loja.com" : "jornal.com.br")}"));
+    vm.OpenSettingsCommand.Execute(null);
+    var readingSettings = (SettingsViewModel)vm.Navigation.CurrentPage!;
+    readingSettings.Section = SettingsSection.Reading;
+    readingSettings.TrustedSenderFilter = "loja";
+    Pump(() => true, 200);
+    var filtered = readingSettings.VisibleTrustedSenders.Count;
+    readingSettings.AllVisibleTrustedSelected = true;
+    readingSettings.TrustedSenderFilter = "";
+    readingSettings.VisibleTrustedSenders[0].IsSelected = true;
+    Pump(() => true, 200);
+    Save(window, "settings-trusted-senders.png");
+    var marked = readingSettings.RemoveSelectedTrustedText;
+    readingSettings.RemoveSelectedTrustedSendersCommand.Execute(null);
+    Console.WriteLine($"remetentes: filtro \"loja\" mostrou {filtered}, botão \"{marked}\", depois de remover sobram {readingSettings.TrustedSenders.Count} (config {trusted.Count}), nenhum da loja: {trusted.All(t => !t.EndsWith("loja.com"))}");
+    vm.GoBackCommand.Execute(null);
 }
 
 window.Close();
@@ -512,8 +531,29 @@ using (var emptyHost = AppHost.Build(emptyDir))
     emptyWindow.Show();
     Pump(() => !emptyVm.HasAccounts);
     Save(emptyWindow, "no-accounts.png");
+    // Clique de verdade no botão "Adicionar conta" do estado vazio (a lista ficava por cima e pegava o clique).
+    var addButton = emptyWindow.GetVisualDescendants().OfType<Button>()
+        .First(b => b.IsEffectivelyVisible && b.FindAncestorOfType<MessageListView>() is not null && b.Command == emptyVm.AddAccountCommand);
+    var addPoint = addButton.TranslatePoint(new Point(addButton.Bounds.Width / 2, addButton.Bounds.Height / 2), emptyWindow)!.Value;
+    var emptyPanel = addButton.FindAncestorOfType<StackPanel>()!;
+    while (emptyPanel.Parent is StackPanel outer)
+        emptyPanel = outer;
+    bool HitsButton() => (emptyWindow.InputHitTest(addPoint) as Visual)?.FindAncestorOfType<Button>(includeSelf: true) == addButton;
+    emptyPanel.ZIndex = 0;
+    Pump(() => true, 50);
+    var hitWithout = HitsButton();
+    emptyPanel.ZIndex = 1;
+    Pump(() => true, 50);
+    Console.WriteLine($"sem contas: clique chega ao botão sem a correção {hitWithout}, com ela {HitsButton()}");
+    emptyWindow.MouseDown(addPoint, MouseButton.Left);
+    emptyWindow.MouseUp(addPoint, MouseButton.Left);
+    Pump(() => emptyVm.Navigation.CurrentPage is AccountEditorViewModel, 2000);
+    Console.WriteLine($"sem contas, clique em Adicionar conta abriu a tela: {emptyVm.Navigation.CurrentPage is AccountEditorViewModel}");
     emptyWindow.Close();
 }
+
+// Página do editor de texto, para testar o script num navegador (o headless não tem WebView).
+File.WriteAllText(Path.Combine(outDir, "editor.html"), EditorDocument.Build(theme.CurrentPalette(), ComposeHtml.MailFont, ""));
 
 // O pool do SQLite mantém o arquivo do banco aberto até ser limpo.
 Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

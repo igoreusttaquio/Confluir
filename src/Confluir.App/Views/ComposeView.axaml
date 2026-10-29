@@ -198,6 +198,7 @@
                     ToolTip.Tip="{l:Tr Compose_Strike}" AutomationProperties.Name="{l:Tr Compose_Strike}">
               <LucideIcon Kind="Strikethrough" Size="16" />
             </Button>
+            <views:TextColorButtons x:Name="Colors" />
             <Border Classes="toolbarDivider" />
             <Button x:Name="BulletButton" Classes="icon fmt" Tag="insertUnorderedList"
                     ToolTip.Tip="{l:Tr Compose_BulletList}" AutomationProperties.Name="{l:Tr Compose_BulletList}">
@@ -242,6 +243,9 @@
           </StackPanel>
         </Grid>
       </Border>
+
+      <!-- Imagem clicada no texto: posição e tamanho -->
+      <views:ImageOptionsBar x:Name="ImageBar" DockPanel.Dock="Top" />
 
       <!-- Corpo: editor formatado ou texto simples -->
       <Panel>

@@ -217,7 +217,7 @@
                    MinHeight="2" Height="2" Margin="0,-2,0,0" />
 
       <Grid>
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24" IsVisible="{Binding IsListEmpty}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24" IsVisible="{Binding IsListEmpty}" ZIndex="1">
           <TextBlock Text="{Binding ListEmptyText}" Classes="secondary" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
           <!-- Sem resultado no aparelho: procurar no servidor -->
           <Button HorizontalAlignment="Center" Command="{Binding SearchServerCommand}" IsVisible="{Binding CanSearchServer}">
@@ -228,9 +228,9 @@
           </Button>
         </StackPanel>
 
-        <!-- Sem contas -->
+        <!-- Sem contas. ZIndex: a lista (fundo transparente, declarada depois) ficaria por cima e pegaria o clique. -->
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24"
-                    IsVisible="{Binding ShowNoAccounts}" MaxWidth="300">
+                    IsVisible="{Binding ShowNoAccounts}" MaxWidth="300" ZIndex="1">
           <LucideIcon Kind="MailPlus" Size="40" StrokeWidth="1.5" Foreground="{DynamicResource Accent}" />
           <TextBlock Text="{l:Tr NoAccounts_Title}" FontSize="16" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" />
@@ -246,7 +246,7 @@
 
         <!-- Erro ao carregar -->
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Margin="24"
-                    IsVisible="{Binding HasListError}" MaxWidth="320">
+                    IsVisible="{Binding HasListError}" MaxWidth="320" ZIndex="1">
           <LucideIcon Kind="CircleAlert" Size="32" StrokeWidth="1.5" Foreground="{DynamicResource Danger}" />
           <TextBlock Text="{l:Tr List_Error}" FontWeight="SemiBold" HorizontalAlignment="Center"
                      Foreground="{DynamicResource TextPrimary}" />

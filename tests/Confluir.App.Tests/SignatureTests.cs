@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Confluir.App.Services;
+using Confluir.App.ViewModels;
 using Confluir.Core.Models;
 using Confluir.Core.Providers;
 
@@ -77,6 +78,18 @@ public sealed class SignatureTests
     [InlineData("<img src=\"data:image/png;base64,AAAA\">", true)]
     public void Assinatura_vazia_conta_como_nenhuma(string? html, bool expected) =>
         Assert.Equal(expected, ComposeHtml.HasContent(html));
+
+    [Fact]
+    public void Imagem_com_texto_ao_lado_fecha_a_assinatura_uma_vez_so()
+    {
+        const string floated = "<img src=\"data:image/png;base64,AAAA\" align=\"left\" style=\"float: left; margin: 0 12px 4px 0;\"><div>Ana</div>";
+        var once = SignatureEditorViewModel.ContainFloats(floated);
+        Assert.Equal(floated + SignatureEditorViewModel.ClearFloats, once);
+        // Reeditada e salva de novo (o editor pode reescrever o style): continua com um só.
+        Assert.Equal(once, SignatureEditorViewModel.ContainFloats(floated + "<div style=\"clear: both;\"></div>"));
+        // Voltou para a linha do texto: o "clear" sai.
+        Assert.Equal(Work, SignatureEditorViewModel.ContainFloats(Work + SignatureEditorViewModel.ClearFloats));
+    }
 
     [Fact]
     public void Contas_salvas_antes_da_assinatura_continuam_validas()

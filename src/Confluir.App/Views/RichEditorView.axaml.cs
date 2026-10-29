@@ -12,6 +12,9 @@ namespace Confluir.App.Views;
 /// <summary>Formatação no ponto do cursor (para destacar os botões da barra).</summary>
 public sealed record EditorFormatState(bool Bold, bool Italic, bool Underline, bool Strike, bool BulletList, bool NumberedList);
 
+/// <summary>Imagem clicada no editor: posição ("left", "right" ou vazio = na linha) e largura (0 = original).</summary>
+public sealed record EditorImageState(string Align, int Width);
+
 /// <summary>
 /// Editor de texto formatado: um <c>contenteditable</c> num WebView nativo (<see cref="EditorDocument"/>).
 /// Fala com o app por mensagens JSON (conteúdo, estado da formatação, arquivos soltos, atalhos).
@@ -64,6 +67,9 @@ public partial class RichEditorView : UserControl
     /// <summary>O texto mudou desde o último conteúdo entregue (o conteúdo em si vem com <see cref="FlushAsync"/>).</summary>
     public event EventHandler? Dirty;
     public event EventHandler<EditorFormatState>? FormatChanged;
+
+    /// <summary>Uma imagem foi clicada (ou deixou de estar selecionada: nulo).</summary>
+    public event EventHandler<EditorImageState?>? ImageChanged;
     public event EventHandler<(string Name, byte[] Data)>? FileDropped;
     public event EventHandler<string>? FileTooLarge;
     public event EventHandler? SendRequested;
@@ -132,6 +138,19 @@ public partial class RichEditorView : UserControl
         Run($"cmd({JsonSerializer.Serialize(command)}, {JsonSerializer.Serialize(value)})");
     }
 
+    /// <summary>
+    /// Imagem com texto ao lado vai para o começo do conteúdo (assinatura: o texto fica ao lado mesmo se a imagem foi
+    /// inserida depois dele). Na escrita de mensagens só vale dentro do bloco da assinatura.
+    /// </summary>
+    public bool FloatedImagesLead { get; set; }
+
+    /// <summary>Posição da imagem selecionada: "left"/"right" (texto ao lado) ou "" (na linha do texto).</summary>
+    public void SetImageAlign(string align) =>
+        Run($"imageAlign({JsonSerializer.Serialize(align)}, {(FloatedImagesLead ? "true" : "false")})");
+
+    /// <summary>Largura da imagem selecionada em pixels; 0 volta ao tamanho original.</summary>
+    public void SetImageWidth(int width) => Run($"imageWidth({width})");
+
     public void InsertLink(string url)
     {
         _web?.Focus();
@@ -199,6 +218,11 @@ public partial class RichEditorView : UserControl
             case "state":
                 FormatChanged?.Invoke(this, new EditorFormatState(
                     Bool("bold"), Bool("italic"), Bool("underline"), Bool("strike"), Bool("ul"), Bool("ol")));
+                break;
+            case "image":
+                ImageChanged?.Invoke(this, Bool("selected")
+                    ? new EditorImageState(Str("align"), m.TryGetProperty("width", out var w) && w.TryGetInt32(out var px) ? px : 0)
+                    : null);
                 break;
             case "file":
                 try

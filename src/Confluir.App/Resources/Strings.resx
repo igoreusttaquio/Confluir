@@ -468,4 +468,21 @@
   <data name="Signature_Edit"><value>Editar</value></data>
   <data name="Settings_Signatures"><value>Assinaturas</value></data>
   <data name="Settings_SignaturesHint"><value>Cada conta tem a sua. Ao trocar a conta em “De” enquanto escreve, a assinatura troca junto.</value></data>
+  <data name="Compose_TextColor"><value>Cor do texto</value></data>
+  <data name="Compose_Highlight"><value>Realçar</value></data>
+  <data name="Compose_ColorAuto"><value>Cor automática</value></data>
+  <data name="Compose_NoHighlight"><value>Sem realce</value></data>
+  <data name="Image_Options"><value>Imagem</value></data>
+  <data name="Image_AlignLeft"><value>À esquerda do texto</value></data>
+  <data name="Image_AlignRight"><value>À direita do texto</value></data>
+  <data name="Image_Inline"><value>Na linha do texto</value></data>
+  <data name="Image_Size"><value>Tamanho</value></data>
+  <data name="Image_Small"><value>Pequena</value></data>
+  <data name="Image_Medium"><value>Média</value></data>
+  <data name="Image_Large"><value>Grande</value></data>
+  <data name="Image_Original"><value>Original</value></data>
+  <data name="Settings_TrustedSendersFilter"><value>Filtrar remetentes</value></data>
+  <data name="Settings_TrustedSendersSelectAll"><value>Selecionar todos</value></data>
+  <data name="Settings_TrustedSendersRemoveSelected"><value>Remover selecionados ({0})</value></data>
+  <data name="Settings_TrustedSendersNoMatch"><value>Nenhum remetente corresponde ao filtro.</value></data>
 </root>

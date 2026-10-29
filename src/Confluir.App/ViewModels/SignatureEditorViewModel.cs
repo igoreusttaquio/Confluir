@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Confluir.App.Resources;
@@ -71,13 +72,28 @@ public sealed partial class SignatureEditorViewModel : ViewModelBase, INavigatio
             Html = ComposeHtml.FromText(PlainText.Trim());
         else if (FlushEditor is { } flush)
             await flush();
-        var signature = ComposeHtml.HasContent(Html) ? Html.Trim() : null;
+        var signature = ComposeHtml.HasContent(Html) ? ContainFloats(Html.Trim()) : null;
         // A conta pode ter mudado enquanto esta tela estava aberta (nome, servidores): grava sobre a versão atual.
         var current = _accounts.Accounts.FirstOrDefault(a => a.Id == Account.Id) ?? Account;
         _accounts.Add(current with { Signature = signature, SignatureOnReplies = OnReplies });
         _notify(signature is null ? Strings.Signature_Removed : Strings.Signature_Saved);
         _goBack();
     }
+
+    /// <summary>
+    /// Imagem com o texto ao lado (float): fecha a assinatura com um "clear", senão o que vem depois dela (a citação,
+    /// numa resposta) subiria para o lado da imagem.
+    /// </summary>
+    public static string ContainFloats(string html)
+    {
+        html = TrailingClear().Replace(html, "");
+        return html.Contains("float:", StringComparison.OrdinalIgnoreCase) ? html + ClearFloats : html;
+    }
+
+    public const string ClearFloats = "<div style=\"clear:both\"></div>";
+
+    [GeneratedRegex(@"(<div style=""clear:\s*both;?""></div>\s*)+$", RegexOptions.IgnoreCase)]
+    private static partial Regex TrailingClear();
 
     /// <summary>Imagem escolhida no disco: entra no texto como data: (o envio a transforma em anexo embutido).</summary>
     public string? ImageDataUri(string fileName, byte[] data)

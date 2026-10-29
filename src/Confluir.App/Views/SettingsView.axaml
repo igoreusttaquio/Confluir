@@ -460,19 +460,42 @@
               <TextBlock Classes="hint" Text="{l:Tr Settings_TrustedSendersHint}" />
               <TextBlock Classes="hint" Text="{l:Tr Settings_TrustedSendersEmpty}" IsVisible="{Binding !HasTrustedSenders}"
                          FontStyle="Italic" />
-              <ItemsControl ItemsSource="{Binding TrustedSenders}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate DataType="vm:TrustedSenderViewModel">
-                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
-                      <TextBlock Text="{Binding Address}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" />
-                      <Button Grid.Column="1" Classes="icon" Command="{Binding RemoveCommand}"
-                              ToolTip.Tip="{l:Tr Settings_TrustedSenderRemove}" AutomationProperties.Name="{l:Tr Settings_TrustedSenderRemove}">
-                        <LucideIcon Kind="X" Size="15" />
-                      </Button>
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
+              <StackPanel Spacing="8" IsVisible="{Binding HasTrustedSenders}">
+                <TextBox Text="{Binding TrustedSenderFilter}" PlaceholderText="{l:Tr Settings_TrustedSendersFilter}" MaxWidth="420"
+                         HorizontalAlignment="Left" MinWidth="260" />
+                <!-- Marcar vários e remover de uma vez -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <CheckBox IsChecked="{Binding AllVisibleTrustedSelected}" IsThreeState="False"
+                            Content="{l:Tr Settings_TrustedSendersSelectAll}" />
+                  <Button Grid.Column="1" Command="{Binding RemoveSelectedTrustedSendersCommand}" IsVisible="{Binding HasSelectedTrusted}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <LucideIcon Kind="Trash" Size="14" Foreground="{DynamicResource Danger}" />
+                      <TextBlock Text="{Binding RemoveSelectedTrustedText}" />
+                    </StackPanel>
+                  </Button>
+                </Grid>
+                <!-- Lista com rolagem própria: com muitos remetentes ela não empurra o resto da página -->
+                <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" MaxHeight="320" ClipToBounds="True">
+                  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding VisibleTrustedSenders}" Margin="10,4,18,4">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:TrustedSenderViewModel">
+                          <Grid ColumnDefinitions="*,Auto" Margin="0,1">
+                            <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center">
+                              <TextBlock Text="{Binding Address}" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                            </CheckBox>
+                            <Button Grid.Column="1" Classes="icon" Command="{Binding RemoveCommand}"
+                                    ToolTip.Tip="{l:Tr Settings_TrustedSenderRemove}" AutomationProperties.Name="{l:Tr Settings_TrustedSenderRemove}">
+                              <LucideIcon Kind="X" Size="15" />
+                            </Button>
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Border>
+                <TextBlock Classes="hint" Text="{l:Tr Settings_TrustedSendersNoMatch}" IsVisible="{Binding HasNoTrustedMatch}" FontStyle="Italic" />
+              </StackPanel>
             </StackPanel>
           </Border>
         </StackPanel>

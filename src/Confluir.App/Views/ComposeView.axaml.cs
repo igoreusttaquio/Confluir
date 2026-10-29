@@ -45,6 +45,8 @@ public partial class ComposeView : UserControl
         });
 
         Editor.ThemeService = (Application.Current as App)?.Services.GetService<ThemeService>();
+        Colors.Editor = Editor;
+        ImageBar.Editor = Editor;
         Editor.Placeholder = Strings.Compose_BodyPlaceholder;
         Editor.ContentChanged += (_, html) => ViewModel?.OnEditorContent(html);
         Editor.Dirty += (_, _) => ViewModel?.OnEditorDirty();

@@ -68,6 +68,7 @@
                 ToolTip.Tip="{l:Tr Compose_Underline}" AutomationProperties.Name="{l:Tr Compose_Underline}">
           <LucideIcon Kind="Underline" Size="16" />
         </Button>
+        <views:TextColorButtons x:Name="Colors" />
         <Border Classes="toolbarDivider" />
         <Button Classes="icon" Click="OnLinkClick"
                 ToolTip.Tip="{l:Tr Compose_Link}" AutomationProperties.Name="{l:Tr Compose_Link}">
@@ -96,6 +97,9 @@
         </StackPanel>
       </Grid>
     </Border>
+
+    <!-- Imagem clicada: texto ao lado e tamanho -->
+    <views:ImageOptionsBar x:Name="ImageBar" DockPanel.Dock="Top" Margin="24,0" BorderBrush="{DynamicResource Border}" />
 
     <!-- Editor (altura fixa: assinaturas são curtas; o WebView não fica dentro de rolagem) -->
     <Panel Margin="24,0,24,24" Height="300" VerticalAlignment="Top">

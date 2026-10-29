@@ -26,6 +26,9 @@ public partial class SignatureEditorView : UserControl
         });
 
         Editor.ThemeService = (Application.Current as App)?.Services.GetService<ThemeService>();
+        Colors.Editor = Editor;
+        ImageBar.Editor = Editor;
+        Editor.FloatedImagesLead = true;
         Editor.Placeholder = Strings.Signature_Placeholder;
         Editor.ContentChanged += (_, html) =>
         {

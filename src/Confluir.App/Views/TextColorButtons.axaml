@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             x:Class="Confluir.App.Views.TextColorButtons">
+  <UserControl.Styles>
+    <Style Selector="Button.swatch">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+    </Style>
+  </UserControl.Styles>
+  <!-- Cor do texto e realce, para dar ênfase a um trecho. As cores são montadas no code-behind. -->
+  <StackPanel Orientation="Horizontal" Spacing="2">
+    <Button x:Name="ColorButton" Classes="icon" ToolTip.Tip="{l:Tr Compose_TextColor}" AutomationProperties.Name="{l:Tr Compose_TextColor}">
+      <LucideIcon Kind="Baseline" Size="16" />
+      <Button.Flyout>
+        <Flyout Placement="BottomEdgeAlignedLeft">
+          <StackPanel Spacing="8" Margin="2">
+            <TextBlock Text="{l:Tr Compose_TextColor}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+            <WrapPanel x:Name="TextColors" ItemSpacing="6" LineSpacing="6" MaxWidth="190" />
+            <Button x:Name="ColorAuto" Content="{l:Tr Compose_ColorAuto}" HorizontalAlignment="Stretch" />
+          </StackPanel>
+        </Flyout>
+      </Button.Flyout>
+    </Button>
+    <Button x:Name="HighlightButton" Classes="icon" ToolTip.Tip="{l:Tr Compose_Highlight}" AutomationProperties.Name="{l:Tr Compose_Highlight}">
+      <LucideIcon Kind="Highlighter" Size="16" />
+      <Button.Flyout>
+        <Flyout Placement="BottomEdgeAlignedLeft">
+          <StackPanel Spacing="8" Margin="2">
+            <TextBlock Text="{l:Tr Compose_Highlight}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+            <WrapPanel x:Name="HighlightColors" ItemSpacing="6" LineSpacing="6" MaxWidth="190" />
+            <Button x:Name="HighlightNone" Content="{l:Tr Compose_NoHighlight}" HorizontalAlignment="Stretch" />
+          </StackPanel>
+        </Flyout>
+      </Button.Flyout>
+    </Button>
+  </StackPanel>
+</UserControl>

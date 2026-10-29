@@ -44,6 +44,12 @@ public sealed partial class TrustedSenderViewModel(string address, SettingsViewM
 {
     public string Address { get; } = address;
 
+    /// <summary>Marcado para "Remover selecionados".</summary>
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+
+    partial void OnIsSelectedChanged(bool value) => owner.OnTrustedSelectionChanged();
+
     [RelayCommand]
     private void Remove() => owner.RemoveTrustedSender(this);
 }
@@ -190,6 +196,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
         SelectedMarkRead = MarkReadOptions.FirstOrDefault(o => o.Seconds == delay) ?? MarkReadOptions[0];
         foreach (var sender in services.Settings.Current.Reading.TrustedImageSenders.Order())
             TrustedSenders.Add(new TrustedSenderViewModel(sender, this));
+        RefreshVisibleTrustedSenders();
         ReloadRules();
         services.Rules.Changed += (_, _) => ReloadRules();
         Shortcuts = ShortcutInfo.All.Select(s => new ShortcutItemViewModel(s, services.Shortcuts, this)).ToList();
@@ -298,12 +305,78 @@ public sealed partial class SettingsViewModel : ViewModelBase, INavigationPage
 
     public bool HasTrustedSenders => TrustedSenders.Count > 0;
 
-    public void RemoveTrustedSender(TrustedSenderViewModel sender)
+    /// <summary>Os remetentes que passam pelo filtro (é nestes que "Selecionar todos" vale).</summary>
+    public ObservableCollection<TrustedSenderViewModel> VisibleTrustedSenders { get; } = [];
+
+    [ObservableProperty]
+    public partial string TrustedSenderFilter { get; set; } = "";
+
+    partial void OnTrustedSenderFilterChanged(string value) => RefreshVisibleTrustedSenders();
+
+    public bool HasNoTrustedMatch => HasTrustedSenders && VisibleTrustedSenders.Count == 0;
+
+    public int SelectedTrustedCount => TrustedSenders.Count(s => s.IsSelected);
+
+    public bool HasSelectedTrusted => SelectedTrustedCount > 0;
+
+    public string RemoveSelectedTrustedText => string.Format(Strings.Settings_TrustedSendersRemoveSelected, SelectedTrustedCount);
+
+    /// <summary>Marca ou desmarca todos os visíveis; nulo quando só parte deles está marcada.</summary>
+    public bool? AllVisibleTrustedSelected
     {
-        _services.Settings.Current.Reading.TrustedImageSenders.Remove(sender.Address);
+        get => VisibleTrustedSenders.Count == 0 || VisibleTrustedSenders.All(s => !s.IsSelected) ? false
+            : VisibleTrustedSenders.All(s => s.IsSelected) ? true : null;
+        set
+        {
+            var select = value == true;
+            _bulkSelecting = true;
+            foreach (var sender in VisibleTrustedSenders)
+                sender.IsSelected = select;
+            _bulkSelecting = false;
+            OnTrustedSelectionChanged();
+        }
+    }
+
+    private bool _bulkSelecting;
+
+    public void OnTrustedSelectionChanged()
+    {
+        if (_bulkSelecting)
+            return;
+        OnPropertyChanged(nameof(SelectedTrustedCount));
+        OnPropertyChanged(nameof(HasSelectedTrusted));
+        OnPropertyChanged(nameof(RemoveSelectedTrustedText));
+        OnPropertyChanged(nameof(AllVisibleTrustedSelected));
+    }
+
+    private void RefreshVisibleTrustedSenders()
+    {
+        var filter = TrustedSenderFilter.Trim();
+        VisibleTrustedSenders.Clear();
+        foreach (var sender in TrustedSenders.Where(s => filter.Length == 0 || s.Address.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+            VisibleTrustedSenders.Add(sender);
+        OnPropertyChanged(nameof(HasNoTrustedMatch));
+        OnTrustedSelectionChanged();
+    }
+
+    public void RemoveTrustedSender(TrustedSenderViewModel sender) => RemoveTrustedSenders([sender]);
+
+    [RelayCommand]
+    private void RemoveSelectedTrustedSenders() => RemoveTrustedSenders(TrustedSenders.Where(s => s.IsSelected).ToList());
+
+    private void RemoveTrustedSenders(IReadOnlyList<TrustedSenderViewModel> senders)
+    {
+        if (senders.Count == 0)
+            return;
+        var trusted = _services.Settings.Current.Reading.TrustedImageSenders;
+        foreach (var sender in senders)
+        {
+            trusted.Remove(sender.Address);
+            TrustedSenders.Remove(sender);
+        }
         _services.Settings.Save();
-        TrustedSenders.Remove(sender);
         OnPropertyChanged(nameof(HasTrustedSenders));
+        RefreshVisibleTrustedSenders();
     }
 
     // Escrita ---------------------------------------------------------------------------------------

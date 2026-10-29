@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             x:Class="Confluir.App.Views.ImageOptionsBar"
+             IsVisible="False">
+  <UserControl.Styles>
+    <Style Selector="ToggleButton.opt">
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+  </UserControl.Styles>
+  <!-- Aparece com uma imagem clicada no editor: posição em relação ao texto e tamanho. -->
+  <Border Padding="12,6" Background="{DynamicResource SurfaceAlt}" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,1">
+    <WrapPanel ItemSpacing="6" LineSpacing="6">
+      <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,6,0">
+        <LucideIcon Kind="Images" Size="15" Foreground="{DynamicResource TextSecondary}" />
+        <TextBlock Text="{l:Tr Image_Options}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextPrimary}" />
+      </StackPanel>
+      <ToggleButton x:Name="AlignLeft" Classes="opt" Tag="left" ToolTip.Tip="{l:Tr Image_AlignLeft}" AutomationProperties.Name="{l:Tr Image_AlignLeft}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <LucideIcon Kind="TextAlignStart" Size="14" />
+          <TextBlock Text="{l:Tr Image_AlignLeft}" FontSize="12" VerticalAlignment="Center" />
+        </StackPanel>
+      </ToggleButton>
+      <ToggleButton x:Name="AlignRight" Classes="opt" Tag="right" ToolTip.Tip="{l:Tr Image_AlignRight}" AutomationProperties.Name="{l:Tr Image_AlignRight}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <LucideIcon Kind="TextAlignEnd" Size="14" />
+          <TextBlock Text="{l:Tr Image_AlignRight}" FontSize="12" VerticalAlignment="Center" />
+        </StackPanel>
+      </ToggleButton>
+      <ToggleButton x:Name="AlignInline" Classes="opt" Tag="" ToolTip.Tip="{l:Tr Image_Inline}" AutomationProperties.Name="{l:Tr Image_Inline}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <LucideIcon Kind="Rows2" Size="14" />
+          <TextBlock Text="{l:Tr Image_Inline}" FontSize="12" VerticalAlignment="Center" />
+        </StackPanel>
+      </ToggleButton>
+      <Border Width="1" Height="18" Margin="4,0" Background="{DynamicResource Border}" VerticalAlignment="Center" />
+      <TextBlock Text="{l:Tr Image_Size}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" />
+      <ToggleButton x:Name="SizeSmall" Classes="opt" Content="{l:Tr Image_Small}" FontSize="12" />
+      <ToggleButton x:Name="SizeMedium" Classes="opt" Content="{l:Tr Image_Medium}" FontSize="12" />
+      <ToggleButton x:Name="SizeLarge" Classes="opt" Content="{l:Tr Image_Large}" FontSize="12" />
+      <ToggleButton x:Name="SizeOriginal" Classes="opt" Content="{l:Tr Image_Original}" FontSize="12" />
+    </WrapPanel>
+  </Border>
+</UserControl>

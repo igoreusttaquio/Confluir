@@ -11,7 +11,7 @@ namespace Confluir.App.Services;
 /// </summary>
 /// <remarks>
 /// Mensagens para o app (JSON): <c>ready</c>, <c>dirty</c> (o texto mudou), <c>content</c> (html, quando pedido),
-/// <c>state</c> (formatação no cursor),
+/// <c>state</c> (formatação no cursor), <c>image</c> (imagem clicada: posição e largura),
 /// <c>file</c> (arquivo solto no editor, em base64), <c>send</c> (Ctrl+Enter) e <c>escape</c>.
 /// </remarks>
 public static class EditorDocument
@@ -44,6 +44,9 @@ public static class EditorDocument
                            border-left: 3px solid var(--border) !important; color: var(--muted) !important; }
               pre, code { font-family: Consolas, "JetBrains Mono", monospace; font-size: 13px; }
               ::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+              /* Realce: o texto fica escuro (no tema escuro o texto claro sumiria no amarelo). */
+              #editor [style*="background-color"] { color: #202124; }
+              img.cf-sel { outline: 2px solid var(--accent); outline-offset: 2px; }
             </style>
             </head>
             <body>
@@ -59,9 +62,19 @@ public static class EditorDocument
               // Digitar só avisa que mudou (uma vez por rodada); o HTML vai para o app quando ele pede (flush),
               // para não mandar o documento inteiro, que pode ter megabytes de citação, a cada tecla.
               let saved = null, last = '', dirtySent = false;
+              // Imagem clicada: o app mostra as opções (posição e tamanho). A marca de seleção não vai no HTML.
+              let img = null;
+              const mark = on => { if (!img) return; img.classList.toggle('cf-sel', on); if (!img.classList.length) img.removeAttribute('class'); };
+              const imgState = () => send(img
+                ? { type: 'image', selected: true, align: img.getAttribute('align') || '', width: parseInt(img.getAttribute('width'), 10) || 0 }
+                : { type: 'image', selected: false });
+              const pick = el => { if (img === el) return; mark(false); img = el; mark(true); imgState(); };
+              const tidy = el => { if (!el.getAttribute('style')) el.removeAttribute('style'); };
               const flush = () => {
                 dirtySent = false;
+                mark(false);
                 const html = ed.innerHTML;
+                mark(true);
                 if (html !== last) { last = html; send({ type: 'content', html }); }
                 else send({ type: 'flushed' });
               };
@@ -80,7 +93,50 @@ public static class EditorDocument
                 const s = getSelection();
                 if (s.rangeCount && ed.contains(s.anchorNode)) { saved = s.getRangeAt(0).cloneRange(); state(); }
               });
-              ed.addEventListener('input', changed);
+              ed.addEventListener('input', () => { if (img && !ed.contains(img)) pick(null); changed(); });
+              ed.addEventListener('click', e => pick(e.target.nodeName === 'IMG' ? e.target : null));
+              ed.addEventListener('keydown', e => { if (img && !['Shift', 'Control', 'Meta', 'Alt'].includes(e.key)) pick(null); });
+
+              // Cores em style (não <font>); "sem cor" tira a cor da seleção e dos elementos em volta.
+              const color = (name, value) => {
+                if (value) {
+                  document.execCommand('styleWithCSS', false, true);
+                  document.execCommand(name, false, value);
+                  document.execCommand('styleWithCSS', false, false);
+                  return;
+                }
+                const prop = name === 'foreColor' ? 'color' : 'backgroundColor';
+                const s = getSelection(); if (!s.rangeCount) return;
+                const r = s.getRangeAt(0);
+                let root = r.commonAncestorContainer; if (root.nodeType !== 1) root = root.parentNode;
+                const els = [...root.querySelectorAll('*')].filter(e => r.intersectsNode(e));
+                for (let p = root; p && p !== ed; p = p.parentNode) els.push(p);
+                for (const e of els) {
+                  if (e.style[prop]) { e.style[prop] = ''; tidy(e); }
+                  if (prop === 'color' && e.nodeName === 'FONT') e.removeAttribute('color');
+                  if ((e.nodeName === 'SPAN' || e.nodeName === 'FONT') && !e.attributes.length) e.replaceWith(...e.childNodes);
+                }
+              };
+              // toStart: na assinatura a imagem vai para o começo, para o texto (escrito antes ou depois) ficar ao lado.
+              window.imageAlign = (a, toStart) => {
+                if (!img) return;
+                if (a === 'left' || a === 'right') {
+                  const lead = img.closest('div.signature') || (toStart ? ed : null);
+                  if (lead && lead.firstChild !== img) lead.prepend(img);
+                  // align: o Outlook ignora float, mas respeita o atributo.
+                  img.setAttribute('align', a); img.style.float = a;
+                  img.style.margin = a === 'left' ? '0 12px 4px 0' : '0 0 4px 12px';
+                } else {
+                  img.removeAttribute('align'); img.style.float = ''; img.style.margin = ''; tidy(img);
+                }
+                changed(); imgState();
+              };
+              window.imageWidth = w => {
+                if (!img) return;
+                if (w > 0) { img.setAttribute('width', w); img.style.width = w + 'px'; img.style.height = 'auto'; }
+                else { img.removeAttribute('width'); img.removeAttribute('height'); img.style.width = ''; img.style.height = ''; tidy(img); }
+                changed(); imgState();
+              };
               document.execCommand('defaultParagraphSeparator', false, 'div');
 
               window.cmd = (name, value) => {
@@ -88,6 +144,8 @@ public static class EditorDocument
                 if (name === 'blockquote') {
                   const inQuote = (() => { let n = getSelection().anchorNode; while (n && n !== ed) { if (n.nodeName === 'BLOCKQUOTE') return true; n = n.parentNode; } return false; })();
                   document.execCommand(inQuote ? 'outdent' : 'formatBlock', false, inQuote ? null : 'blockquote');
+                } else if (name === 'foreColor' || name === 'hiliteColor') {
+                  color(name, value);
                 } else {
                   document.execCommand(name, false, value === undefined ? null : value);
                 }
@@ -99,7 +157,7 @@ public static class EditorDocument
                 else document.execCommand('createLink', false, url);
                 changed();
               };
-              window.setContent = html => { ed.innerHTML = html; last = ''; flush(); };
+              window.setContent = html => { pick(null); ed.innerHTML = html; last = ''; flush(); };
               window.flush = flush;
               window.focusStart = () => {
                 ed.focus();
