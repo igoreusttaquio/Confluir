@@ -494,4 +494,11 @@
   <data name="Reading_MoreRecipients"><value>+{0} más</value></data>
   <data name="Reading_ShowFewerRecipients"><value>Mostrar menos</value></data>
   <data name="Folder_Creating"><value>Creando…</value></data>
+  <data name="Folder_Delete"><value>Eliminar carpeta</value></data>
+  <data name="Folder_Deleting"><value>Eliminando…</value></data>
+  <data name="Folder_Delete_Confirm"><value>¿Eliminar la carpeta «{0}» en el servidor? Sus mensajes y subcarpetas también se eliminarán.</value></data>
+  <data name="Folder_Delete_ConfirmGmail"><value>¿Eliminar la carpeta «{0}»? En Gmail sus mensajes siguen en «Todos».</value></data>
+  <data name="Folder_Deleted"><value>Carpeta «{0}» eliminada</value></data>
+  <data name="Folder_Delete_Offline"><value>Sin conexión: inténtalo de nuevo cuando la cuenta esté en línea.</value></data>
+  <data name="Folder_Delete_Failed"><value>El servidor no eliminó la carpeta.</value></data>
 </root>

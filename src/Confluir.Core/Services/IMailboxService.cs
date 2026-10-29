@@ -73,6 +73,12 @@ public interface IMailboxService
     /// </summary>
     Task<MailFolder?> CreateFolderAsync(Guid accountId, string name, CancellationToken ct = default);
 
+    /// <summary>
+    /// Exclui no servidor uma pasta criada pelo usuário, com as subpastas (precisa de conexão). Pastas especiais
+    /// (Caixa de entrada, Enviados…) não são excluídas.
+    /// </summary>
+    Task DeleteFolderAsync(Guid accountId, Guid folderId, CancellationToken ct = default);
+
     /// <summary>Aplica uma regra às mensagens que já estão na caixa de entrada; retorna quantas foram afetadas.</summary>
     Task<int> ApplyRuleAsync(MailRule rule, CancellationToken ct = default);
 

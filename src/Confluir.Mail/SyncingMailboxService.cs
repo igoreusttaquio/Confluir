@@ -161,6 +161,19 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
         return folders.FirstOrDefault(f => f.FullName == fullName);
     }
 
+    public async Task DeleteFolderAsync(Guid accountId, Guid folderId, CancellationToken ct = default)
+    {
+        var account = _accounts.Accounts.First(a => a.Id == accountId);
+        var folder = (await _cache.GetFoldersAsync(accountId, ct)).FirstOrDefault(f => f.Id == folderId)
+            ?? throw new InvalidOperationException("A pasta não está mais no cache.");
+        if (folder.Kind != SpecialFolderKind.None)
+            throw new InvalidOperationException("Pastas especiais não são excluídas.");
+        await _engine.DeleteFolderAsync(account, folder.FullName, ct);
+        // A lista nova tira a pasta (e as mensagens dela) do cache.
+        await _engine.SyncFolderListAsync(account, ct, ImapLane.Reading);
+        RaiseChanged(accountId, foldersChanged: true);
+    }
+
     // Busca -----------------------------------------------------------------------------------------
 
     public Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default) =>

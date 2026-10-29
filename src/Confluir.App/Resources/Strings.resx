@@ -494,4 +494,11 @@
   <data name="Reading_MoreRecipients"><value>+{0} mais</value></data>
   <data name="Reading_ShowFewerRecipients"><value>Mostrar menos</value></data>
   <data name="Folder_Creating"><value>Criando…</value></data>
+  <data name="Folder_Delete"><value>Excluir pasta</value></data>
+  <data name="Folder_Deleting"><value>Excluindo…</value></data>
+  <data name="Folder_Delete_Confirm"><value>Excluir a pasta “{0}” no servidor? As mensagens e as subpastas dela também serão excluídas.</value></data>
+  <data name="Folder_Delete_ConfirmGmail"><value>Excluir a pasta “{0}”? No Gmail as mensagens dela continuam em “Todos os e-mails”.</value></data>
+  <data name="Folder_Deleted"><value>Pasta “{0}” excluída</value></data>
+  <data name="Folder_Delete_Offline"><value>Sem conexão: tente de novo quando a conta estiver online.</value></data>
+  <data name="Folder_Delete_Failed"><value>O servidor não excluiu a pasta.</value></data>
 </root>

@@ -40,7 +40,15 @@
       <Button Classes="addr" Content="{Binding Label}" ToolTip.Tip="{Binding Full}" AutomationProperties.Name="{Binding Full}">
         <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="{Binding Full}" IsEnabled="False" />
+                <MenuItem IsEnabled="False" ToolTip.Tip="{Binding Full}">
+                  <!-- Largura limitada: nome e endereço longos são cortados (sem rolagem lateral no menu) -->
+                  <MenuItem.Header>
+                    <StackPanel MaxWidth="300">
+                      <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Email}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </MenuItem.Header>
+                </MenuItem>
                 <Separator />
                 <MenuItem Header="{l:Tr Reading_WriteTo}" Command="{Binding WriteCommand}">
                   <MenuItem.Icon><LucideIcon Kind="SquarePen" Size="16" /></MenuItem.Icon>
@@ -143,7 +151,15 @@
                   ToolTip.Tip="{Binding Full}" AutomationProperties.Name="{Binding Full}">
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="{Binding Full}" IsEnabled="False" />
+                <MenuItem IsEnabled="False" ToolTip.Tip="{Binding Full}">
+                  <!-- Largura limitada: nome e endereço longos são cortados (sem rolagem lateral no menu) -->
+                  <MenuItem.Header>
+                    <StackPanel MaxWidth="300">
+                      <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Email}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </MenuItem.Header>
+                </MenuItem>
                 <Separator />
                 <MenuItem Header="{l:Tr Reading_WriteTo}" Command="{Binding WriteCommand}">
                   <MenuItem.Icon><LucideIcon Kind="SquarePen" Size="16" /></MenuItem.Icon>

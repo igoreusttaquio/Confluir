@@ -105,6 +105,36 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
         }, ct, ImapLane.Reading);
 
     /// <summary>
+    /// Exclui a pasta no servidor, subpastas primeiro (há servidores que recusam excluir uma pasta com filhas).
+    /// Pela conexão de leitura, como criar: o usuário está esperando.
+    /// </summary>
+    public Task DeleteFolderAsync(MailAccount account, string fullName, CancellationToken ct) =>
+        pool.RunAsync(account.Id, async (client, token) =>
+        {
+            async Task DeleteTreeAsync(IMailFolder folder)
+            {
+                foreach (var child in await folder.GetSubfoldersAsync(subscribedOnly: false, token))
+                    await DeleteTreeAsync(child);
+                // Alguns servidores não excluem a pasta selecionada.
+                if (folder.IsOpen)
+                    await folder.CloseAsync(expunge: false, token);
+                try
+                {
+                    await folder.UnsubscribeAsync(token);
+                }
+                catch (ImapCommandException ex)
+                {
+                    logger.LogDebug(ex, "Servidor recusou cancelar a assinatura da pasta {Folder}", folder.FullName);
+                }
+                await folder.DeleteAsync(token);
+            }
+
+            await DeleteTreeAsync(await client.GetFolderAsync(fullName, token));
+            logger.LogInformation("Pasta excluída na conta {AccountId}", account.Id);
+            return true;
+        }, ct, ImapLane.Reading);
+
+    /// <summary>
     /// Sincroniza uma pasta: novas mensagens e preenchimento das antigas (do mais novo para o mais antigo, em lotes),
     /// remoções e flags. <paramref name="onProgress"/> é chamado a cada lote gravado, para a interface atualizar.
     /// </summary>

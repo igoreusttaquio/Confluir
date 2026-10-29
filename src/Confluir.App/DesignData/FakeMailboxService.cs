@@ -175,6 +175,20 @@ public sealed class FakeMailboxService : IMailboxService
         return Task.FromResult<MailFolder?>(folder);
     }
 
+    public Task DeleteFolderAsync(Guid accountId, Guid folderId, CancellationToken ct = default)
+    {
+        var folders = _folders[accountId];
+        var folder = folders.First(f => f.Id == folderId);
+        if (folder.Kind != SpecialFolderKind.None)
+            throw new InvalidOperationException("Pastas especiais não são excluídas.");
+        foreach (var gone in folders.Where(f => f.FullName == folder.FullName || f.FullName.StartsWith(folder.FullName + "/", StringComparison.Ordinal)).ToList())
+        {
+            folders.Remove(gone);
+            _messages.Remove(gone.Id);
+        }
+        return Task.CompletedTask;
+    }
+
     // Busca simples (sem índice): o bastante para a interface com dados de exemplo.
     public Task<IReadOnlyList<MessageSummary>> SearchAsync(MessageSearch search, int limit = 500, CancellationToken ct = default)
     {

@@ -142,10 +142,62 @@ public sealed partial class AccountNode(MailAccount account, IAccountNodeHost ho
     }
 }
 
-public sealed partial class FolderNode(MailFolder folder, MailAccount account) : SidebarNode
+public interface IFolderNodeHost
+{
+    /// <summary>Exclui a pasta no servidor; devolve o erro para mostrar (nulo = excluída).</summary>
+    Task<string?> DeleteFolderAsync(FolderNode node);
+}
+
+public sealed partial class FolderNode(MailFolder folder, MailAccount account, IFolderNodeHost? host = null) : SidebarNode
 {
     public MailFolder Folder { get; } = folder;
     public MailAccount Account { get; } = account;
+
+    // Excluir: só pastas criadas pelo usuário, com confirmação inline sob a própria pasta.
+
+    public bool CanDelete => host is not null && Folder.Kind == SpecialFolderKind.None;
+
+    [ObservableProperty]
+    public partial bool IsConfirmingDelete { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDeleteError))]
+    public partial string? DeleteError { get; set; }
+
+    public bool HasDeleteError => DeleteError is not null;
+
+    /// <summary>No Gmail a pasta é um marcador: as mensagens continuam em "Todos os e-mails".</summary>
+    public string DeleteConfirmText => string.Format(
+        Account.Provider == MailProvider.Gmail ? Strings.Folder_Delete_ConfirmGmail : Strings.Folder_Delete_Confirm, Title);
+
+    [RelayCommand]
+    private void AskDelete()
+    {
+        if (!CanDelete)
+            return;
+        DeleteError = null;
+        IsConfirmingDelete = true;
+    }
+
+    [RelayCommand]
+    private void CancelDelete()
+    {
+        IsConfirmingDelete = false;
+        DeleteError = null;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmDeleteAsync()
+    {
+        if (host is null)
+            return;
+        DeleteError = null;
+        var error = await host.DeleteFolderAsync(this);
+        if (error is null)
+            IsConfirmingDelete = false;
+        else
+            DeleteError = error;
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnread))]

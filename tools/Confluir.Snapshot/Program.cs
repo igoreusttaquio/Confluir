@@ -407,6 +407,33 @@ Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000
     Pump(() => create.IsCompleted);
     Console.WriteLine($"pasta repetida: \"{folderAccount.FolderError}\"");
     folderAccount.CancelCreateFolderCommand.Execute(null);
+
+    // Excluir pasta: botão direito numa pasta criada pelo usuário abre o menu; a confirmação fica sob a pasta.
+    Pump(() => true, 200);
+    var acme = vm.SidebarNodes.OfType<FolderNode>().First(f => f.Folder.FullName == "Clientes/Acme");
+    Pump(() => nodes.ContainerFromItem(acme) is not null);
+    var acmePoint = ((Control)nodes.ContainerFromItem(acme)!).TranslatePoint(new Point(60, 12), window)!.Value;
+    window.MouseDown(acmePoint, MouseButton.Right);
+    window.MouseUp(acmePoint, MouseButton.Right);
+    var folderMenu = nodes.ContextFlyout as MenuFlyout;
+    Pump(() => folderMenu?.IsOpen == true, 2000);
+    Console.WriteLine($"menu da pasta aberto: {folderMenu?.IsOpen == true}; itens: {string.Join(" | ", folderMenu?.Items.OfType<MenuItem>().Select(i => i.Header?.ToString()) ?? [])}");
+    Save(window, "folder-menu.png");
+    (folderMenu?.Items.OfType<MenuItem>().First().Command)?.Execute(null);
+    folderMenu?.Hide();
+    Pump(() => acme.IsConfirmingDelete, 1000);
+    Save(window, "folder-delete-confirm.png");
+    Console.WriteLine($"confirmação: \"{acme.DeleteConfirmText}\"");
+    var deleting = acme.ConfirmDeleteCommand.ExecuteAsync(null);
+    Pump(() => deleting.IsCompleted, 3000);
+    Console.WriteLine($"pasta excluída: some da barra {!vm.SidebarNodes.OfType<FolderNode>().Any(f => f.Folder.FullName == "Clientes/Acme")}, aviso \"{vm.StatusMessage}\"");
+    // Pasta especial: sem menu.
+    var inboxRow = (Control)nodes.ContainerFromItem(folderAccount.Folders[0])!;
+    var inboxPoint = inboxRow.TranslatePoint(new Point(60, 10), window)!.Value;
+    window.MouseDown(inboxPoint, MouseButton.Right);
+    window.MouseUp(inboxPoint, MouseButton.Right);
+    Pump(() => true, 300);
+    Console.WriteLine($"menu sobre a Caixa de entrada: {nodes.ContextFlyout?.IsOpen == true}");
 }
 
 // Domínio desconhecido, tema escuro, com resultado de teste.
@@ -566,6 +593,23 @@ vm.GoBackCommand.Execute(null);
     var spinningNow = vm.IsSyncSpinning;
     Pump(() => !vm.IsSyncSpinning, 4000);
     Console.WriteLine($"sincronizar: girou {spinningNow}, parou {!vm.IsSyncSpinning}");
+
+    // Mãozinha no que é clicável (e cursor de texto nos campos).
+    string CursorOf(Control? c) => c is null ? "(não achado)" : c.Cursor?.ToString() ?? "padrão";
+    vm.SelectedRow = vm.Rows.OfType<MessageRow>().First();
+    Pump(() => vm.Detail is { IsLoading: false }, 2000);
+    Pump(() => true, 300);
+    var all = window.GetVisualDescendants().OfType<Control>().Where(c => c.IsEffectivelyVisible).ToList();
+    Console.WriteLine("cursores: " + string.Join(", ", new (string Name, Control? Control)[]
+    {
+        ("mensagem", all.OfType<ListBoxItem>().FirstOrDefault(i => i.DataContext is MessageRow)),
+        ("pasta", all.OfType<ListBoxItem>().FirstOrDefault(i => i.DataContext is FolderNode)),
+        ("filtro", all.OfType<RadioButton>().FirstOrDefault(r => r.Classes.Contains("chip"))),
+        ("botão", all.OfType<Button>().FirstOrDefault(b => b.Classes.Contains("icon"))),
+        ("endereço", all.OfType<Button>().FirstOrDefault(b => b.Classes.Contains("addr"))),
+        ("busca (texto)", all.OfType<TextBox>().FirstOrDefault(t => t.Name == "SearchBox")),
+    }.Select(p => $"{p.Name}={CursorOf(p.Control)}")));
+
 
     // Leitura: remetentes com imagens sempre exibidas, filtro e remoção de vários de uma vez.
     var trusted = services.GetRequiredService<ISettingsStore>().Current.Reading.TrustedImageSenders;

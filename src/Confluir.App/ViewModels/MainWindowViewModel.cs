@@ -21,7 +21,7 @@ public enum ListFilter
     Attachments,
 }
 
-public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost, IMessageActions
+public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHost, IFolderNodeHost, IMessageActions
 {
     private readonly LocalizationService _loc;
     private readonly ReadingServices _reading;
@@ -540,7 +540,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
                 current.UnreadCount = f.UnreadCount;
                 return current;
             }
-            return new FolderNode(f, node.Account);
+            return new FolderNode(f, node.Account, this);
         }).ToList();
 
         if (!updated.SequenceEqual(node.Folders))
@@ -601,6 +601,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         {
             _logger.LogWarning(ex, "Falha ao criar pasta na conta {AccountId}", node.Account.Id);
             return node.IsOffline ? Strings.Folder_Create_Offline : Strings.Folder_Create_Failed;
+        }
+    }
+
+    public async Task<string?> DeleteFolderAsync(FolderNode folder)
+    {
+        try
+        {
+            await _mailbox.DeleteFolderAsync(folder.Account.Id, folder.Folder.Id);
+            if (SidebarNodes.OfType<AccountNode>().FirstOrDefault(a => a.Account.Id == folder.Account.Id) is { } account)
+                await ReloadFoldersAsync(account);
+            ShowStatus(string.Format(Strings.Folder_Deleted, folder.Title));
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao excluir pasta na conta {AccountId}", folder.Account.Id);
+            var offline = SidebarNodes.OfType<AccountNode>().FirstOrDefault(a => a.Account.Id == folder.Account.Id)?.IsOffline == true;
+            return offline ? Strings.Folder_Delete_Offline : Strings.Folder_Delete_Failed;
         }
     }
 

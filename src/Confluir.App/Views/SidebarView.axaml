@@ -194,10 +194,21 @@
       </Border>
 
       <ListBox x:Name="Nodes" ItemsSource="{Binding SidebarNodes}"
+
                SelectedItem="{Binding SelectedNode}"
                ItemContainerTheme="{StaticResource SidebarItemTheme}"
                Background="Transparent"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <!-- Botão direito numa pasta criada pelo usuário: a View troca o menu da lista por este. -->
+        <ListBox.Resources>
+          <MenuFlyout x:Key="FolderMenu" x:DataType="vm:FolderNode" Placement="Pointer" OverlayDismissEventPassThrough="True">
+            <MenuItem Header="{l:Tr Folder_Delete}" Command="{Binding AskDeleteCommand}">
+              <MenuItem.Icon>
+                <LucideIcon Kind="Trash" Size="16" />
+              </MenuItem.Icon>
+            </MenuItem>
+          </MenuFlyout>
+        </ListBox.Resources>
         <!-- Botão direito numa conta: a View põe a conta como DataContext dos itens antes de abrir. -->
         <ListBox.ContextFlyout>
           <MenuFlyout x:DataType="vm:AccountNode" Opening="OnAccountMenuOpening" Placement="Pointer"
@@ -352,14 +363,35 @@
           </DataTemplate>
 
           <DataTemplate DataType="vm:FolderNode">
-            <Grid ColumnDefinitions="Auto,*,Auto" Margin="32,6,10,6">
-              <LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="1.75" Foreground="{DynamicResource TextSecondary}" />
-              <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource SidebarItemFontSize}"
-                         TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-              <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasUnread}">
-                <TextBlock Text="{Binding UnreadCount, StringFormat={}{0:N0}}" />
+            <StackPanel>
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="32,6,10,6">
+                <LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="1.75" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource SidebarItemFontSize}"
+                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasUnread}">
+                  <TextBlock Text="{Binding UnreadCount, StringFormat={}{0:N0}}" />
+                </Border>
+              </Grid>
+              <!-- Excluir pasta: confirmação inline sob a pasta -->
+              <Border Margin="10,0,10,8" Padding="10" CornerRadius="8" Background="{DynamicResource Surface}"
+                      BorderBrush="{DynamicResource Danger}" BorderThickness="1" IsVisible="{Binding IsConfirmingDelete}">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="{Binding DeleteConfirmText}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextPrimary}" />
+                  <TextBlock Text="{Binding DeleteError}" IsVisible="{Binding HasDeleteError}" TextWrapping="Wrap"
+                             FontSize="12" Foreground="{DynamicResource Danger}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                    <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelDeleteCommand}" Padding="10,4" FontSize="12" />
+                    <Button Classes="danger" Command="{Binding ConfirmDeleteCommand}" Padding="10,4" FontSize="12">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <LucideIcon Kind="LoaderCircle" Size="13" Classes="spin" IsVisible="{Binding ConfirmDeleteCommand.IsRunning}" />
+                        <TextBlock Text="{l:Tr Folder_Delete}" IsVisible="{Binding !ConfirmDeleteCommand.IsRunning}" />
+                        <TextBlock Text="{l:Tr Folder_Deleting}" IsVisible="{Binding ConfirmDeleteCommand.IsRunning}" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </StackPanel>
               </Border>
-            </Grid>
+            </StackPanel>
           </DataTemplate>
         </ListBox.DataTemplates>
       </ListBox>

@@ -20,31 +20,35 @@ public partial class SidebarView : UserControl
         Nodes.AddHandler(PointerPressedEvent, (_, e) =>
         {
             if (e.GetCurrentPoint(Nodes).Properties.IsRightButtonPressed)
-                SetMenuAccount((e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as AccountNode);
+                SetMenuTarget((e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext);
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
         Nodes.AddHandler(KeyDownEvent, (_, e) =>
         {
             if (e.Key == Key.Apps || (e.Key == Key.F10 && e.KeyModifiers.HasFlag(KeyModifiers.Shift)))
-                SetMenuAccount((e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as AccountNode);
+                SetMenuTarget((e.Source as Control)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext);
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     private MenuFlyout? _accountMenu;
 
-    // Pastas e a caixa unificada não têm menu: o menu só fica na lista enquanto o clique é numa conta.
-    private void SetMenuAccount(AccountNode? account)
+    // Menu conforme a linha: conta, pasta criada pelo usuário (excluir) ou nenhum (caixa unificada e pastas especiais).
+    private void SetMenuTarget(object? node)
     {
         _accountMenu ??= Nodes.ContextFlyout as MenuFlyout;
-        _menuAccount = account;
-        Nodes.ContextFlyout = account is null ? null : _accountMenu;
-        if (_accountMenu is not null)
+        var folderMenu = Nodes.Resources["FolderMenu"] as MenuFlyout;
+        _menuAccount = node as AccountNode;
+        var folder = node is FolderNode { CanDelete: true } f ? f : null;
+        Nodes.ContextFlyout = _menuAccount is not null ? _accountMenu : folder is not null ? folderMenu : null;
+        foreach (var (menu, context) in new[] { (_accountMenu, (object?)_menuAccount), (folderMenu, folder) })
         {
-            foreach (var item in _accountMenu.Items.OfType<Control>())
-                item.DataContext = account;
+            if (menu is null)
+                continue;
+            foreach (var item in menu.Items.OfType<Control>())
+                item.DataContext = context;
         }
     }
 
-    // Só abre sobre uma conta (pastas e a caixa unificada não têm menu).
+    // O menu de conta só abre sobre uma conta.
     private void OnAccountMenuOpening(object? sender, EventArgs e)
     {
         if (_menuAccount is null && sender is MenuFlyout menu)
