@@ -7,6 +7,10 @@
   <SolidColorBrush x:Key="Border" Color="#26305A" />
   <SolidColorBrush x:Key="TextPrimary" Color="#E8ECFF" />
   <SolidColorBrush x:Key="TextSecondary" Color="#9AA3C7" />
+  <!-- Polegar da rolagem da lista: a cor do painel de leitura (texto secundário semitransparente) -->
+  <SolidColorBrush x:Key="ListScrollThumb" Color="#669AA3C7" />
+  <SolidColorBrush x:Key="ListScrollThumbHover" Color="#AA9AA3C7" />
+  <SolidColorBrush x:Key="ListScrollThumbPressed" Color="#CC9AA3C7" />
   <SolidColorBrush x:Key="Accent" Color="#7B97FF" />
   <SolidColorBrush x:Key="OnAccent" Color="#0B1020" />
   <SolidColorBrush x:Key="Success" Color="#4ADE80" />

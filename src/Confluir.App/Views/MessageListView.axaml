@@ -6,10 +6,18 @@
              x:Class="Confluir.App.Views.MessageListView"
              x:DataType="vm:MainWindowViewModel">
   <UserControl.Styles>
-    <!-- Barra de rolagem da lista discreta, como a do painel de leitura -->
-    <Style Selector="ListBox#Messages ScrollBar:vertical">
-      <Setter Property="Theme" Value="{StaticResource SubtleVerticalScrollBar}" />
+    <!-- Rolagem da lista com a cor do painel de leitura. Só a cor do polegar muda: modelo, tamanho,
+         expansão sob o mouse e arrasto continuam os da barra padrão do tema. -->
+    <Style Selector="ListBox#Messages ScrollBar:vertical /template/ Thumb">
+      <Setter Property="Background" Value="{DynamicResource ListScrollThumb}" />
     </Style>
+    <Style Selector="ListBox#Messages ScrollBar:vertical:pointerover /template/ Thumb">
+      <Setter Property="Background" Value="{DynamicResource ListScrollThumbHover}" />
+    </Style>
+    <Style Selector="ListBox#Messages ScrollBar:vertical /template/ Thumb:pressed">
+      <Setter Property="Background" Value="{DynamicResource ListScrollThumbPressed}" />
+    </Style>
+
     <Style Selector="TextBlock.from">
       <Setter Property="FontSize" Value="{DynamicResource ListFromFontSize}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />

@@ -3,52 +3,6 @@
         xmlns:vm="using:Confluir.App.ViewModels">
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Rolagem discreta (como a do painel de leitura): fina e semitransparente, sem setas. Sob o mouse ela alarga
-           (com uma trilha suave) para dar para pegar e arrastar. -->
-      <ControlTheme x:Key="SubtleVerticalScrollBar" TargetType="ScrollBar">
-        <Setter Property="Width" Value="14" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Template">
-          <ControlTemplate>
-            <Border Background="{TemplateBinding Background}" CornerRadius="7">
-              <Track Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
-                     Value="{TemplateBinding Value, Mode=TwoWay}" ViewportSize="{TemplateBinding ViewportSize}"
-                     Orientation="Vertical" IsDirectionReversed="True">
-                <Track.Thumb>
-                  <Thumb Name="thumb" Background="{DynamicResource TextSecondary}">
-                    <Thumb.Template>
-                      <ControlTemplate>
-                        <Border Background="{TemplateBinding Background}" CornerRadius="5" />
-                      </ControlTemplate>
-                    </Thumb.Template>
-                  </Thumb>
-                </Track.Thumb>
-              </Track>
-            </Border>
-          </ControlTemplate>
-        </Setter>
-        <Style Selector="^ /template/ Thumb#thumb">
-          <Setter Property="Opacity" Value="0.3" />
-          <Setter Property="Margin" Value="5,2" />
-          <Setter Property="Transitions">
-            <Transitions>
-              <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
-              <ThicknessTransition Property="Margin" Duration="0:0:0.12" />
-            </Transitions>
-          </Setter>
-        </Style>
-        <Style Selector="^:pointerover">
-          <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
-        </Style>
-        <Style Selector="^:pointerover /template/ Thumb#thumb">
-          <Setter Property="Opacity" Value="0.6" />
-          <Setter Property="Margin" Value="2,2" />
-        </Style>
-        <Style Selector="^ /template/ Thumb#thumb:pressed">
-          <Setter Property="Opacity" Value="0.75" />
-        </Style>
-      </ControlTheme>
-
       <!-- Item da lista de mensagens: hover em SurfaceAlt, seleção em Accent a 12%. -->
       <ControlTheme x:Key="MessageItemTheme" TargetType="ListBoxItem" x:DataType="vm:MessageListRow">
         <Setter Property="Background" Value="Transparent" />

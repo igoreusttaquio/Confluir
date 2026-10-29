@@ -603,18 +603,69 @@ vm.GoBackCommand.Execute(null);
     Pump(() => !vm.IsSyncSpinning, 4000);
     Console.WriteLine($"sincronizar: girou {spinningNow}, parou {!vm.IsSyncSpinning}");
 
-    // Barra de rolagem da lista: fina parada, larga com o mouse em cima.
-    var listBar = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>()
-        .First(s => s.Orientation == Avalonia.Layout.Orientation.Vertical && s.FindAncestorOfType<MessageListView>() is not null && s.IsEffectivelyVisible);
-    var barThumb = listBar.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.Thumb>().First();
-    var idleWidth = barThumb.Bounds.Width;
-    var barPoint = listBar.TranslatePoint(new Point(listBar.Bounds.Width / 2, 40), window)!.Value;
-    window.MouseMove(barPoint);
-    Pump(() => true, 400);
-    Console.WriteLine($"rolagem da lista: polegar {idleWidth:0}px parado, {barThumb.Bounds.Width:0}px com o mouse em cima");
-    Save(window, "list-scrollbar-hover.png");
-    window.MouseMove(new Point(5, 5));
+    // Barra de rolagem da lista: a padrão do tema (alarga sob o mouse e o polegar segue o arraste), só com as cores
+    // do painel de leitura.
+    {
+        var listBar = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>()
+            .First(s => s.Orientation == Avalonia.Layout.Orientation.Vertical && s.FindAncestorOfType<MessageListView>() is not null && s.IsEffectivelyVisible);
+        var listScroll = listBar.FindAncestorOfType<ScrollViewer>()!;
+        var thumb = listBar.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.Thumb>().First(x => x.IsEffectivelyVisible);
+        // Largura desenhada (a barra padrão alarga com uma transformação, que Bounds não mostra).
+        double Drawn() => thumb.TranslatePoint(new Point(thumb.Bounds.Width, 0), window)!.Value.X - thumb.TranslatePoint(new Point(0, 0), window)!.Value.X;
+        string Pseudo() => string.Join(" ", ((Avalonia.Controls.IPseudoClasses)listBar.Classes).GetType() is not null
+            ? listBar.Classes.Where(c => c.StartsWith(':')) : []);
+        var idle = Drawn();
+        var idleState = Pseudo();
+        var onBar = listBar.TranslatePoint(new Point(listBar.Bounds.Width / 2, listBar.Bounds.Height / 2), window)!.Value;
+        window.MouseMove(onBar);
+        Pump(() => Drawn() > idle + 1, 2500);
+        Pump(() => true, 500);
+        var expanded = Drawn();
+        var expandedState = Pseudo() + $" AllowAutoHide={listBar.AllowAutoHide} IsExpanded={listBar.IsExpanded} ShowDelay={listBar.ShowDelay} ScrollViewer.AllowAutoHide={listBar.FindAncestorOfType<ScrollViewer>()?.AllowAutoHide}";
+        // O headless não dispara o atraso de expansão da barra padrão; força o estado expandido para medir o visual.
+        if (!listBar.IsExpanded)
+        {
+            typeof(Avalonia.Controls.Primitives.ScrollBar).GetMethod("Expand", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.Invoke(listBar, null);
+            Pump(() => Drawn() > idle + 1, 2000);
+            Pump(() => true, 500);
+            expanded = Drawn();
+            expandedState += " (forçado)";
+        }
+        var fill = (thumb.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Background is not null)?.Background ?? thumb.Background) as Avalonia.Media.ISolidColorBrush;
+        Save(window, "list-scrollbar-hover.png");
+        var thumbVisual = listBar.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Rectangle>().First(r => r.Name == "ThumbVisual");
+        Console.WriteLine($"  polegar sob o mouse ({Application.Current!.ActualThemeVariant}): {thumbVisual.Fill}");
+        window.MouseMove(new Point(5, 5));
+        Pump(() => true, 300);
+        Console.WriteLine($"  polegar sem o mouse ({Application.Current!.ActualThemeVariant}): {thumbVisual.Fill}");
+        theme.SetTheme(Application.Current!.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark ? ThemeMode.Light : ThemeMode.Dark);
+        Pump(() => true, 300);
+        Console.WriteLine($"  polegar sem o mouse ({Application.Current!.ActualThemeVariant}): {thumbVisual.Fill}");
+        theme.SetTheme(Application.Current!.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark ? ThemeMode.Light : ThemeMode.Dark);
+        Pump(() => true, 300);
+        window.MouseMove(onBar);
+        Pump(() => true, 300);
 
+        // Arrasto de verdade: aperta no meio do polegar, desce 120 px, solta.
+        var start = thumb.TranslatePoint(new Point(thumb.Bounds.Width / 2, thumb.Bounds.Height / 2), window)!.Value;
+        var thumbTop = thumb.TranslatePoint(new Point(0, 0), listBar)!.Value.Y;
+        var before = listScroll.Offset.Y;
+        window.MouseMove(start);
+        window.MouseDown(start, MouseButton.Left);
+        for (var dy = 10; dy <= 120; dy += 10)
+        {
+            window.MouseMove(start + new Point(0, dy), RawInputModifiers.LeftMouseButton);
+            Pump(() => true, 20);
+        }
+        var thumbMoved = thumb.TranslatePoint(new Point(0, 0), listBar)!.Value.Y - thumbTop;
+        window.MouseUp(start + new Point(0, 120), MouseButton.Left);
+        Pump(() => true, 200);
+        Console.WriteLine($"rolagem da lista: tema {(listBar.Theme is null ? "padrão" : "próprio")}, polegar {idle:0.#}px parado [{idleState}] / {expanded:0.#}px sob o mouse [{expandedState}], cor {fill?.Color}");
+        Console.WriteLine($"arrasto: mouse desceu 120px, polegar desceu {thumbMoved:0}px, lista rolou {listScroll.Offset.Y - before:0}px");
+        listScroll.Offset = new Vector(0, 0);
+        window.MouseMove(new Point(5, 5));
+        Pump(() => true, 300);
+    }
     // Mãozinha no que é clicável (e cursor de texto nos campos).
     string CursorOf(Control? c) => c is null ? "(não achado)" : c.Cursor?.ToString() ?? "padrão";
     vm.SelectedRow = vm.Rows.OfType<MessageRow>().First();
