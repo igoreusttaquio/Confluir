@@ -440,4 +440,16 @@
   <data name="AddAccount_AuthChoice"><value>Como entrar</value></data>
   <data name="AddAccount_Detected_Workspace"><value>{0} usa o Google Workspace. Servidores do Gmail preenchidos.</value></data>
   <data name="AddAccount_Detected_Microsoft365"><value>{0} usa o Microsoft 365. Entre com a sua conta da Microsoft.</value></data>
+  <data name="About_Title"><value>Sobre o Confluir</value></data>
+  <data name="About_Tagline"><value>Todas as suas contas de email num só lugar. Gratuito e de código aberto; seus emails ficam no seu computador.</value></data>
+  <data name="About_Website"><value>Site</value></data>
+  <data name="About_Source"><value>Código-fonte</value></data>
+  <data name="About_Privacy"><value>Privacidade</value></data>
+  <data name="About_Credits"><value>Bibliotecas e recursos</value></data>
+  <data name="About_CreditsHint"><value>O Confluir é feito com estes projetos de código aberto. Obrigado a quem os mantém! Clique num item para abrir o site do projeto.</value></data>
+  <data name="About_Group_Interface"><value>Interface</value></data>
+  <data name="About_Group_Email"><value>Email</value></data>
+  <data name="About_Group_Data"><value>Dados e login</value></data>
+  <data name="About_Group_Platform"><value>Plataforma</value></data>
+  <data name="About_Group_Fonts"><value>Fontes e ícones</value></data>
 </root>

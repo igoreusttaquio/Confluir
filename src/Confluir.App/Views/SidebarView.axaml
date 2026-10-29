@@ -121,6 +121,9 @@
         <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" Command="{Binding OpenSettingsCommand}">
           <LucideIcon Kind="Settings" />
         </Button>
+        <Button Classes="icon" ToolTip.Tip="{l:Tr About_Title}" AutomationProperties.Name="{l:Tr About_Title}" Command="{Binding OpenAboutCommand}">
+          <LucideIcon Kind="Info" />
+        </Button>
       </StackPanel>
 
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
@@ -173,6 +176,9 @@
           </Button>
           <Button Classes="icon" ToolTip.Tip="{l:Tr Settings}" AutomationProperties.Name="{l:Tr Settings}" Command="{Binding OpenSettingsCommand}">
             <LucideIcon Kind="Settings" />
+          </Button>
+          <Button Classes="icon" ToolTip.Tip="{l:Tr About_Title}" AutomationProperties.Name="{l:Tr About_Title}" Command="{Binding OpenAboutCommand}">
+            <LucideIcon Kind="Info" />
           </Button>
           <!-- Versão nova no GitHub -->
           <Button Classes="accent" Margin="6,0,0,0" Padding="10,4" VerticalAlignment="Center"

@@ -582,6 +582,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     private void AddAccount() => Navigation.NavigateTo(_accountEditor());
 
     [RelayCommand]
+    private void OpenAbout()
+    {
+        if (Navigation.CurrentPage is AboutViewModel)
+            return;
+        Navigation.NavigateTo(new AboutViewModel(_settingsServices.Urls, _settingsServices.Updates, () => Navigation.GoBack()));
+    }
+
+    [RelayCommand]
     private void OpenSettings()
     {
         if (Navigation.CurrentPage is SettingsViewModel)

@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:Confluir.App.Localization"
+             xmlns:vm="using:Confluir.App.ViewModels"
+             x:Class="Confluir.App.Views.AboutView"
+             x:DataType="vm:AboutViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Border.license">
+      <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="7,1" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Cada crédito é um botão-linha: o projeto abre no navegador -->
+    <Style Selector="Button.credit">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="16,10" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Background="{DynamicResource Background}">
+    <Border DockPanel.Dock="Top" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1" Height="{StaticResource PaneHeaderHeight}" Padding="12,0">
+      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Classes="icon" Command="{Binding BackCommand}"
+                ToolTip.Tip="{l:Tr Action_Back}" AutomationProperties.Name="{l:Tr Action_Back}">
+          <LucideIcon Kind="ArrowLeft" />
+        </Button>
+        <TextBlock Text="{l:Tr About_Title}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextPrimary}" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left" Margin="40,28,40,40">
+        <!-- O app -->
+        <Border Classes="card" Padding="24">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+            <Image Source="{StaticResource LogoImage}" Width="64" Height="64" VerticalAlignment="Top" />
+            <StackPanel Grid.Column="1" Spacing="4">
+              <TextBlock Text="{l:Tr AppTitle}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+              <TextBlock Text="{Binding VersionText}" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+              <TextBlock Text="{l:Tr About_Tagline}" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource TextPrimary}" />
+              <WrapPanel Margin="0,10,0,0" ItemSpacing="8" LineSpacing="8">
+                <Button Command="{Binding OpenCommand}" CommandParameter="{x:Static vm:AboutViewModel.SiteUrl}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <LucideIcon Kind="Globe" Size="14" />
+                    <TextBlock Text="{l:Tr About_Website}" />
+                  </StackPanel>
+                </Button>
+                <Button Command="{Binding OpenCommand}" CommandParameter="{x:Static vm:AboutViewModel.SourceUrl}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <LucideIcon Kind="Code" Size="14" />
+                    <TextBlock Text="{l:Tr About_Source}" />
+                  </StackPanel>
+                </Button>
+                <Button Command="{Binding OpenCommand}" CommandParameter="{x:Static vm:AboutViewModel.PrivacyUrl}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <LucideIcon Kind="ShieldCheck" Size="14" />
+                    <TextBlock Text="{l:Tr About_Privacy}" />
+                  </StackPanel>
+                </Button>
+              </WrapPanel>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Créditos -->
+        <StackPanel Spacing="4" Margin="0,8,0,0">
+          <TextBlock Text="{l:Tr About_Credits}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+          <TextBlock Text="{l:Tr About_CreditsHint}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Groups}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="16" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:CreditGroup">
+              <StackPanel Spacing="8">
+                <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}">
+                  <TextBlock.Text>
+                    <MultiBinding Converter="{x:Static l:TrKeyConverter.Instance}">
+                      <Binding Path="TitleKey" />
+                      <ReflectionBinding Path="Version" Source="{x:Static l:LocalizationService.Instance}" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                </TextBlock>
+                <Border Classes="card" Padding="4">
+                  <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vm:Credit">
+                        <Button Classes="credit" ToolTip.Tip="{Binding Url}" AutomationProperties.Name="{Binding Name}"
+                                Command="{Binding $parent[UserControl].((vm:AboutViewModel)DataContext).OpenCommand}"
+                                CommandParameter="{Binding Url}">
+                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                            <StackPanel>
+                              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                              <TextBlock Text="{Binding Author}" FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                         TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Classes="license">
+                              <TextBlock Text="{Binding License}" FontSize="11" FontFamily="{DynamicResource MonoFontFamily}"
+                                         Foreground="{DynamicResource TextPrimary}" />
+                            </Border>
+                            <LucideIcon Grid.Column="2" Kind="ExternalLink" Size="14" VerticalAlignment="Center"
+                                        Foreground="{DynamicResource TextSecondary}" />
+                          </Grid>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Border>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

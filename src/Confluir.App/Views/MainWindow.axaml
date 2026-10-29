@@ -99,6 +99,9 @@
           <DataTemplate DataType="vm:ComposeViewModel">
             <views:ComposeView />
           </DataTemplate>
+          <DataTemplate DataType="vm:AboutViewModel">
+            <views:AboutView />
+          </DataTemplate>
         </TransitioningContentControl.DataTemplates>
       </TransitioningContentControl>
       </Border>

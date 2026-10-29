@@ -167,6 +167,13 @@ Save(window, "add-account-gmail-password.png");
 Console.WriteLine($"Gmail com senha de app: pede senha {!gmail.RequiresOAuth}, dica {gmail.HasAppPasswordHint}");
 vm.GoBackCommand.Execute(null);
 
+// Sobre: versão, links e créditos.
+vm.OpenAboutCommand.Execute(null);
+Pump(() => vm.Navigation.CurrentPage is AboutViewModel);
+Save(window, "about.png");
+Console.WriteLine($"sobre: {AboutViewModel.Credits.Sum(g => g.Items.Count)} créditos em {AboutViewModel.Credits.Count} grupos");
+vm.GoBackCommand.Execute(null);
+
 // Outlook sem ID do Entra ID configurado.
 vm.AddAccountCommand.Execute(null);
 var outlook = (AccountEditorViewModel)vm.Navigation.CurrentPage!;

@@ -35,6 +35,7 @@ public sealed record SettingsServices(
     RuleEditorServices RuleEditor,
     ShortcutService Shortcuts,
     UpdateService Updates,
+    IUrlLauncher Urls,
     Services.Desktop.DesktopIntegration Desktop,
     Services.Desktop.AutostartService Autostart,
     ILogger<SettingsViewModel> Logger);

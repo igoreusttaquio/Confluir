@@ -440,4 +440,16 @@
   <data name="AddAccount_AuthChoice"><value>How to sign in</value></data>
   <data name="AddAccount_Detected_Workspace"><value>{0} uses Google Workspace. Gmail servers filled in.</value></data>
   <data name="AddAccount_Detected_Microsoft365"><value>{0} uses Microsoft 365. Sign in with your Microsoft account.</value></data>
+  <data name="About_Title"><value>About Confluir</value></data>
+  <data name="About_Tagline"><value>All your email accounts in one place. Free and open source; your email stays on your computer.</value></data>
+  <data name="About_Website"><value>Website</value></data>
+  <data name="About_Source"><value>Source code</value></data>
+  <data name="About_Privacy"><value>Privacy</value></data>
+  <data name="About_Credits"><value>Libraries and resources</value></data>
+  <data name="About_CreditsHint"><value>Confluir is built on these open-source projects. Thanks to everyone who maintains them! Click an item to open the project&apos;s website.</value></data>
+  <data name="About_Group_Interface"><value>Interface</value></data>
+  <data name="About_Group_Email"><value>Email</value></data>
+  <data name="About_Group_Data"><value>Data and sign-in</value></data>
+  <data name="About_Group_Platform"><value>Platform</value></data>
+  <data name="About_Group_Fonts"><value>Fonts and icons</value></data>
 </root>
