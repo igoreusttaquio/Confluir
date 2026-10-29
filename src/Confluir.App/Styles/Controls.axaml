@@ -3,13 +3,14 @@
         xmlns:vm="using:Confluir.App.ViewModels">
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Rolagem discreta (como a do painel de leitura): fina, semitransparente, sem setas; mais visível sob o mouse. -->
+      <!-- Rolagem discreta (como a do painel de leitura): fina e semitransparente, sem setas. Sob o mouse ela alarga
+           (com uma trilha suave) para dar para pegar e arrastar. -->
       <ControlTheme x:Key="SubtleVerticalScrollBar" TargetType="ScrollBar">
-        <Setter Property="Width" Value="10" />
+        <Setter Property="Width" Value="14" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
           <ControlTemplate>
-            <Border Background="{TemplateBinding Background}">
+            <Border Background="{TemplateBinding Background}" CornerRadius="7">
               <Track Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
                      Value="{TemplateBinding Value, Mode=TwoWay}" ViewportSize="{TemplateBinding ViewportSize}"
                      Orientation="Vertical" IsDirectionReversed="True">
@@ -17,7 +18,7 @@
                   <Thumb Name="thumb" Background="{DynamicResource TextSecondary}">
                     <Thumb.Template>
                       <ControlTemplate>
-                        <Border Background="{TemplateBinding Background}" CornerRadius="3" />
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5" />
                       </ControlTemplate>
                     </Thumb.Template>
                   </Thumb>
@@ -28,16 +29,19 @@
         </Setter>
         <Style Selector="^ /template/ Thumb#thumb">
           <Setter Property="Opacity" Value="0.3" />
-          <Setter Property="Margin" Value="3,2" />
+          <Setter Property="Margin" Value="5,2" />
           <Setter Property="Transitions">
             <Transitions>
               <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
-              <ThicknessTransition Property="Margin" Duration="0:0:0.15" />
+              <ThicknessTransition Property="Margin" Duration="0:0:0.12" />
             </Transitions>
           </Setter>
         </Style>
+        <Style Selector="^:pointerover">
+          <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+        </Style>
         <Style Selector="^:pointerover /template/ Thumb#thumb">
-          <Setter Property="Opacity" Value="0.55" />
+          <Setter Property="Opacity" Value="0.6" />
           <Setter Property="Margin" Value="2,2" />
         </Style>
         <Style Selector="^ /template/ Thumb#thumb:pressed">
@@ -135,17 +139,11 @@
     <Setter Property="Background" Value="{DynamicResource Background}" />
   </Style>
 
-  <!-- Mãozinha em tudo que é clicável: botões (e derivados: alternar, opção, caixa de seleção, link), linhas das
-       listas (mensagens, pastas, opções), menus, listas suspensas, interruptores e o calendário. -->
-  <Style Selector=":is(Button), ListBoxItem, ComboBox, ComboBoxItem, MenuItem, ToggleSwitch, CalendarDatePicker, CalendarDayButton, CalendarButton, TabItem">
+  <!-- Mãozinha só no que funciona como link (como na web): links, endereços do cabeçalho, "+N mais" e os filtros em
+       chip. Botões, linhas das listas e menus ficam com a seta, como nos apps de desktop (o destaque ao passar o mouse
+       já mostra que são clicáveis). -->
+  <Style Selector="HyperlinkButton, RadioButton.chip, Button.addr, Button.more">
     <Setter Property="Cursor" Value="Hand" />
-  </Style>
-  <!-- Desabilitado não é clicável; o campo de data aceita digitação (cursor de texto na caixa). -->
-  <Style Selector=":is(Button):disabled, MenuItem:disabled, ComboBox:disabled, ListBoxItem:disabled">
-    <Setter Property="Cursor" Value="Arrow" />
-  </Style>
-  <Style Selector="CalendarDatePicker TextBox">
-    <Setter Property="Cursor" Value="Ibeam" />
   </Style>
 
   <!-- Tipografia básica com tokens de tema -->
@@ -224,13 +222,28 @@
     <Setter Property="Background" Value="{DynamicResource Danger}" />
     <Setter Property="CornerRadius" Value="6" />
   </Style>
+  <!-- Texto branco nos dois temas (a cor de fundo do tema ficava quase preta sobre o vermelho no escuro). -->
   <Style Selector="Button.danger /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Foreground" Value="{DynamicResource Background}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.danger LucideIcon">
+    <Setter Property="Foreground" Value="White" />
   </Style>
   <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource Danger}" />
-    <Setter Property="Foreground" Value="{DynamicResource Background}" />
+    <Setter Property="Foreground" Value="White" />
     <Setter Property="Opacity" Value="0.9" />
+  </Style>
+  <!-- Ocupado (ex.: "Excluindo…"): continua vermelho e legível, só mais apagado. -->
+  <Style Selector="Button.danger:disabled">
+    <Setter Property="Opacity" Value="0.7" />
+  </Style>
+  <Style Selector="Button.danger:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Danger}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.accent LucideIcon">
+    <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
   </Style>
 
   <!-- Amostra de cor selecionável: anel em TextPrimary quando selecionada -->

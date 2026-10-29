@@ -423,6 +423,15 @@ Pump(() => clearing.IsCompleted && !vm.IsSearchActive && !vm.IsListLoading, 8000
     folderMenu?.Hide();
     Pump(() => acme.IsConfirmingDelete, 1000);
     Save(window, "folder-delete-confirm.png");
+    // Tema escuro com o botão ocupado ("Excluindo…"): continua legível.
+    theme.SetTheme(ThemeMode.Dark);
+    var dangerButton = window.GetVisualDescendants().OfType<Button>().First(b => b.Classes.Contains("danger") && b.IsEffectivelyVisible);
+    dangerButton.IsEnabled = false;
+    Save(window, "folder-deleting-dark.png");
+    var dangerText = dangerButton.GetVisualDescendants().OfType<TextBlock>().First(t => t.IsEffectivelyVisible);
+    Console.WriteLine($"botão excluir ocupado no escuro: texto {dangerText.Foreground}, opacidade {dangerButton.Opacity}");
+    dangerButton.IsEnabled = true;
+    theme.SetTheme(ThemeMode.Light);
     Console.WriteLine($"confirmação: \"{acme.DeleteConfirmText}\"");
     var deleting = acme.ConfirmDeleteCommand.ExecuteAsync(null);
     Pump(() => deleting.IsCompleted, 3000);
@@ -593,6 +602,18 @@ vm.GoBackCommand.Execute(null);
     var spinningNow = vm.IsSyncSpinning;
     Pump(() => !vm.IsSyncSpinning, 4000);
     Console.WriteLine($"sincronizar: girou {spinningNow}, parou {!vm.IsSyncSpinning}");
+
+    // Barra de rolagem da lista: fina parada, larga com o mouse em cima.
+    var listBar = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>()
+        .First(s => s.Orientation == Avalonia.Layout.Orientation.Vertical && s.FindAncestorOfType<MessageListView>() is not null && s.IsEffectivelyVisible);
+    var barThumb = listBar.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.Thumb>().First();
+    var idleWidth = barThumb.Bounds.Width;
+    var barPoint = listBar.TranslatePoint(new Point(listBar.Bounds.Width / 2, 40), window)!.Value;
+    window.MouseMove(barPoint);
+    Pump(() => true, 400);
+    Console.WriteLine($"rolagem da lista: polegar {idleWidth:0}px parado, {barThumb.Bounds.Width:0}px com o mouse em cima");
+    Save(window, "list-scrollbar-hover.png");
+    window.MouseMove(new Point(5, 5));
 
     // Mãozinha no que é clicável (e cursor de texto nos campos).
     string CursorOf(Control? c) => c is null ? "(não achado)" : c.Cursor?.ToString() ?? "padrão";
