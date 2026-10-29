@@ -116,4 +116,10 @@ public sealed partial record SearchQuery(
 /// <param name="AccountId">Só esta conta (nulo = todas).</param>
 /// <param name="FolderId">Só esta pasta (nulo = todas).</param>
 /// <param name="Since">Só a partir desta data.</param>
-public sealed record MessageSearch(SearchQuery Query, Guid? AccountId = null, Guid? FolderId = null, DateTimeOffset? Since = null);
+/// <param name="Until">Só antes desta data (exclusivo).</param>
+public sealed record MessageSearch(SearchQuery Query, Guid? AccountId = null, Guid? FolderId = null, DateTimeOffset? Since = null,
+    DateTimeOffset? Until = null)
+{
+    /// <summary>Sem texto nem filtros, mas com período: lista as mensagens do período.</summary>
+    public bool IsEmpty => Query.IsEmpty && Since is null && Until is null;
+}

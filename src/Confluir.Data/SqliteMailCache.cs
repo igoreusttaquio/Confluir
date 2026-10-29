@@ -246,7 +246,7 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
     {
         await ThreadPoolSwitch.Instance;
         var q = search.Query;
-        if (q.IsEmpty || ct.IsCancellationRequested)
+        if (search.IsEmpty || ct.IsCancellationRequested)
             return [];
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<MessageRow>(new CommandDefinition($"""
@@ -257,6 +257,7 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
               AND (@attachments = 0 OR has_attachments = 1)
               AND (@unread = 0 OR is_read = 0)
               AND (@since IS NULL OR date_utc_ms >= @since)
+              AND (@until IS NULL OR date_utc_ms < @until)
             ORDER BY date_utc_ms DESC
             LIMIT @limit
             """, new
@@ -267,6 +268,7 @@ public async Task<IReadOnlyList<MessageSummary>> SearchMessagesAsync(MessageSear
             attachments = q.HasAttachment,
             unread = q.Unread,
             since = search.Since?.ToUnixTimeMilliseconds(),
+            until = search.Until?.ToUnixTimeMilliseconds(),
             limit,
         }, cancellationToken: ct));
         return rows.Select(ToSummary).ToList();

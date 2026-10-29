@@ -186,6 +186,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         Navigation.NavigateTo(new ComposeViewModel(_compose, _accounts.Values.ToList(), accountId, ShowStatus));
     }
 
+    public void ComposeTo(MessageDetailViewModel message, MailAddress to)
+    {
+        var compose = new ComposeViewModel(_compose, _accounts.Values.ToList(), message.Row.Account.Id, ShowStatus)
+        {
+            To = Confluir.Mail.AddressParser.Format([to]),
+        };
+        Navigation.NavigateTo(compose);
+    }
+
+    public void Notify(string text) => ShowStatus(text);
+
     public Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode) =>
         ComposeForRowAsync(message.Row, mode, message.LoadedBody);
 
@@ -384,7 +395,29 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
     }
 
     [RelayCommand]
-    private void Refresh() => _mailbox.RequestSync();
+    private void Refresh()
+    {
+        _mailbox.RequestSync();
+        // O ícone gira por um instante (como os outros botões) e enquanto alguma conta estiver sincronizando.
+        IsSyncSpinning = true;
+        var until = DateTimeOffset.UtcNow + MaxSyncSpin;
+        void Check()
+        {
+            var syncing = _accounts.Keys.Any(id => _mailbox.GetStatus(id) == SyncStatus.Syncing);
+            if (syncing && DateTimeOffset.UtcNow < until)
+                DispatcherTimer.RunOnce(Check, TimeSpan.FromMilliseconds(400));
+            else
+                IsSyncSpinning = false;
+        }
+        DispatcherTimer.RunOnce(Check, MinimumSyncSpin);
+    }
+
+    private static readonly TimeSpan MinimumSyncSpin = TimeSpan.FromSeconds(1.2);
+    private static readonly TimeSpan MaxSyncSpin = TimeSpan.FromSeconds(60);
+
+    /// <summary>"Sincronizar agora" foi clicado e a sincronização ainda está andando.</summary>
+    [ObservableProperty]
+    public partial bool IsSyncSpinning { get; private set; }
 
     public AppearanceViewModel Appearance { get; }
 

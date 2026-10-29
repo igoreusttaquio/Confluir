@@ -358,6 +358,26 @@ public sealed class SqliteMailCacheTests : IDisposable
     }
 
     [Fact]
+    public async Task Busca_por_periodo_escolhido_com_ou_sem_texto()
+    {
+        var inbox = Folder("INBOX", SpecialFolderKind.Inbox);
+        await _cache.SaveFoldersAsync(_account, [inbox], _ct);
+        var day = new DateTimeOffset(2026, 10, 10, 0, 0, 0, TimeSpan.Zero);
+        await _cache.UpsertMessagesAsync(inbox.Id,
+            [Message(inbox, 1, date: day.AddDays(-1)), Message(inbox, 2, date: day.AddHours(9)), Message(inbox, 3, date: day.AddDays(1))], _ct);
+
+        async Task<string[]> Find(string text, DateTimeOffset? since, DateTimeOffset? until) =>
+            (await _cache.SearchMessagesAsync(new MessageSearch(SearchQuery.Parse(text), Since: since, Until: until), 50, _ct))
+            .Select(m => m.Subject).ToArray();
+
+        // Até é exclusivo: o dia 11 começa fora.
+        Assert.Equal(["Assunto 2"], await Find("", day, day.AddDays(1)));
+        Assert.Equal(["Assunto 2", "Assunto 1"], await Find("", null, day.AddDays(1)));
+        Assert.Equal(["Assunto 3", "Assunto 2"], await Find("assunto", day, null));
+        Assert.Empty(await Find("", null, null)); // sem nada, não lista tudo
+    }
+
+    [Fact]
     public async Task Sugestao_de_endereco_usa_o_nome_mais_recente_e_ordena_por_frequencia()
     {
         var inbox = Folder("INBOX", SpecialFolderKind.Inbox);

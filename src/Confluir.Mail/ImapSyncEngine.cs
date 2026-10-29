@@ -31,7 +31,9 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
     ];
 
     /// <summary>Atualiza a lista de pastas da conta no cache e devolve a versão do cache (com contagens).</summary>
-    public async Task<IReadOnlyList<MailFolder>> SyncFolderListAsync(MailAccount account, CancellationToken ct)
+    /// <param name="lane">Depois de criar uma pasta (o usuário espera), a conexão de leitura.</param>
+    public async Task<IReadOnlyList<MailFolder>> SyncFolderListAsync(MailAccount account, CancellationToken ct,
+        ImapLane lane = ImapLane.Sync)
     {
         var folders = await pool.RunAsync<IReadOnlyList<MailFolder>>(account.Id, async (client, token) =>
         {
@@ -60,7 +62,7 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
                 .OrderBy(f => f.Kind == SpecialFolderKind.None ? int.MaxValue : Array.IndexOf(FolderOrder, f.Kind))
                 .ThenBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
-        }, ct);
+        }, ct, lane);
 
         await cache.SaveFoldersAsync(account.Id, folders, ct);
         return await cache.GetFoldersAsync(account.Id, ct);
@@ -68,6 +70,7 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
 
     /// <summary>
     /// Cria a pasta no servidor (cada trecho de "Mãe/Filha" que ainda não existir) e a assina. Devolve o nome completo.
+    /// Usa a conexão de leitura: o usuário está esperando e a sincronização pode estar no meio de um lote longo.
     /// </summary>
     public Task<string> CreateFolderAsync(MailAccount account, string name, CancellationToken ct) =>
         pool.RunAsync(account.Id, async (client, token) =>
@@ -99,7 +102,7 @@ public sealed class ImapSyncEngine(ImapConnectionPool pool, IMailCache cache, IL
             }
             logger.LogInformation("Pasta criada na conta {AccountId}", account.Id);
             return current.FullName;
-        }, ct);
+        }, ct, ImapLane.Reading);
 
     /// <summary>
     /// Sincroniza uma pasta: novas mensagens e preenchimento das antigas (do mais novo para o mais antigo, em lotes),

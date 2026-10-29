@@ -98,6 +98,16 @@ public sealed class FakeMailboxService : IMailboxService
         return Task.FromResult(all);
     }
 
+    private static readonly MailAddress[] GroupCopy =
+    [
+        new("Rafael Lima", "rafael.lima@exemplo.com"), new("Beatriz Nunes", "beatriz.nunes@exemplo.com"),
+        new("Carlos Mendes", "carlos.mendes@exemplo.com"), new("Daniela Rocha", "daniela.rocha@exemplo.com"),
+        new("Eduardo Pires", "eduardo.pires@exemplo.com"), new("Fernanda Alves", "fernanda.alves@exemplo.com"),
+        new("", "financeiro@exemplo.com"), new("Gustavo Reis", "gustavo.reis@exemplo.com"),
+        new("Helena Costa", "helena.costa@exemplo.com"), new("Igor Martins", "igor.martins@exemplo.com"),
+        new("Juliana Freitas", "juliana.freitas@exemplo.com"),
+    ];
+
     public async Task<MessageBody> GetMessageBodyAsync(Guid messageId, CancellationToken ct = default)
     {
         await Task.Delay(60, ct); // simula a busca sob demanda
@@ -111,7 +121,13 @@ public sealed class FakeMailboxService : IMailboxService
             "com os próximos passos.\n\n" +
             $"Abraços,\n{m.FromName}\n\n--\n{m.FromAddress}";
 
-        var cc = random.Next(4) == 0 ? new[] { new MailAddress("Rafael Lima", "rafael.lima@exemplo.com") } : [];
+        // Algumas com o grupo inteiro em cópia (o cabeçalho recolhe a lista).
+        var cc = random.Next(5) switch
+        {
+            0 => new[] { new MailAddress("Rafael Lima", "rafael.lima@exemplo.com") },
+            1 => GroupCopy,
+            _ => [],
+        };
         var attachments = m.HasAttachments
             ? AttachmentPool.OrderBy(_ => random.Next()).Take(random.Next(1, 4)).ToArray()
             : [];
@@ -171,6 +187,7 @@ public sealed class FakeMailboxService : IMailboxService
             .Where(m => search.AccountId is null || m.AccountId == search.AccountId)
             .Where(m => search.FolderId is null || m.FolderId == search.FolderId)
             .Where(m => search.Since is null || m.Date >= search.Since)
+            .Where(m => search.Until is null || m.Date < search.Until)
             .Where(m => !q.HasAttachment || m.HasAttachments)
             .Where(m => !q.Unread || !m.IsRead)
             .Where(m => q.Terms.All(t => Has(m.Subject, t) || Has(m.FromName, t) || Has(m.FromAddress, t) || Has(m.Preview, t)))

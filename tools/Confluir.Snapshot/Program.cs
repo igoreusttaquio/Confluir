@@ -497,6 +497,76 @@ vm.GoBackCommand.Execute(null);
     vm.ToggleSidebarCommand.Execute(null);
     Pump(() => true, 400);
 
+    // Cabeçalho com o grupo todo em cópia: recolhido em "+N mais", expande e recolhe; endereço com menu.
+    vm.SelectedNode = inbox;
+    Pump(() => vm.Rows.OfType<MessageRow>().Any(r => r.Summary.FolderId == inbox.Folder.Id), 3000);
+    MessageDetailViewModel? group = null;
+    foreach (var r in vm.Rows.OfType<MessageRow>().Take(40))
+    {
+        vm.SelectedRow = r;
+        Pump(() => vm.Detail is { IsLoading: false } d && d.Row == r, 2000);
+        if (vm.Detail is { HasCcMore: true } found)
+        {
+            group = found;
+            break;
+        }
+    }
+    if (group is null)
+        Console.WriteLine("cópias: nenhuma mensagem com o grupo em cópia");
+    else
+    {
+        Console.WriteLine($"cópias recolhidas: {group.VisibleCc.Count} visíveis, \"{group.CcMoreText}\"");
+        Save(window, "recipients-collapsed.png");
+        group.ToggleRecipientsCommand.Execute(null);
+        Pump(() => true, 200);
+        Console.WriteLine($"cópias expandidas: {group.VisibleCc.Count}, mostrar menos {group.CanCollapseRecipients}");
+        Save(window, "recipients-expanded.png");
+        group.ToggleRecipientsCommand.Execute(null);
+        Pump(() => true, 200);
+
+        // Clique de verdade num endereço: abre o menu; copiar e escrever.
+        var chip = window.GetVisualDescendants().OfType<Button>()
+            .First(b => b.Classes.Contains("addr") && b.DataContext is AddressViewModel a && group.VisibleCc.Contains(a) && b.IsEffectivelyVisible);
+        var chipAddress = (AddressViewModel)chip.DataContext!;
+        var chipPoint = chip.TranslatePoint(new Point(chip.Bounds.Width / 2, chip.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(chipPoint, MouseButton.Left);
+        window.MouseUp(chipPoint, MouseButton.Left);
+        var chipMenu = chip.Flyout as MenuFlyout;
+        Pump(() => chipMenu?.IsOpen == true, 2000);
+        var chipItems = window.GetVisualDescendants().OfType<MenuItem>().ToList();
+        Console.WriteLine($"menu do endereço aberto: {chipMenu?.IsOpen == true}; itens: {string.Join(" | ", chipMenu?.Items.OfType<MenuItem>().Select(i => i.Header?.ToString()) ?? [])}");
+        Save(window, "recipient-menu.png");
+        var copyItem = chipMenu?.Items.OfType<MenuItem>().Last();
+        copyItem?.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
+        Pump(() => vm.StatusMessage?.Contains(chipAddress.Email) == true, 1000);
+        Console.WriteLine($"copiar: aviso \"{vm.StatusMessage}\"");
+        chipMenu?.Hide();
+        chipAddress.WriteCommand.Execute(null);
+        Pump(() => vm.Navigation.CurrentPage is ComposeViewModel, 1000);
+        Console.WriteLine($"escrever para: abriu {(vm.Navigation.CurrentPage as ComposeViewModel)?.To}");
+        vm.GoBackCommand.Execute(null);
+        Pump(() => vm.Navigation.IsAtRoot, 1000);
+    }
+
+    // Busca por período escolhido (sem texto): mantém os períodos rápidos e mostra as datas.
+    vm.IsAdvancedSearchOpen = true;
+    vm.SearchPeriod = vm.SearchPeriods.First(p => p.IsCustom);
+    vm.SearchFromDate = DateTime.Today.AddDays(-3);
+    vm.SearchToDate = DateTime.Today;
+    Pump(() => vm.IsSearchActive && !vm.IsListLoading, 3000);
+    var inRange = vm.Rows.OfType<MessageRow>().ToList();
+    Console.WriteLine($"período personalizado: {vm.SearchPeriods.Count} opções, {inRange.Count} mensagens, todas no intervalo {inRange.All(r => r.Summary.Date.LocalDateTime.Date >= DateTime.Today.AddDays(-3))}");
+    Save(window, "search-custom-period.png");
+    vm.ClearSearchCommand.Execute(null);
+    vm.IsAdvancedSearchOpen = false;
+    Pump(() => !vm.IsSearchActive, 2000);
+
+    // Sincronizar agora: o ícone gira por um instante.
+    vm.RefreshCommand.Execute(null);
+    var spinningNow = vm.IsSyncSpinning;
+    Pump(() => !vm.IsSyncSpinning, 4000);
+    Console.WriteLine($"sincronizar: girou {spinningNow}, parou {!vm.IsSyncSpinning}");
+
     // Leitura: remetentes com imagens sempre exibidas, filtro e remoção de vários de uma vez.
     var trusted = services.GetRequiredService<ISettingsStore>().Current.Reading.TrustedImageSenders;
     trusted.AddRange(Enumerable.Range(1, 18).Select(i => $"noticias{i}@{(i % 3 == 0 ? "loja.com" : "jornal.com.br")}"));

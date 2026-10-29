@@ -76,7 +76,7 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0" VerticalAlignment="Center">
             <Button Classes="icon" Command="{Binding RefreshCommand}" ToolTip.Tip="{l:Tr Action_Sync}" AutomationProperties.Name="{l:Tr Action_Sync}">
-              <LucideIcon Kind="RefreshCw" />
+              <LucideIcon Kind="RefreshCw" Classes.spin="{Binding IsSyncSpinning}" />
             </Button>
             <Button Classes="accent iconOnly" Command="{Binding NewMessageCommand}" ToolTip.Tip="{l:Tr Action_NewMessage}" AutomationProperties.Name="{l:Tr Action_NewMessage}">
               <LucideIcon Kind="SquarePen" Size="18" Foreground="{DynamicResource OnAccent}" />
@@ -113,8 +113,9 @@
             <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SearchSubject}" />
             <TextBlock Grid.Row="2" Text="{l:Tr Rule_Field_To}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
             <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SearchTo}" />
-            <TextBlock Grid.Row="3" Text="{l:Tr Search_Period}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
-            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SearchPeriods}" SelectedItem="{Binding SearchPeriod}"
+            <TextBlock Grid.Row="3" Text="{l:Tr Search_Period}" VerticalAlignment="Top" Margin="0,7,0,0" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
+            <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6">
+            <ComboBox ItemsSource="{Binding SearchPeriods}" SelectedItem="{Binding SearchPeriod}"
                       HorizontalAlignment="Stretch">
               <ComboBox.ItemTemplate>
                 <DataTemplate DataType="vm:SearchPeriodOption">
@@ -129,6 +130,17 @@
                 </DataTemplate>
               </ComboBox.ItemTemplate>
             </ComboBox>
+            <!-- Personalizado: de / até (qualquer um pode ficar vazio) -->
+            <!-- Uma data por linha: com a lista estreita, lado a lado a data ficava cortada -->
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6" IsVisible="{Binding IsCustomPeriod}">
+              <TextBlock Text="{l:Tr Search_DateFrom}" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+              <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding SearchFromDate}" HorizontalAlignment="Stretch"
+                                  AutomationProperties.Name="{l:Tr Search_DateFrom}" DisplayDateEnd="{Binding SearchToDate}" />
+              <TextBlock Grid.Row="1" Text="{l:Tr Search_DateTo}" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+              <CalendarDatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding SearchToDate}" HorizontalAlignment="Stretch"
+                                  AutomationProperties.Name="{l:Tr Search_DateTo}" DisplayDateStart="{Binding SearchFromDate}" />
+            </Grid>
+            </StackPanel>
             <TextBlock Grid.Row="4" Text="{l:Tr Rule_Account}" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondary}" />
             <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding SearchAccounts}" SelectedItem="{Binding SearchAccount}"
                       HorizontalAlignment="Stretch" PlaceholderText="{l:Tr Rule_AllAccounts}" IsEnabled="{Binding !SearchInFolder}">

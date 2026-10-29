@@ -485,4 +485,13 @@
   <data name="Settings_TrustedSendersSelectAll"><value>Select all</value></data>
   <data name="Settings_TrustedSendersRemoveSelected"><value>Remove selected ({0})</value></data>
   <data name="Settings_TrustedSendersNoMatch"><value>No senders match the filter.</value></data>
+  <data name="Search_Period_Custom"><value>Custom…</value></data>
+  <data name="Search_DateFrom"><value>From</value></data>
+  <data name="Search_DateTo"><value>To</value></data>
+  <data name="Reading_WriteTo"><value>Write a message</value></data>
+  <data name="Reading_CopyAddress"><value>Copy address</value></data>
+  <data name="Reading_AddressCopied"><value>{0} copied</value></data>
+  <data name="Reading_MoreRecipients"><value>+{0} more</value></data>
+  <data name="Reading_ShowFewerRecipients"><value>Show fewer</value></data>
+  <data name="Folder_Creating"><value>Creating…</value></data>
 </root>

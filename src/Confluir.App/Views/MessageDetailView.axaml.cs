@@ -1,6 +1,9 @@
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
+using Avalonia.Interactivity;
+using Confluir.App.ViewModels;
 
 namespace Confluir.App.Views;
 
@@ -44,5 +47,15 @@ public partial class MessageDetailView : UserControl
     {
         get => GetValue(ShowOpenInPageProperty);
         set => SetValue(ShowOpenInPageProperty, value);
+    }
+
+    /// <summary>"Copiar endereço" no menu de um remetente ou destinatário.</summary>
+    private async void OnCopyAddress(object? sender, RoutedEventArgs e)
+    {
+        if ((sender as MenuItem)?.DataContext is not AddressViewModel address ||
+            TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
+            return;
+        await clipboard.SetTextAsync(address.Email);
+        address.Copied();
     }
 }

@@ -37,6 +37,30 @@ public interface IMessageActions
     Task ComposeAsync(MessageDetailViewModel message, ComposeMode mode);
     Task EditDraftAsync(MessageDetailViewModel message);
     void CreateRule(MessageDetailViewModel message);
+
+    /// <summary>Mensagem nova para um endereço do cabeçalho, pela conta desta mensagem.</summary>
+    void ComposeTo(MessageDetailViewModel message, MailAddress to);
+
+    void Notify(string text);
+}
+
+/// <summary>Um endereço do cabeçalho (remetente ou destinatário). Clicar abre o menu: escrever, copiar.</summary>
+public sealed partial class AddressViewModel(MailAddress address, MessageDetailViewModel owner) : ViewModelBase
+{
+    public MailAddress Address { get; } = address;
+
+    /// <summary>O nome, ou o endereço quando não há nome.</summary>
+    public string Label => string.IsNullOrWhiteSpace(Address.Name) ? Address.Address : Address.Name;
+
+    public string Email => Address.Address;
+
+    public string Full => Address.ToString();
+
+    [RelayCommand]
+    private void Write() => owner.Actions?.ComposeTo(owner, Address);
+
+    /// <summary>Depois de copiar (a área de transferência é da tela): avisa.</summary>
+    public void Copied() => owner.Actions?.Notify(string.Format(Strings.Reading_AddressCopied, Email));
 }
 
 /// <summary>Painel de leitura de uma mensagem; o corpo é carregado sob demanda.</summary>
@@ -59,6 +83,7 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         var hash = summary.FromAddress.ToLowerInvariant().Aggregate(17u, (h, c) => unchecked(h * 31 + c));
         AvatarColor = AccountColors.All[(int)(hash % (uint)AccountColors.All.Count)].Hex;
         _allowRemoteImages = TrustedSenders.Contains(SenderKey);
+        From = new AddressViewModel(new MailAddress(summary.FromName, summary.FromAddress), this);
     }
 
     private static CultureInfo Culture => LocalizationService.Instance.FormatCulture;
@@ -84,14 +109,70 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         }
     }
 
-    [ObservableProperty]
-    public partial string To { get; private set; } = "";
+    public AddressViewModel From { get; }
+
+    /// <summary>Com mais endereços que isto numa linha (Para ou Cc), a linha mostra só os primeiros e "+N".</summary>
+    public const int CollapsedRecipients = 3;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasCc))]
-    public partial string Cc { get; private set; } = "";
+    private partial IReadOnlyList<AddressViewModel> ToAll { get; set; } = [];
 
-    public bool HasCc => Cc.Length > 0;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCc))]
+    private partial IReadOnlyList<AddressViewModel> CcAll { get; set; } = [];
+
+    [ObservableProperty]
+    public partial bool IsRecipientsExpanded { get; set; }
+
+    partial void OnToAllChanged(IReadOnlyList<AddressViewModel> value) => RecipientsChanged();
+    partial void OnCcAllChanged(IReadOnlyList<AddressViewModel> value) => RecipientsChanged();
+    partial void OnIsRecipientsExpandedChanged(bool value) => RecipientsChanged();
+
+    private void RecipientsChanged()
+    {
+        OnPropertyChanged(nameof(VisibleTo));
+        OnPropertyChanged(nameof(VisibleCc));
+        OnPropertyChanged(nameof(ToMoreText));
+        OnPropertyChanged(nameof(CcMoreText));
+        OnPropertyChanged(nameof(HasToMore));
+        OnPropertyChanged(nameof(HasCcMore));
+        OnPropertyChanged(nameof(CanCollapseRecipients));
+        OnPropertyChanged(nameof(To));
+        OnPropertyChanged(nameof(Cc));
+    }
+
+    private IReadOnlyList<AddressViewModel> Visible(IReadOnlyList<AddressViewModel> all) =>
+        IsRecipientsExpanded || all.Count <= CollapsedRecipients ? all : all.Take(CollapsedRecipients).ToList();
+
+    private string MoreText(IReadOnlyList<AddressViewModel> all) =>
+        string.Format(Strings.Reading_MoreRecipients, all.Count - CollapsedRecipients);
+
+    public IReadOnlyList<AddressViewModel> VisibleTo => Visible(ToAll);
+
+    public IReadOnlyList<AddressViewModel> VisibleCc => Visible(CcAll);
+
+    public bool HasToMore => !IsRecipientsExpanded && ToAll.Count > CollapsedRecipients;
+
+    public bool HasCcMore => !IsRecipientsExpanded && CcAll.Count > CollapsedRecipients;
+
+    public string ToMoreText => MoreText(ToAll);
+
+    public string CcMoreText => MoreText(CcAll);
+
+    /// <summary>Expandida e havia o que recolher: "Mostrar menos".</summary>
+    public bool CanCollapseRecipients =>
+        IsRecipientsExpanded && (ToAll.Count > CollapsedRecipients || CcAll.Count > CollapsedRecipients);
+
+    public bool HasCc => CcAll.Count > 0;
+
+    /// <summary>Destinatários em texto (Para), ex.: para a busca e acessibilidade.</summary>
+    public string To => string.Join(", ", ToAll.Select(a => a.Full));
+
+    public string Cc => string.Join(", ", CcAll.Select(a => a.Full));
+
+    [RelayCommand]
+    private void ToggleRecipients() => IsRecipientsExpanded = !IsRecipientsExpanded;
 
     /// <summary>Texto puro (usado quando não há WebView disponível).</summary>
     [ObservableProperty]
@@ -222,8 +303,8 @@ public sealed partial class MessageDetailViewModel : ViewModelBase
         {
             var body = await _services.Mailbox.GetMessageBodyAsync(Row.Summary.Id, ct);
             _body = body;
-            To = string.Join(", ", body.To);
-            Cc = string.Join(", ", body.Cc);
+            ToAll = body.To.Select(a => new AddressViewModel(a, this)).ToList();
+            CcAll = body.Cc.Select(a => new AddressViewModel(a, this)).ToList();
             Body = body.TextBody;
             Attachments = body.Attachments.Select(a => new AttachmentViewModel(a, this)).ToList();
             RebuildDocument();

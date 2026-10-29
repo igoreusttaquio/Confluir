@@ -156,7 +156,7 @@ public sealed class SyncingMailboxService : IMailboxService, IHostedService, IAs
     {
         var account = _accounts.Accounts.First(a => a.Id == accountId);
         var fullName = await _engine.CreateFolderAsync(account, name, ct);
-        var folders = await _engine.SyncFolderListAsync(account, ct);
+        var folders = await _engine.SyncFolderListAsync(account, ct, ImapLane.Reading);
         RaiseChanged(accountId, foldersChanged: true);
         return folders.FirstOrDefault(f => f.FullName == fullName);
     }

@@ -10,7 +10,48 @@
     <Style Selector="Button.icon.flagged LucideIcon">
       <Setter Property="Foreground" Value="{DynamicResource Warning}" />
     </Style>
+    <!-- Endereços do cabeçalho: parecem texto, clicáveis (menu com escrever e copiar) -->
+    <Style Selector="Button.addr">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,1" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.addr:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+    </Style>
+    <Style Selector="Button.more">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,1" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
   </UserControl.Styles>
+  <UserControl.Resources>
+    <DataTemplate x:Key="AddressChip" x:DataType="vm:AddressViewModel">
+      <Button Classes="addr" Content="{Binding Label}" ToolTip.Tip="{Binding Full}" AutomationProperties.Name="{Binding Full}">
+        <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="{Binding Full}" IsEnabled="False" />
+                <Separator />
+                <MenuItem Header="{l:Tr Reading_WriteTo}" Command="{Binding WriteCommand}">
+                  <MenuItem.Icon><LucideIcon Kind="SquarePen" Size="16" /></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="{l:Tr Reading_CopyAddress}" Click="OnCopyAddress">
+                  <MenuItem.Icon><LucideIcon Kind="Copy" Size="16" /></MenuItem.Icon>
+                </MenuItem>
+              </MenuFlyout>        </Button.Flyout>
+      </Button>
+    </DataTemplate>
+  </UserControl.Resources>
   <DockPanel>
     <!-- Ações (responder etc. chegam na fase de envio) -->
     <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
@@ -96,17 +137,47 @@
                      HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
         <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2">
-          <SelectableTextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap">
-            <Run Text="{Binding FromName}" />
-            <Run Text="{Binding FromAddress, StringFormat='&lt;{0}&gt;'}" FontWeight="Normal"
-                 Foreground="{DynamicResource TextSecondary}" FontSize="13" />
-          </SelectableTextBlock>
-          <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap">
-            <Run Text="{l:Tr Reading_To}" /><Run Text=": " /><Run Text="{Binding To}" />
-          </SelectableTextBlock>
-          <SelectableTextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" IsVisible="{Binding HasCc}">
-            <Run Text="{l:Tr Reading_Cc}" /><Run Text=": " /><Run Text="{Binding Cc}" />
-          </SelectableTextBlock>
+          <!-- Remetente: clicar abre o menu (escrever, copiar) -->
+          <Button Classes="addr" Margin="-4,0,0,0" HorizontalAlignment="Left" DataContext="{Binding From}"
+                  x:DataType="vm:AddressViewModel"
+                  ToolTip.Tip="{Binding Full}" AutomationProperties.Name="{Binding Full}">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="{Binding Full}" IsEnabled="False" />
+                <Separator />
+                <MenuItem Header="{l:Tr Reading_WriteTo}" Command="{Binding WriteCommand}">
+                  <MenuItem.Icon><LucideIcon Kind="SquarePen" Size="16" /></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="{l:Tr Reading_CopyAddress}" Click="OnCopyAddress">
+                  <MenuItem.Icon><LucideIcon Kind="Copy" Size="16" /></MenuItem.Icon>
+                </MenuItem>
+              </MenuFlyout>            </Button.Flyout>
+            <TextBlock TextWrapping="Wrap">
+              <Run Text="{Binding Label}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextPrimary}" />
+              <Run Text="{Binding Email, StringFormat='&lt;{0}&gt;'}" FontSize="13" />
+            </TextBlock>
+          </Button>
+          <!-- Para e Cc: com muitos, só os primeiros e "+N"; cada endereço tem o menu -->
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Text="{l:Tr Reading_To}" Classes="secondary" FontSize="13" Margin="0,2,0,0" VerticalAlignment="Top" />
+            <WrapPanel Grid.Column="1">
+              <ItemsControl ItemsSource="{Binding VisibleTo}" ItemTemplate="{StaticResource AddressChip}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              </ItemsControl>
+              <Button Classes="more" Content="{Binding ToMoreText}" Command="{Binding ToggleRecipientsCommand}" IsVisible="{Binding HasToMore}" />
+            </WrapPanel>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasCc}">
+            <TextBlock Text="{l:Tr Reading_Cc}" Classes="secondary" FontSize="13" Margin="0,2,0,0" VerticalAlignment="Top" />
+            <WrapPanel Grid.Column="1">
+              <ItemsControl ItemsSource="{Binding VisibleCc}" ItemTemplate="{StaticResource AddressChip}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              </ItemsControl>
+              <Button Classes="more" Content="{Binding CcMoreText}" Command="{Binding ToggleRecipientsCommand}" IsVisible="{Binding HasCcMore}" />
+            </WrapPanel>
+          </Grid>
+          <Button Classes="more" Content="{l:Tr Reading_ShowFewerRecipients}" Command="{Binding ToggleRecipientsCommand}"
+                  IsVisible="{Binding CanCollapseRecipients}" HorizontalAlignment="Left" Margin="-4,0,0,0" />
           <TextBlock Text="{Binding DateText}" Classes="caption" TextWrapping="Wrap" />
         </StackPanel>
       </Grid>

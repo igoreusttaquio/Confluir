@@ -313,6 +313,7 @@
                   <TextBlock Text="{l:Tr Folder_Create}" FontSize="12" FontWeight="SemiBold"
                              Foreground="{DynamicResource TextPrimary}" />
                   <TextBox Text="{Binding NewFolderName}" PlaceholderText="{l:Tr Folder_Create_Placeholder}" FontSize="12"
+                           IsEnabled="{Binding !ConfirmCreateFolderCommand.IsRunning}"
                            AttachedToVisualTree="OnNewFolderBoxAttached" DetachedFromVisualTree="OnNewFolderBoxDetached">
                     <TextBox.KeyBindings>
                       <KeyBinding Gesture="Enter" Command="{Binding ConfirmCreateFolderCommand}" />
@@ -325,8 +326,15 @@
                   <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
                     <Button Content="{l:Tr AddAccount_Cancel}" Command="{Binding CancelCreateFolderCommand}"
                             Padding="10,4" FontSize="12" />
-                    <Button Classes="accent" Content="{l:Tr Folder_Create_Confirm}"
-                            Command="{Binding ConfirmCreateFolderCommand}" Padding="10,4" FontSize="12" />
+                    <!-- Criando: o botão gira e diz o que está acontecendo (não parece travado) -->
+                    <Button Classes="accent" Command="{Binding ConfirmCreateFolderCommand}" Padding="10,4" FontSize="12">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <LucideIcon Kind="LoaderCircle" Size="13" Classes="spin" Foreground="{DynamicResource OnAccent}"
+                                    IsVisible="{Binding ConfirmCreateFolderCommand.IsRunning}" />
+                        <TextBlock Text="{l:Tr Folder_Create_Confirm}" IsVisible="{Binding !ConfirmCreateFolderCommand.IsRunning}" />
+                        <TextBlock Text="{l:Tr Folder_Creating}" IsVisible="{Binding ConfirmCreateFolderCommand.IsRunning}" />
+                      </StackPanel>
+                    </Button>
                   </StackPanel>
                 </StackPanel>
               </Border>

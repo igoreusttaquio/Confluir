@@ -11,8 +11,13 @@ namespace Confluir.App.ViewModels;
 /// <param name="Account">Nula = todas as contas.</param>
 public sealed record SearchAccountOption(MailAccount? Account, string Label);
 
-/// <param name="Days">Últimos N dias; 0 = qualquer data.</param>
-public sealed record SearchPeriodOption(int Days, string LabelKey);
+/// <param name="Days">Últimos N dias; 0 = qualquer data; <see cref="CustomDays"/> = de/até escolhidos.</param>
+public sealed record SearchPeriodOption(int Days, string LabelKey)
+{
+    public const int CustomDays = -1;
+
+    public bool IsCustom => Days == CustomDays;
+}
 
 /// <summary>
 /// Busca: campo no topo da lista (com operadores como <c>de:</c> e <c>assunto:</c>) e filtro avançado
@@ -34,7 +39,39 @@ public sealed partial class MainWindowViewModel
         new(7, nameof(Strings.Search_Period_Week)),
         new(30, nameof(Strings.Search_Period_Month)),
         new(365, nameof(Strings.Search_Period_Year)),
+        new(SearchPeriodOption.CustomDays, nameof(Strings.Search_Period_Custom)),
     ];
+
+    /// <summary>Período escolhido à mão: as datas aparecem.</summary>
+    public bool IsCustomPeriod => SearchPeriod?.IsCustom == true;
+
+    /// <summary>De (inclusive, desde o começo do dia). Nulo = sem limite.</summary>
+    [ObservableProperty]
+    public partial DateTime? SearchFromDate { get; set; }
+
+    /// <summary>Até (inclusive, até o fim do dia). Nulo = sem limite.</summary>
+    [ObservableProperty]
+    public partial DateTime? SearchToDate { get; set; }
+
+    partial void OnSearchFromDateChanged(DateTime? value) => ScheduleSearch();
+    partial void OnSearchToDateChanged(DateTime? value) => ScheduleSearch();
+
+    /// <summary>
+    /// Limites da busca no fuso local. No personalizado, as datas podem vir trocadas (até antes de de): valem
+    /// como intervalo do mesmo jeito.
+    /// </summary>
+    public static (DateTimeOffset? Since, DateTimeOffset? Until) PeriodBounds(SearchPeriodOption? period, DateTime? from, DateTime? to,
+        DateTimeOffset now)
+    {
+        if (period is null || period.Days == 0)
+            return (null, null);
+        if (!period.IsCustom)
+            return (now.AddDays(-period.Days), null);
+        if (from is { } a && to is { } b && a.Date > b.Date)
+            (from, to) = (to, from);
+        DateTimeOffset? Local(DateTime day) => new DateTimeOffset(day.Date, TimeZoneInfo.Local.GetUtcOffset(day.Date));
+        return (from is { } f ? Local(f) : null, to is { } t ? Local(t.Date.AddDays(1)) : null);
+    }
 
     [ObservableProperty]
     public partial string SearchText { get; set; } = "";
@@ -119,7 +156,11 @@ public sealed partial class MainWindowViewModel
     partial void OnSearchSubjectChanged(string value) => ScheduleSearch();
     partial void OnSearchHasAttachmentChanged(bool value) => ScheduleSearch();
     partial void OnSearchUnreadChanged(bool value) => ScheduleSearch();
-    partial void OnSearchPeriodChanged(SearchPeriodOption? value) => ScheduleSearch();
+    partial void OnSearchPeriodChanged(SearchPeriodOption? value)
+    {
+        OnPropertyChanged(nameof(IsCustomPeriod));
+        ScheduleSearch();
+    }
     partial void OnSearchInFolderChanged(bool value) => ScheduleSearch();
 
     /// <summary>Espera uma pausa na digitação; a busca anterior é cancelada.</summary>
@@ -157,8 +198,10 @@ public sealed partial class MainWindowViewModel
         if (!keepLimit && !keepSelection)
             _searchLimit = SearchPageSize;
         var query = CurrentQuery();
+        var (since, until) = PeriodBounds(SearchPeriod, SearchFromDate, SearchToDate, DateTimeOffset.Now);
         _searchCts?.Cancel();
-        if (query.IsEmpty)
+        // Só o período (sem texto) também busca: lista as mensagens daquelas datas.
+        if (query.IsEmpty && since is null && until is null)
         {
             if (IsSearchActive)
             {
@@ -176,10 +219,9 @@ public sealed partial class MainWindowViewModel
         ListTitle = Strings.Search_Title;
         try
         {
-            var days = SearchPeriod?.Days ?? 0;
             var folderId = SearchInFolder && SelectedNode is FolderNode f ? f.Folder.Id : (Guid?)null;
             var search = new MessageSearch(query, AccountId: folderId is null ? SearchAccount?.Account?.Id : null, FolderId: folderId,
-                Since: days > 0 ? DateTimeOffset.Now.AddDays(-days) : null);
+                Since: since, Until: until);
             var found = await _mailbox.SearchAsync(search, _searchLimit, cts.Token);
             if (cts.IsCancellationRequested)
                 return;
@@ -244,6 +286,8 @@ public sealed partial class MainWindowViewModel
             SearchHasAttachment = false;
             SearchUnread = false;
             SearchPeriod = SearchPeriods[0];
+            SearchFromDate = null;
+            SearchToDate = null;
             SearchInFolder = false;
             SearchAccount = null;
             CanLoadMoreResults = false;
