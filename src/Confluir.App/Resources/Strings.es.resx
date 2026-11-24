@@ -54,9 +54,6 @@
   <data name="Accent_Default"><value>Predeterminado</value></data>
   <data name="Accent_Custom"><value>Personalizado</value></data>
   <data name="CompactMode"><value>Modo compacto</value></data>
-  <data name="TransparencyEffects"><value>Efectos de transparencia</value></data>
-  <data name="TransparencyEffects_Hint"><value>La barra lateral deja ver el fondo del escritorio, con el efecto del sistema (Mica en Windows 11, desenfoque en Windows 10 y macOS).</value></data>
-  <data name="TransparencyEffects_Unavailable"><value>Este sistema no ofrece el efecto: el fondo sigue sólido.</value></data>
   <data name="Language"><value>Idioma</value></data>
   <data name="Language_System"><value>Usar el idioma del sistema</value></data>
   <data name="Language_PtBR"><value>Português (Brasil)</value></data>

@@ -54,9 +54,6 @@
   <data name="Accent_Default"><value>Default</value></data>
   <data name="Accent_Custom"><value>Custom</value></data>
   <data name="CompactMode"><value>Compact mode</value></data>
-  <data name="TransparencyEffects"><value>Transparency effects</value></data>
-  <data name="TransparencyEffects_Hint"><value>The sidebar lets the desktop show through, using the system effect (Mica on Windows 11, blur on Windows 10 and macOS).</value></data>
-  <data name="TransparencyEffects_Unavailable"><value>This system doesn't offer the effect: the background stays solid.</value></data>
   <data name="Language"><value>Language</value></data>
   <data name="Language_System"><value>Use system language</value></data>
   <data name="Language_PtBR"><value>Português (Brasil)</value></data>

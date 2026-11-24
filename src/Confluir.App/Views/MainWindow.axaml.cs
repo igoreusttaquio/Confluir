@@ -42,8 +42,6 @@ public partial class MainWindow : Window
         fonts.Changed += (_, _) => ApplyScale();
 
         ApplyLayout();
-        ApplyTransparency();
-        viewModel.Appearance.TransparencyChanged += (_, _) => ApplyTransparency();
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         viewModel.FocusSearchRequested += (_, _) => this.FindDescendantOfType<MessageListView>()?.FocusSearch();
         RestoreWindowSize();
@@ -53,32 +51,6 @@ public partial class MainWindow : Window
             ApplyMinimumSize();
             await viewModel.InitializeAsync();
         };
-    }
-
-    // Transparência -----------------------------------------------------------------------------------
-
-    // Só efeitos com desfoque: "Transparent" puro deixaria o texto da barra lateral sobre a área de trabalho nítida.
-    private static readonly WindowTransparencyLevel[] BlurLevels =
-        [WindowTransparencyLevel.Mica, WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur];
-
-    /// <summary>
-    /// Pede ao sistema o melhor efeito disponível e só deixa a barra lateral translúcida (classe "translucent")
-    /// se ele foi aplicado de fato; senão tudo continua sólido.
-    /// </summary>
-    private void ApplyTransparency()
-    {
-        if (_settings is null)
-            return;
-        TransparencyLevelHint = _settings.Current.Appearance.TransparencyEffects ? BlurLevels : [];
-        UpdateTranslucent();
-    }
-
-    private void UpdateTranslucent()
-    {
-        var applied = _settings?.Current.Appearance.TransparencyEffects == true && BlurLevels.Contains(ActualTransparencyLevel);
-        Classes.Set("translucent", applied);
-        if (_vm is not null)
-            _vm.Appearance.IsTransparencyApplied = applied;
     }
 
     private static readonly TimeSpan SidebarAnimation = TimeSpan.FromMilliseconds(220);
@@ -302,9 +274,7 @@ public partial class MainWindow : Window
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ActualTransparencyLevelProperty)
-            UpdateTranslucent();
-        else if (change.Property == ClientSizeProperty)
+        if (change.Property == ClientSizeProperty)
         {
             if (WindowState == WindowState.Normal)
                 _normalSize = ClientSize;

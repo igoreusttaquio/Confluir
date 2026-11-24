@@ -173,26 +173,6 @@ Pump(() => Environment.TickCount64 > openedAt, 1000);
     Pump(() => true, 200);
 }
 
-// Efeitos de transparência: sem efeito do sistema (sem janela não há) a barra fica sólida e a tela avisa;
-// com o efeito aplicado (forçado aqui) o cartão da barra lateral fica translúcido.
-{
-    var card = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("sidebarCard"));
-    string Brush() => (card.Background as Avalonia.Media.ISolidColorBrush)?.Color.ToString() ?? "-";
-    var solid = Brush();
-    vm.Appearance.TransparencyEffects = true;
-    Pump(() => true, 300);
-    Console.WriteLine($"transparência ligada sem efeito do sistema: classe {window.Classes.Contains("translucent")}, " +
-                      $"aviso {vm.Appearance.IsTransparencyUnavailable}, pediu {string.Join("/", window.TransparencyLevelHint)}, cor {Brush()} (sólida {solid})");
-    window.Classes.Add("translucent");
-    var settle = Environment.TickCount64 + 400;
-    Pump(() => Environment.TickCount64 > settle, 1000);
-    Console.WriteLine($"com efeito aplicado: barra lateral {Brush()}, janela {(window.Background as Avalonia.Media.ISolidColorBrush)?.Color}");
-    window.Classes.Remove("translucent");
-    vm.Appearance.TransparencyEffects = false;
-    Pump(() => true, 300);
-    Console.WriteLine($"transparência desligada: pediu [{string.Join("/", window.TransparencyLevelHint)}], aviso {vm.Appearance.IsTransparencyUnavailable}");
-}
-
 // Texto da lista grande.
 vm.Appearance.IsListTextLarge = true;
 Save(window, "list-text-large.png");

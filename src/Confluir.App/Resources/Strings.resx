@@ -54,9 +54,6 @@
   <data name="Accent_Default"><value>Padrão</value></data>
   <data name="Accent_Custom"><value>Personalizada</value></data>
   <data name="CompactMode"><value>Modo compacto</value></data>
-  <data name="TransparencyEffects"><value>Efeitos de transparência</value></data>
-  <data name="TransparencyEffects_Hint"><value>A barra lateral deixa ver o fundo da área de trabalho, com o efeito do sistema (Mica no Windows 11, desfoque no Windows 10 e no macOS).</value></data>
-  <data name="TransparencyEffects_Unavailable"><value>Este sistema não oferece o efeito: o fundo continua sólido.</value></data>
   <data name="Language"><value>Idioma</value></data>
   <data name="Language_System"><value>Seguir o sistema</value></data>
   <data name="Language_PtBR"><value>Português (Brasil)</value></data>

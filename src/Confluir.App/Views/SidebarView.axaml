@@ -7,13 +7,6 @@
              x:Class="Confluir.App.Views.SidebarView"
              x:DataType="vm:MainWindowViewModel">
   <UserControl.Styles>
-    <!-- Cartão da barra lateral: sólido, ou translúcido quando a janela tem efeito de transparência. -->
-    <Style Selector="Border.sidebarCard">
-      <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
-    </Style>
-    <Style Selector="Window.translucent Border.sidebarCard">
-      <Setter Property="Background" Value="{DynamicResource SidebarTranslucent}" />
-    </Style>
     <Style Selector="Button.accountHeader">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
@@ -107,7 +100,7 @@
   </UserControl.Styles>
 
   <!-- Cartão como os demais, com o mesmo respiro de 8px também na borda esquerda da janela -->
-  <Border Classes="panel sidebarCard" ClipToBounds="True" Margin="8,8,8,8">
+  <Border Classes="panel" Background="{DynamicResource SurfaceAlt}" ClipToBounds="True" Margin="8,8,8,8">
     <!-- As duas versões ficam sobrepostas e trocam por esmaecimento enquanto a coluna anima a largura. -->
     <Panel Classes="sidebarRoot" Classes.collapsed="{Binding IsSidebarCollapsed}">
     <!-- Barra recolhida: faixa de ícones (caixa unificada, uma bolinha por conta e o rodapé). -->
