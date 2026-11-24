@@ -133,5 +133,13 @@
 
     <ToggleSwitch Content="{l:Tr CompactMode}" IsChecked="{Binding CompactMode}"
                   OnContent="" OffContent="" />
+
+    <StackPanel Spacing="4">
+      <ToggleSwitch Content="{l:Tr TransparencyEffects}" IsChecked="{Binding TransparencyEffects}"
+                    OnContent="" OffContent="" />
+      <TextBlock Text="{l:Tr TransparencyEffects_Hint}" Classes="caption" TextWrapping="Wrap" />
+      <TextBlock Text="{l:Tr TransparencyEffects_Unavailable}" Classes="caption" TextWrapping="Wrap"
+                 Foreground="{DynamicResource Danger}" IsVisible="{Binding IsTransparencyUnavailable}" />
+    </StackPanel>
   </StackPanel>
 </UserControl>

@@ -94,6 +94,9 @@ public sealed class AppearanceSettings
 
     public bool CompactMode { get; set; }
 
+    /// <summary>Barra lateral translúcida com o efeito do sistema (Mica, desfoque); sem suporte fica sólida.</summary>
+    public bool TransparencyEffects { get; set; }
+
     /// <summary>Tamanho do texto na lista de mensagens.</summary>
     public ListTextSize ListTextSize { get; set; } = ListTextSize.Medium;
 

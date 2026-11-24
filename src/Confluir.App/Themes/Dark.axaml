@@ -4,6 +4,9 @@
   <SolidColorBrush x:Key="Background" Color="#0B1020" />
   <SolidColorBrush x:Key="Surface" Color="#111833" />
   <SolidColorBrush x:Key="SurfaceAlt" Color="#1A2347" />
+  <!-- Efeitos de transparência: fundo da janela e barra lateral deixam o efeito do sistema (Mica, desfoque) aparecer. -->
+  <SolidColorBrush x:Key="TranslucentBackground" Color="#800B1020" />
+  <SolidColorBrush x:Key="SidebarTranslucent" Color="#591A2347" />
   <SolidColorBrush x:Key="Border" Color="#26305A" />
   <SolidColorBrush x:Key="TextPrimary" Color="#E8ECFF" />
   <SolidColorBrush x:Key="TextSecondary" Color="#9AA3C7" />

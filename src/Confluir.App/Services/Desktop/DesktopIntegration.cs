@@ -109,6 +109,9 @@ public sealed class DesktopIntegration(
         if (_window.WindowState == WindowState.Minimized)
             _window.WindowState = WindowState.Normal;
         _window.Activate();
+        // No Windows o Activate sozinho não vence o Explorer (que está na frente no clique da bandeja).
+        if (OperatingSystem.IsWindows() && _window.TryGetPlatformHandle() is { } handle)
+            WindowsForeground.Bring(handle.Handle);
     }
 
     /// <summary>Fecha o app de vez (mesmo com "fechar para a bandeja" ligado).</summary>

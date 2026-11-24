@@ -980,8 +980,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAccountNodeHos
         _ => ListTitle,
     };
 
-private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages) =>
-        MessageListBuilder.Build(ApplyFilter(messages, Filter, (SelectedRow as MessageRow)?.Summary.Id),
+    /// <param name="keepOpen">Mantém a mensagem aberta mesmo fora do filtro (ver <see cref="ApplyFilter"/>).</param>
+    private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages, bool keepOpen = true) =>
+        MessageListBuilder.Build(ApplyFilter(messages, Filter, keepOpen ? (SelectedRow as MessageRow)?.Summary.Id : null),
             _accounts, _locallyRead, _time.GetLocalNow(), _loc.FormatCulture);
 
     // Filtros rápidos ---------------------------------------------------------------------------------
@@ -1003,12 +1004,16 @@ private List<MessageListRow> BuildRows(IReadOnlyList<MessageSummary> messages) =
 
     partial void OnFilterChanged(ListFilter value)
     {
-        ReplaceRowsKeepingSelection(BuildRows(_listMessages));
+        // Trocar de filtro é pedir só o que bate: a aberta fica apenas se também bater (senão o leitor fecha).
+        ReplaceRowsKeepingSelection(BuildRows(_listMessages, keepOpen: false));
         if (SelectedNode is { } node)
             UpdateSubtitle(node);
     }
 
-    /// <param name="keepId">Mensagem aberta: continua na lista mesmo que deixe de bater (ex.: ficou lida).</param>
+    /// <param name="keepId">
+    /// Mensagem aberta: continua na lista mesmo que deixe de bater (ex.: ficou lida ao abrir dentro de "Não lidas").
+    /// Ao trocar de filtro não vale: aí ela só aparece se bater.
+    /// </param>
     private IReadOnlyList<MessageSummary> ApplyFilter(IReadOnlyList<MessageSummary> messages, ListFilter filter, Guid? keepId) =>
         filter switch
         {

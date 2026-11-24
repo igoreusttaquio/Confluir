@@ -94,6 +94,10 @@
   <Style Selector="Window">
     <Setter Property="Background" Value="{DynamicResource Background}" />
   </Style>
+  <!-- Efeitos de transparência aplicados pelo sistema: o fundo deixa o efeito aparecer (os cartões seguem sólidos). -->
+  <Style Selector="Window.translucent">
+    <Setter Property="Background" Value="{DynamicResource TranslucentBackground}" />
+  </Style>
 
   <!-- Mãozinha só no que funciona como link (como na web): links, endereços do cabeçalho, "+N mais" e os filtros em
        chip. Botões, linhas das listas e menus ficam com a seta, como nos apps de desktop (o destaque ao passar o mouse

@@ -54,7 +54,31 @@ public sealed partial class AppearanceViewModel : ViewModelBase
             string.Equals(o.Hex, theme.AccentColor, StringComparison.OrdinalIgnoreCase));
         CustomColor = Color.Parse(theme.AccentColor ?? ThemeService.DefaultAccent);
         CompactMode = settings.Current.Appearance.CompactMode;
+        TransparencyEffects = settings.Current.Appearance.TransparencyEffects;
         _syncing = false;
+    }
+
+    /// <summary>Ligou ou desligou os efeitos de transparência (a janela pede o efeito ao sistema).</summary>
+    public event EventHandler? TransparencyChanged;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTransparencyUnavailable))]
+    public partial bool TransparencyEffects { get; set; }
+
+    /// <summary>A janela informa se o sistema aplicou o efeito pedido.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTransparencyUnavailable))]
+    public partial bool IsTransparencyApplied { get; set; }
+
+    public bool IsTransparencyUnavailable => TransparencyEffects && !IsTransparencyApplied;
+
+    partial void OnTransparencyEffectsChanged(bool value)
+    {
+        if (_syncing)
+            return;
+        _settings.Current.Appearance.TransparencyEffects = value;
+        _settings.Save();
+        TransparencyChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public IReadOnlyList<AccentOption> AccentOptions { get; }

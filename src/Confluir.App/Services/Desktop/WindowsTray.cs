@@ -26,7 +26,8 @@ internal sealed class WindowsTray : IDesktopTray
     private const int NOTIFYICON_VERSION_4 = 4;
     private const uint TPM_RETURNCMD = 0x0100, TPM_RIGHTBUTTON = 0x0002, TPM_BOTTOMALIGN = 0x0020;
     private const uint MF_STRING = 0x0000;
-    private static readonly IntPtr HWND_MESSAGE = new(-3);
+    private const int WS_POPUP = unchecked((int)0x80000000);
+    private const int WS_EX_TOOLWINDOW = 0x80;
 
     private readonly WndProc _wndProc; // mantido vivo: o Windows chama de volta enquanto a janela existir
     private readonly IntPtr _hwnd;
@@ -51,7 +52,9 @@ internal sealed class WindowsTray : IDesktopTray
             lpszClassName = className,
         };
         RegisterClassEx(ref wc);
-        _hwnd = CreateWindowEx(0, className, "Confluir", 0, 0, 0, 0, 0, HWND_MESSAGE, IntPtr.Zero, instance, IntPtr.Zero);
+        // Janela comum, oculta e fora da barra de tarefas (não "só mensagens"): esta recebe o aviso de Explorer
+        // reiniciado (difusão) e pode ir para a frente, o que o menu da bandeja exige para fechar ao clicar fora.
+        _hwnd = CreateWindowEx(WS_EX_TOOLWINDOW, className, "Confluir", WS_POPUP, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, instance, IntPtr.Zero);
         // O Explorer reiniciado recria a área de notificação: o ícone precisa ser adicionado de novo.
         _taskbarCreated = RegisterWindowMessage("TaskbarCreated");
 
